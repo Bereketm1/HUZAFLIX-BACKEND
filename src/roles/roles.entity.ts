@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { User } from 'src/users/users.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('roles')
 export class Role {
@@ -10,4 +18,13 @@ export class Role {
 
   @Column({ nullable: true })
   description?: string;
+
+  @OneToMany(() => User, (user) => user.role)
+  users: User[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }
