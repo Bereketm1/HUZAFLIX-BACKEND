@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # usage: ./wait-for-postgres.sh <cmd...>
 # waits for POSTGRES host:port to be available then exec the provided command
@@ -16,5 +16,5 @@ while ! nc -z "$HOST" "$PORT"; do
   sleep 1
 done
 
-echo "Postgres is up - executing command: $@"
+echo "Postgres is up - executing command: $*"
 exec "$@"

@@ -16,15 +16,19 @@ WORKDIR /app
 
 # Copy package.json and install prod deps only
 COPY package*.json ./
-RUN npm ci --only=production --silent
+# Copy package.json (kept for metadata)
+COPY package*.json ./
+# Copy node_modules from the builder stage to avoid re-installing during final image build
+COPY --from=builder /app/node_modules ./node_modules
 # install netcat so we can wait for the database in the entrypoint script
-RUN apk add --no-cache netcat-openbsd bash
+RUN apk add --no-cache netcat-openbsd
 
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
+# Copy the entire built app from the builder stage (includes dist and other generated files)
+COPY --from=builder /app /app
 # copy wait script
 COPY wait-for-postgres.sh ./
 RUN chmod +x ./wait-for-postgres.sh
+RUN sed -i 's/\r$//' ./wait-for-postgres.sh || true
 
 EXPOSE 3000
-CMD ["./wait-for-postgres.sh", "node", "dist/main"]
+CMD ["sh", "./wait-for-postgres.sh", "node", "dist/src/main.js"]
