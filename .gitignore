@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.nest_tmp/
+.env
+.DS_Store
+npm-debug.log*
+pnpm-lock.yaml
+yarn.lock
+coverage/
+.idea/
+.vscode/
+/.turbo/
+/*.local
