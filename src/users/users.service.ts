@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { RolesService } from 'src/roles/roles.service';
 
 @Injectable()
@@ -55,6 +59,9 @@ export class UsersService {
   }
 
   private async hashPassword(password: string) {
-    return bcrypt.hash(password, 10);
+    if (!password)
+      throw new UnprocessableEntityException('Password is required');
+    const saltRounds = 10;
+    return bcrypt.hash(password, saltRounds);
   }
 }
