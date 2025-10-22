@@ -17,4 +17,12 @@ while ! nc -z "$HOST" "$PORT"; do
 done
 
 echo "Postgres is up - executing command: $@"
+
+echo "Running database migrations..."
+npm run migration:run
+
+echo "Seeding database..."
+npm run seed
+
+echo "Starting server..."
 exec "$@"
