@@ -16,5 +16,11 @@ while ! nc -z "$HOST" "$PORT"; do
   sleep 1
 done
 
-echo "Postgres is up - executing command: $*"
+echo "Running database migrations..."
+npm run migration:run
+
+echo "Seeding database..."
+npm run seed
+
+echo "Postgres is up - executing command: $@"
 exec "$@"
