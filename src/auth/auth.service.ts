@@ -19,7 +19,7 @@ export class AuthService {
     };
   }
 
-  async login(user: LoginDto): Promise<{ access_token: Promise<string> }> {
+  async login(user: LoginDto): Promise<{ access_token: string }> {
     const { email, password } = user;
     const res = await this.userService.findOneByEmail(email);
     if (
@@ -30,7 +30,7 @@ export class AuthService {
     }
     const payload = { id: res.id, email: res.email };
     return {
-      access_token: this.signJwt(payload),
+      access_token: await this.signJwt(payload),
     };
   }
 
