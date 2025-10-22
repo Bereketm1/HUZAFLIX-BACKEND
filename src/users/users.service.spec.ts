@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './users.entity';
+import { RolesService } from 'src/roles/roles.service';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -21,6 +22,10 @@ describe('UsersService', () => {
         {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
+        },
+        {
+          provide: RolesService,
+          useValue: {},
         },
       ],
     }).compile();
