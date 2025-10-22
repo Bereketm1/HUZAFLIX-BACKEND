@@ -17,7 +17,7 @@ export class User {
   @Column({ unique: true, nullable: false })
   email: string;
 
-  @Column({ nullable: false })
+  @Column({ type: 'text', nullable: false })
   password_hash?: string;
 
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
@@ -27,9 +27,9 @@ export class User {
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
 }
