@@ -1,27 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { AbilityBuilder, Ability, AbilityClass } from '@casl/ability';
+import { PermissionsService } from 'src/roles/permissions.service';
+import { Permission } from 'src/roles/permission.entity';
 
 export type Actions = 'manage' | 'create' | 'read' | 'update' | 'delete';
 export type Subjects = string;
 
 export type AppAbility = Ability<[Actions, Subjects]>;
 
-export interface PermissionRecord {
-  id: number;
-  name: string; // 'resource:action' format, e.g. 'users:create'
-}
-
-export interface PermissionsService {
-  // fetch permission names assigned to a role id
-  getPermissionsForRole(roleId: number): Promise<PermissionRecord[]>;
-}
-
 @Injectable()
 export class AbilityFactory {
   constructor(private readonly permissionsService: PermissionsService) {}
 
   async createForRole(roleId: number): Promise<AppAbility> {
-    const permissions =
+    const permissions: Permission[] =
       await this.permissionsService.getPermissionsForRole(roleId);
 
     const { can, build } = new AbilityBuilder(

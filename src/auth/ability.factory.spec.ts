@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { AbilityFactory, PermissionsService } from './ability.factory';
+import { AbilityFactory } from './ability.factory';
+import { PermissionsService } from 'src/roles/permissions.service';
 
 describe('AbilityFactory', () => {
   let factory: AbilityFactory;
 
-  const mockPermService: PermissionsService = {
+  const mockPermService: jest.Mocked<PermissionsService> = {
     getPermissionsForRole: jest.fn(),
-  } as any;
+  } as unknown as jest.Mocked<PermissionsService>;
 
   beforeEach(() => {
     factory = new AbilityFactory(mockPermService);
