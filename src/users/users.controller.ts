@@ -31,7 +31,7 @@ export class UsersController {
     return await this.userService.create(createUserDto);
   }
 
-  @Put()
+  @Put(':id')
   @ApiOperation({ summary: 'Update user by ID' })
   @ApiResponse({ status: 200, description: 'Updated user successfully' })
   async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
