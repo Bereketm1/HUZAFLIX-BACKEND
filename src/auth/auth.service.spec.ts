@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
+import { RolesService } from 'src/roles/roles.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -17,12 +18,18 @@ describe('AuthService', () => {
     create: jest.fn(),
   };
 
+  const mockRolesService = {
+    findOneByName: jest.fn(),
+    findOneById: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: JwtService, useValue: mockJwtService },
         { provide: UsersService, useValue: mockUsersService },
+        { provide: RolesService, useValue: mockRolesService },
       ],
     }).compile();
 
@@ -44,10 +51,17 @@ describe('AuthService', () => {
         password: '123456',
       };
       mockUsersService.create.mockResolvedValue({ id: '1', ...registerDto });
+      mockRolesService.findOneByName.mockResolvedValue({
+        id: '1',
+        name: 'user',
+      });
 
       const result = await service.register(registerDto);
 
-      expect(mockUsersService.create).toHaveBeenCalledWith(registerDto);
+      expect(mockUsersService.create).toHaveBeenCalledWith({
+        ...registerDto,
+        role_id: '1',
+      });
       expect(result).toEqual({ message: 'User registered successfully' });
     });
   });
