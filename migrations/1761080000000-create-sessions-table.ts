@@ -4,6 +4,10 @@ export class CreateSessionsTable1761080000000 implements MigrationInterface {
   name = 'CreateSessionsTable1761080000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // ensure uuid generation function exists in Postgres
+    // some Postgres images require enabling the extension explicitly
+    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+
     await queryRunner.query(
       `CREATE TABLE "sessions" (
         "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
