@@ -5,9 +5,9 @@ export async function seedRoles() {
   const roleRepository = AppDataSource.getRepository(Role);
 
   const roles = [
-    { name: 'admin', description: 'Administrator with full access' },
-    { name: 'user', description: 'Regular user with limited access' },
-    { name: 'moderator', description: 'Can moderate content' },
+    { name: 'administrator', description: 'Responsible for managing the system' },
+    { name: 'api_consumer', description: 'Authenticated API consumers who can subscribe and manage keys' },
+    { name: 'visitor', description: 'Unauthenticated visitors who can view public APIs and marketing content' },
   ];
 
   for (const role of roles) {

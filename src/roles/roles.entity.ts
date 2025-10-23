@@ -1,4 +1,5 @@
 import { User } from 'src/users/users.entity';
+import { RolePermission } from './role-permission.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -21,6 +22,9 @@ export class Role {
 
   @OneToMany(() => User, (user) => user.role)
   users: User[];
+
+  @OneToMany(() => RolePermission, (rp) => rp.role, { cascade: false })
+  rolePermissions?: RolePermission[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
