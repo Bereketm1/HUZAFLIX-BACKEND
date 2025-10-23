@@ -111,7 +111,12 @@ export class AuthService {
   }
 
   private async signJwt(payload: Record<string, unknown>) {
-    return await this.jwt.signAsync(payload, { expiresIn: '15m' });
+    try {
+      return await this.jwt.signAsync(payload, { expiresIn: '15m' });
+    } catch (err) {
+      // allow Nest to handle the exception but provide a clearer message
+      throw new Error(`Failed to sign JWT: ${(err as Error).message}`);
+    }
   }
 
   private async comparePasswords(password: string, hashedPassword: string) {

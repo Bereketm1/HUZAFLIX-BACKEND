@@ -33,6 +33,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       DB_HOST: ${DB_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
+      JWT_SECRET: ${JWT_SECRET}
       REDIS_URL: ${REDIS_URL}
     ports:
       - '${APP_PORT}:3000'
