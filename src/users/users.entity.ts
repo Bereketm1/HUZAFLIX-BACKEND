@@ -17,8 +17,8 @@ export class User {
   @Column({ unique: true, nullable: false })
   email: string;
 
-  @Column({ type: 'text', nullable: false })
-  password_hash?: string;
+  @Column({ type: 'text', nullable: true })
+  password_hash?: string | null;
 
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
   @JoinColumn({ name: 'role_id' })
