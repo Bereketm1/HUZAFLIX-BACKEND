@@ -51,9 +51,9 @@ describe('UsersService', () => {
   describe('create', () => {
     it('should hash password, assign role and save user', async () => {
       const dto: CreateUserDto = { email: 'a@b.com', password: 'plainpass' };
-      const role = { id: 2, name: 'user' } as any;
+  const role = { id: 2, name: 'api_consumer' } as any;
 
-      (mockRolesService.findOneByName as jest.Mock).mockResolvedValue(role);
+  (mockRolesService.findOneByName as jest.Mock).mockResolvedValue(role);
       (mockUserRepository.create as jest.Mock).mockReturnValue({ ...dto });
       (mockUserRepository.save as jest.Mock).mockImplementation((u) =>
         Promise.resolve({ id: 1, ...u }),
@@ -61,7 +61,7 @@ describe('UsersService', () => {
 
       const res = await service.create(dto);
 
-      expect(mockRolesService.findOneByName).toHaveBeenCalledWith('user');
+  expect(mockRolesService.findOneByName).toHaveBeenCalledWith('api_consumer');
       expect(bcrypt.hash as jest.Mock).toHaveBeenCalledWith(dto.password, 10);
       expect(mockUserRepository.create).toHaveBeenCalled();
       expect(mockUserRepository.save).toHaveBeenCalled();

@@ -23,17 +23,17 @@ describe('RolesGuard', () => {
   };
 
   it('should allow when no roles metadata provided', () => {
-    const ctx = makeCtx(undefined, { role: { name: 'user' } });
+    const ctx = makeCtx(undefined, { role: { name: 'api_consumer' } });
     expect(guard.canActivate(ctx)).toBe(true);
   });
 
   it('should allow when user has required role', () => {
-    const ctx = makeCtx(['Admin'], { role: { name: 'Admin' } });
+    const ctx = makeCtx(['administrator'], { role: { name: 'administrator' } });
     expect(guard.canActivate(ctx)).toBe(true);
   });
 
   it('should deny when user lacks required role', () => {
-    const ctx = makeCtx(['Admin'], { role: { name: 'user' } });
+    const ctx = makeCtx(['administrator'], { role: { name: 'api_consumer' } });
     expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
   });
 

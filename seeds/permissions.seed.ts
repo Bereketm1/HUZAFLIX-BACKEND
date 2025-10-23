@@ -28,8 +28,8 @@ export async function seedPermissions() {
   }
 
   // assign permissions to roles
-  const admin = await roleRepo.findOne({ where: { name: 'admin' } });
-  const user = await roleRepo.findOne({ where: { name: 'user' } });
+  const admin = await roleRepo.findOne({ where: { name: 'administrator' } });
+  const user = await roleRepo.findOne({ where: { name: 'api_consumer' } });
 
   if (admin) {
     const allPerm = await permRepo.findOne({ where: { name: 'all:manage' } });
