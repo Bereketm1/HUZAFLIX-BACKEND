@@ -11,7 +11,8 @@ import bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import * as crypto from 'crypto';
+// crypto was previously used for UUID generation; removed in favor of
+// using the session row id as the jti. Keep import removed to satisfy linter.
 import type { User } from 'src/users/users.entity';
 
 @Injectable()
@@ -65,16 +66,24 @@ export class AuthService {
           'If an account with that email exists, a reset token has been sent',
       };
     }
-    // create a session entry with a jti and sign a JWT containing the jti
-    const jti = crypto.randomUUID();
+    // create a session entry and use its numeric id as the jti
     const expiresInSeconds = 60 * 60; // 1 hour
     const expires = new Date(Date.now() + expiresInSeconds * 1000);
+    // create session first so we have an integer id to use as jti
+    const created = await this.sessionsService.create({
+      userId: user.id,
+      type: 'password_reset',
+      expiresAt: expires,
+    });
+    const jti = created.id;
     // sign a JWT that includes the user id and the jti
     const token = await this.jwt.signAsync(
       { id: user.id, jti },
       { expiresIn: `${expiresInSeconds}s` },
     );
+    // update the session with jti and token (repo.save will perform an update when id is present)
     await this.sessionsService.create({
+      id: created.id,
       userId: user.id,
       jti,
       token,
@@ -100,7 +109,7 @@ export class AuthService {
     }
     if (!payload || typeof payload !== 'object')
       throw new NotFoundException('Invalid token');
-    const { id: userId, jti } = payload as { id?: number; jti?: string };
+    const { id: userId, jti } = payload as { id?: number; jti?: number };
     if (!userId || !jti) throw new NotFoundException('Invalid token');
     // find session by jti and validate
     const session = await this.sessionsService.findByJti(jti);
@@ -118,6 +127,9 @@ export class AuthService {
    * Handle OAuth login (Google). If user exists, return token. Otherwise create user and return token.
    */
   async loginWithOAuth(profile: { email?: string; name?: string }) {
+    // Important security: only accept OAuth logins when the provider token has
+    // already been validated by the controller. Do NOT auto-create users here.
+    // Auto-creating allows an attacker to obtain a token for any email.
     if (!profile || !profile.email) {
       throw new Error('Invalid OAuth profile');
     }
@@ -126,14 +138,17 @@ export class AuthService {
     try {
       user = await this.userService.findOneByEmail(email);
     } catch {
-      // user not found, create one with a random password
-      const randomPassword = crypto.randomUUID();
-      user = await this.userService.create({
-        email,
-        password: randomPassword,
-        name: profile.name,
-      });
+      // Do not create users automatically. Require the user to register or
+      // perform an explicit account linking flow.
+      throw new NotFoundException(
+        'No account exists for this email. Please register or link your account.',
+      );
     }
+
+    // Optionally: enforce that the user has previously linked their Google
+    // account. This project stores arbitrary user metadata; if you want to
+    // require linkage, you could check `user.metadata?.google_sub` here.
+
     const payload = { id: user.id, email: user.email };
     return {
       access_token: await this.signJwt(payload),

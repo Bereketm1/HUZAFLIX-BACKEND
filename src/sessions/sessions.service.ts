@@ -15,7 +15,7 @@ export class SessionsService {
     return await this.repo.save(s);
   }
 
-  async findByJti(jti: string): Promise<Session> {
+  async findByJti(jti: number): Promise<Session> {
     const s = await this.repo.findOne({ where: { jti } });
     if (!s) throw new NotFoundException('Session not found');
     return s;
@@ -27,11 +27,11 @@ export class SessionsService {
     return s;
   }
 
-  async markUsed(id: string): Promise<void> {
+  async markUsed(id: number): Promise<void> {
     await this.repo.update({ id }, { usedAt: new Date() } as Partial<Session>);
   }
 
-  async revoke(id: string): Promise<void> {
+  async revoke(id: number): Promise<void> {
     await this.repo.update({ id }, { revoked: true } as Partial<Session>);
   }
 }

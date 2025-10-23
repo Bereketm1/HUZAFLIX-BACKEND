@@ -13,8 +13,8 @@ export type SessionType = 'refresh' | 'password_reset' | 'other';
 
 @Entity('sessions')
 export class Session {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @ManyToOne(() => User, { eager: false })
   @JoinColumn({ name: 'user_id' })
@@ -23,8 +23,8 @@ export class Session {
   @Column({ name: 'user_id' })
   userId: number;
 
-  @Column({ type: 'text', nullable: true })
-  jti?: string | null;
+  @Column({ type: 'integer', nullable: true })
+  jti?: number | null;
 
   @Column({ type: 'text', nullable: true })
   token?: string | null;

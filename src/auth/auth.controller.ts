@@ -109,21 +109,54 @@ export class AuthController {
     if (typeof idToken !== 'string')
       throw new BadRequestException('No id_token returned from provider');
 
-    // Decode id_token payload (JWT) without verification to extract email/name
-    const parts = idToken.split('.');
-    if (parts.length < 2) throw new BadRequestException('Malformed id_token');
-    const payloadJson = Buffer.from(parts[1], 'base64').toString('utf8');
-    let payload: Record<string, unknown>;
-    try {
-      payload = JSON.parse(payloadJson) as Record<string, unknown>;
-    } catch {
-      throw new BadRequestException('Failed to parse id_token payload');
+    // Verify id_token with Google to ensure it's valid and signed by Google.
+    // Using Google's tokeninfo endpoint is a simple server-side verification
+    // that confirms signature, expiry and gives us the verified payload.
+    const tokenInfoRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(
+        idToken,
+      )}`,
+    );
+    const tokenInfoJson: unknown = await tokenInfoRes.json();
+    if (!tokenInfoRes.ok) {
+      const err =
+        (tokenInfoJson as { error_description?: string; error?: string }) ??
+        undefined;
+      throw new BadRequestException(
+        err?.error_description ?? err?.error ?? 'Invalid id_token',
+      );
+    }
+
+    if (typeof tokenInfoJson !== 'object' || tokenInfoJson === null) {
+      throw new BadRequestException('Invalid tokeninfo response from provider');
+    }
+
+    const payload = tokenInfoJson as Record<string, unknown>;
+
+    // Basic checks: audience must match our client id and email must be verified
+    if (typeof payload.aud !== 'string' || payload.aud !== clientId) {
+      throw new BadRequestException('id_token audience does not match client');
+    }
+    if (
+      payload.iss !== 'https://accounts.google.com' &&
+      payload.iss !== 'accounts.google.com'
+    ) {
+      throw new BadRequestException('Invalid id_token issuer');
+    }
+
+    const emailVerifiedRaw = payload.email_verified;
+    const emailVerified =
+      emailVerifiedRaw === 'true' || emailVerifiedRaw === true || false;
+    if (!emailVerified) {
+      throw new BadRequestException('Email not verified by provider');
     }
 
     const profile: OAuthProfile = {
       email: typeof payload.email === 'string' ? payload.email : undefined,
       name: typeof payload.name === 'string' ? payload.name : undefined,
     };
+
+    // Delegate to auth service which will only sign a JWT for an existing, linked user.
     return this.authService.loginWithOAuth(profile);
   }
 

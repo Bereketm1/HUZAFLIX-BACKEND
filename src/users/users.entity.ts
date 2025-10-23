@@ -17,17 +17,11 @@ export class User {
   @Column({ unique: true, nullable: false })
   email: string;
 
-  @Column({ nullable: true })
-  name?: string;
+  // Name moved to user metadata. Keep schema minimal and use `metadata` for
+  // optional profile fields like name, display name, etc.
 
   @Column({ type: 'text', nullable: true })
   password_hash?: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  password_reset_token?: string | null;
-
-  @Column({ type: 'timestamptz', nullable: true })
-  password_reset_expires?: Date | null;
 
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
   @JoinColumn({ name: 'role_id' })

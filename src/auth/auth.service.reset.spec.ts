@@ -68,10 +68,10 @@ describe('AuthService - password reset', () => {
     // mock jwt.verifyAsync to return payload with id and jti
     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({
       id: 1,
-      jti: 'jti-123',
+      jti: 123,
     });
     (mockSessionsService.findByJti as jest.Mock).mockResolvedValue({
-      id: 'sess-1',
+      id: 1,
       userId: 1,
       revoked: false,
       usedAt: null,
@@ -81,7 +81,7 @@ describe('AuthService - password reset', () => {
 
     const res = await service.resetPassword(dto);
     expect(res).toEqual({ message: 'Password has been reset successfully' });
-    expect(mockSessionsService.markUsed).toHaveBeenCalledWith('sess-1');
+    expect(mockSessionsService.markUsed).toHaveBeenCalledWith(1);
     expect(mockUsersService.updatePassword).toHaveBeenCalledWith(
       1,
       dto.newPassword,
@@ -102,10 +102,10 @@ describe('AuthService - password reset', () => {
     const dto: ResetPasswordDto = { token: 'tok', newPassword: 'newPass123' };
     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({
       id: 1,
-      jti: 'jti-123',
+      jti: 123,
     });
     (mockSessionsService.findByJti as jest.Mock).mockResolvedValue({
-      id: 'sess-1',
+      id: 1,
       userId: 1,
       revoked: false,
       usedAt: null,
