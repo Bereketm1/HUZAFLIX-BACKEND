@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
@@ -9,13 +8,13 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 describe('AuthService - password reset', () => {
   let service: AuthService;
 
-  const mockJwtService = { signAsync: jest.fn() };
-  const mockUsersService = {
+  const mockJwtService: Partial<JwtService> = { signAsync: jest.fn() };
+  const mockUsersService: Partial<UsersService> = {
     findOneByEmail: jest.fn(),
     setPasswordResetToken: jest.fn(),
     findOneByResetToken: jest.fn(),
     updatePasswordAndClearReset: jest.fn(),
-  } as any;
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,11 +31,13 @@ describe('AuthService - password reset', () => {
 
   it('requestPasswordReset returns token when email exists', async () => {
     const dto: ForgotPasswordDto = { email: 'a@b.com' };
-    mockUsersService.findOneByEmail.mockResolvedValue({
+    (mockUsersService.findOneByEmail as jest.Mock).mockResolvedValue({
       id: 1,
       email: dto.email,
     });
-    mockUsersService.setPasswordResetToken.mockResolvedValue(true);
+    (mockUsersService.setPasswordResetToken as jest.Mock).mockResolvedValue(
+      true,
+    );
 
     const res = await service.requestPasswordReset(dto);
     expect(res).toHaveProperty('token');
@@ -45,7 +46,9 @@ describe('AuthService - password reset', () => {
 
   it('requestPasswordReset does not reveal missing email', async () => {
     const dto: ForgotPasswordDto = { email: 'missing@x.com' };
-    mockUsersService.findOneByEmail.mockRejectedValue(new Error('not found'));
+    (mockUsersService.findOneByEmail as jest.Mock).mockRejectedValue(
+      new Error('not found'),
+    );
 
     const res = await service.requestPasswordReset(dto);
     expect(res).not.toHaveProperty('token');
@@ -57,8 +60,10 @@ describe('AuthService - password reset', () => {
       id: 1,
       password_reset_expires: new Date(Date.now() + 10000),
     };
-    mockUsersService.findOneByResetToken.mockResolvedValue(user);
-    mockUsersService.updatePasswordAndClearReset.mockResolvedValue(true);
+    (mockUsersService.findOneByResetToken as jest.Mock).mockResolvedValue(user);
+    (
+      mockUsersService.updatePasswordAndClearReset as jest.Mock
+    ).mockResolvedValue(true);
 
     const res = await service.resetPassword(dto);
     expect(res).toEqual({ message: 'Password has been reset successfully' });
@@ -70,7 +75,7 @@ describe('AuthService - password reset', () => {
 
   it('resetPassword should throw on invalid token', async () => {
     const dto: ResetPasswordDto = { token: 'bad', newPassword: 'newPass123' };
-    mockUsersService.findOneByResetToken.mockRejectedValue(
+    (mockUsersService.findOneByResetToken as jest.Mock).mockRejectedValue(
       new Error('not found'),
     );
 
@@ -83,7 +88,7 @@ describe('AuthService - password reset', () => {
       id: 1,
       password_reset_expires: new Date(Date.now() - 10000),
     };
-    mockUsersService.findOneByResetToken.mockResolvedValue(user);
+    (mockUsersService.findOneByResetToken as jest.Mock).mockResolvedValue(user);
 
     await expect(service.resetPassword(dto)).rejects.toThrow();
   });

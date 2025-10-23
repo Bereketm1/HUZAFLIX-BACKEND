@@ -13,7 +13,7 @@ jest.mock('bcryptjs', () => ({
 describe('UsersService', () => {
   let service: UsersService;
 
-  const mockUserRepository = {
+  const mockUserRepository: Partial<Record<string, jest.Mock>> = {
     find: jest.fn(),
     findOne: jest.fn(),
     save: jest.fn(),
@@ -21,7 +21,7 @@ describe('UsersService', () => {
     delete: jest.fn(),
   };
 
-  const mockRolesService = {
+  const mockRolesService: Partial<RolesService> = {
     findOneByName: jest.fn(),
   };
 
@@ -52,9 +52,9 @@ describe('UsersService', () => {
       const dto: CreateUserDto = { email: 'a@b.com', password: 'plainpass' };
       const role = { id: 2, name: 'user' } as any;
 
-      mockRolesService.findOneByName.mockResolvedValue(role);
-      mockUserRepository.create.mockReturnValue({ ...dto });
-      mockUserRepository.save.mockImplementation((u) =>
+      (mockRolesService.findOneByName as jest.Mock).mockResolvedValue(role);
+      (mockUserRepository.create as jest.Mock).mockReturnValue({ ...dto });
+      (mockUserRepository.save as jest.Mock).mockImplementation((u) =>
         Promise.resolve({ id: 1, ...u }),
       );
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { RolesGuard } from './roles.guard';
 import { Reflector } from '@nestjs/core';
@@ -11,7 +10,7 @@ describe('RolesGuard', () => {
     guard = new RolesGuard(reflector);
   });
 
-  const makeCtx = (rolesMeta: string[] | undefined, user: any) => {
+  const makeCtx = (rolesMeta: string[] | undefined, user: unknown) => {
     // mock reflector
     jest
       .spyOn(reflector, 'getAllAndOverride')
