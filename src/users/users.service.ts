@@ -43,10 +43,13 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto): Promise<User> {
+    const passwordHash = dto.password
+      ? await this.hashPassword(dto.password)
+      : null;
     const user = this.userRepository.create({
       ...dto,
-      role: await this.roleService.findOneByName('user'),
-      password_hash: await this.hashPassword(dto.password),
+      role: await this.roleService.findOneByName('api_consumer'),
+      password_hash: passwordHash,
     });
     return await this.userRepository.save(user);
   }
@@ -55,6 +58,12 @@ export class UsersService {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     Object.assign(user, dto);
+    return await this.userRepository.save(user);
+  }
+  async updatePassword(id: number, newPassword: string) {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+    user.password_hash = await this.hashPassword(newPassword);
     return await this.userRepository.save(user);
   }
 

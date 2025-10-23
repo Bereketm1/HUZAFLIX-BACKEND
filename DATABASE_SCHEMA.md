@@ -1,17 +1,69 @@
-# HuzaFlix Backend - PostgreSQL Schema v1.0
 
-This document provides a comprehensive design for the HuzaFlix database schema, derived from a deep analysis of the project's SRS and contract deliverables. It is designed to be scalable, secure, and maintainable, serving as the blueprint for all backend data persistence.
+## Overview / Notes
 
-## 1. Schema Overview and Design Principles
+- The codebase uses TypeORM with migrations. The current migrations create two primary tables used in the app: `roles` and `users`.
+- Primary keys for these tables are integer `SERIAL` values (auto-incrementing), not UUIDs.
+- Timestamps use `TIMESTAMP WITH TIME ZONE` (`timestamptz`) with `DEFAULT now()`.
+- `metadata` on `users` is stored as `jsonb`.
 
-This schema is designed with the following core principles, reflecting industry best practices and the specific requirements of the HuzaFlix platform:
+---
 
-*   **Normalization:** The schema is normalized to Third Normal Form (3NF) to reduce data redundancy and improve data integrity, as mentioned in SRS 3.5.1.
-*   **Data Types:** Data types have been carefully selected for performance and integrity. `UUID` is used for public-facing primary keys to prevent enumeration attacks, while `SERIAL` is used for internal lookup tables. `TIMESTAMPTZ` is used for all timestamps to ensure timezone consistency. `JSONB` is used for flexible metadata storage.
-*   **Naming Conventions:** A consistent `snake_case` naming convention is used for all tables and columns. Join tables are named by combining the two table names (e.g., `role_permissions`).
-*   **Foreign Keys & Integrity:** All relationships are enforced with foreign key constraints. `ON DELETE` policies (`CASCADE`, `SET NULL`) are defined to ensure relational integrity and prevent orphaned records.
-*   **Indexing:** Critical columns used in `WHERE` clauses (foreign keys, unique identifiers like email) will be indexed to ensure high-performance queries.
-*   **Scalability:** The design anticipates future growth. Tables expected to grow large (e.g., `audit_logs`, `api_usage_logs`) are designed with future partitioning strategies in mind (e.g., by date range).
+## Table: roles
+Lookup table for user roles.
+
+Columns:
+
+- `id` — SERIAL, PRIMARY KEY
+- `name` — character varying, NOT NULL, UNIQUE
+- `description` — character varying, nullable
+- `created_at` — TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+- `updated_at` — TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+
+Notes:
+
+- Created by migration `1761072997742-roles.ts` (initial `roles` table) and migration `1761076000000-add-roles-timestamps.ts` (adds `created_at` and `updated_at`).
+- Unique constraint on `name` prevents duplicate role names.
+
+---
+
+## Table: users
+Stores user accounts, credentials, and their assigned role.
+
+Columns:
+
+- `id` — SERIAL, PRIMARY KEY
+- `email` — character varying, NOT NULL, UNIQUE
+- `password_hash` — text, NOT NULL
+- `metadata` — jsonb, nullable
+- `created_at` — TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+- `updated_at` — TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+- `role_id` — integer, NOT NULL, foreign key references `roles(id)`
+
+Constraints and indexes:
+
+- Unique constraint on `email` (migration constraint name: `UQ_97672ac88f789774dd47f7c8be3`).
+- Foreign key constraint from `users.role_id` to `roles.id` was added in `1761074554963-users.ts`. The migration creates a FK with default `ON DELETE NO ACTION ON UPDATE NO ACTION` behavior.
+
+Notes:
+
+- The TypeORM `User` entity maps `role` as a `ManyToOne` relationship to `Role` and eager-loads the relation (`{ eager: true }`).
+- `password_hash` is stored as `text` to accommodate hashed password lengths (bcrypt, argon2, etc.).
+- `metadata` is stored as `jsonb` to hold flexible profile or preference data.
+
+---
+
+## Differences from the original design notes
+
+- The repository uses integer `SERIAL` primary keys for `users` and `roles`, not UUIDs for `users` as earlier design notes suggested.
+- `users.role_id` is required (`NOT NULL`) and the FK uses default `NO ACTION` for deletes/updates (not `CASCADE` or `SET NULL`).
+
+---
+
+## Future/optional tables (kept for planning)
+
+The repository currently does not implement the following tables (listed for planning and future sprints): `permissions`, `role_permissions`, `api_categories`, `apis`, `api_versions`, `endpoints`, `plans`, `subscriptions`, `api_keys`, `invoices`, `transactions`, `audit_logs`, `api_usage_logs`. If you add these later, consider types and constraints consistent with the existing naming and timestamp conventions.
+
+```
 
 ## 2. Core Authentication & Authorization Schema (Sprint 1 Scope)
 

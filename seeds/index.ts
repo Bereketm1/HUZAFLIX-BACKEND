@@ -1,34 +1,19 @@
 import { AppDataSource } from '../data-source';
-import { Role } from 'src/roles/roles.entity';
+import { seedRoles } from './roles.seed';
+import { seedPermissions } from './permissions.seed';
 
-async function seedRoles() {
-  await AppDataSource.initialize();
-
-  const roles = [
-    { name: 'admin', description: 'Administrator with full access' },
-    { name: 'user', description: 'Regular user with limited access' },
-    { name: 'moderator', description: 'Can moderate content' },
-  ];
-
-  const roleRepository = AppDataSource.getRepository(Role);
-
-  for (const role of roles) {
-    const existing = await roleRepository.findOne({
-      where: { name: role.name },
-    });
-    if (!existing) {
-      await roleRepository.save(role);
-      console.log(`Seeded role: ${role.name}`);
-    } else {
-      console.log(`Role already exists: ${role.name}`);
-    }
+async function run() {
+  try {
+    await AppDataSource.initialize();
+    await seedRoles();
+    await seedPermissions();
+    console.log('Seeding completed');
+  } catch (err) {
+    console.error('Error running seeds:', err);
+    process.exit(1);
+  } finally {
+    await AppDataSource.destroy();
   }
-
-  console.log('Roles seeding completed');
-  await AppDataSource.destroy();
 }
 
-seedRoles().catch((err) => {
-  console.error('Error seeding roles:', err);
-  process.exit(1);
-});
+run();
