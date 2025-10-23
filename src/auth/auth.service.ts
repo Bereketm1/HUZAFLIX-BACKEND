@@ -28,7 +28,7 @@ export class AuthService {
     };
   }
 
-  async login(user: LoginDto): Promise<{ access_token: string }> {
+  async login(user: LoginDto): Promise<{ access_token: string; message: string }> {
     const { email, password } = user;
     const res = await this.userService.findOneByEmail(email);
     if (
@@ -40,6 +40,7 @@ export class AuthService {
     const payload = { id: res.id, email: res.email };
     return {
       access_token: await this.signJwt(payload),
+      message: 'User logged in successfully',
     };
   }
 

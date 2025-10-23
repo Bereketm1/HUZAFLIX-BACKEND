@@ -21,7 +21,7 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 201, description: 'User logged in successfully' })
-  async login(@Body() dto: LoginDto): Promise<{ access_token: string }> {
+  async login(@Body() dto: LoginDto): Promise<{ access_token: string; message: string }> {
     return this.authService.login(dto);
   }
 
