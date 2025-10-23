@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call */
 import {
   CanActivate,
   ExecutionContext,
@@ -19,29 +20,32 @@ export class JwtAuthGuard implements CanActivate {
     const authHeader = request.headers?.authorization;
     if (!authHeader) throw new UnauthorizedException('Missing Authorization');
 
-    const [scheme, token] = authHeader.split(' ');
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2)
+      throw new UnauthorizedException('Invalid authorization header');
+    const [scheme, token] = parts;
     if (scheme !== 'Bearer' || !token)
       throw new UnauthorizedException('Invalid authorization header');
 
-    let payload: any;
+    let payload: { id?: number } | undefined;
     try {
+      if (typeof token !== 'string')
+        throw new UnauthorizedException('Invalid token');
       payload = await this.jwtService.verifyAsync(token);
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    if (!payload || !payload.id) throw new UnauthorizedException();
+    if (!payload?.id) throw new UnauthorizedException();
 
-    let user: any;
+    let user;
     try {
-      user = await this.usersService.findOneById(payload.id as number);
-    } catch (err) {
-      // translate any error into Unauthorized for security
-      throw new UnauthorizedException('User not found');
+      user = await this.usersService.findOneById(payload.id);
+    } catch {
+      throw new UnauthorizedException();
     }
-    if (!user) throw new UnauthorizedException('User not found');
 
-    // attach user to request for downstream handlers
+    if (!user) throw new UnauthorizedException();
     request.user = user;
     return true;
   }

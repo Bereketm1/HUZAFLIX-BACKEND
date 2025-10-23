@@ -29,8 +29,14 @@ describe('JwtAuthGuard', () => {
 
   it('should allow when token is valid and user exists', async () => {
     const ctx = makeContext('Bearer valid.token');
-  (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1, email: 'a@b.com' });
-  (mockUsersService.findOneById as jest.Mock).mockResolvedValue({ id: 1, email: 'a@b.com' });
+    (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({
+      id: 1,
+      email: 'a@b.com',
+    });
+    (mockUsersService.findOneById as jest.Mock).mockResolvedValue({
+      id: 1,
+      email: 'a@b.com',
+    });
 
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
   });
@@ -47,14 +53,18 @@ describe('JwtAuthGuard', () => {
 
   it('should throw when token verification fails', async () => {
     const ctx = makeContext('Bearer bad.token');
-  (mockJwtService.verifyAsync as jest.Mock).mockRejectedValue(new Error('bad'));
+    (mockJwtService.verifyAsync as jest.Mock).mockRejectedValue(
+      new Error('bad'),
+    );
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
   });
 
   it('should throw when user not found', async () => {
     const ctx = makeContext('Bearer valid.token');
-  (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 999 });
-  (mockUsersService.findOneById as jest.Mock).mockRejectedValue(new Error('not found'));
+    (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 999 });
+    (mockUsersService.findOneById as jest.Mock).mockRejectedValue(
+      new Error('not found'),
+    );
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
   });
 });

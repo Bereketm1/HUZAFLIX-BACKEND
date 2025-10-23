@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { AbilityFactory, PermissionsService } from './ability.factory';
 
 describe('AbilityFactory', () => {
@@ -29,7 +30,7 @@ describe('AbilityFactory', () => {
 
     const ability = await factory.createForRole(2);
     expect(ability.can('create', 'users')).toBe(true);
-  expect(ability.can('read', 'apis')).toBe(true);
+    expect(ability.can('read', 'apis')).toBe(true);
     expect(ability.can('delete', 'users')).toBe(false);
   });
 });

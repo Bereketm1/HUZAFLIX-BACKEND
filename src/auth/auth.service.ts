@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import { LoginDto } from './dto/login.dto';
@@ -37,31 +41,51 @@ export class AuthService {
     };
   }
 
-  async requestPasswordReset(dto: ForgotPasswordDto): Promise<{ message: string; token?: string }> {
+  async requestPasswordReset(
+    dto: ForgotPasswordDto,
+  ): Promise<{ message: string; token?: string }> {
     const { email } = dto;
-    let user;
+    interface ResUser {
+      id: number;
+      email: string;
+    }
+    let user: ResUser | undefined;
     try {
       user = await this.userService.findOneByEmail(email);
-    } catch (err) {
+    } catch {
       // don't reveal whether email exists
-      return { message: 'If an account with that email exists, a reset token has been sent' };
+      return {
+        message:
+          'If an account with that email exists, a reset token has been sent',
+      };
     }
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await this.userService.setPasswordResetToken(user.id, token, expires);
     // In production we'd email the token; for tests log/return it
-    return { message: 'If an account with that email exists, a reset token has been sent', token };
+    return {
+      message:
+        'If an account with that email exists, a reset token has been sent',
+      token,
+    };
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
     const { token, newPassword } = dto;
-    let user;
+    interface TokenUser {
+      id: number;
+      password_reset_expires?: Date | null;
+    }
+    let user: TokenUser | undefined;
     try {
       user = await this.userService.findOneByResetToken(token);
-    } catch (err) {
+    } catch {
       throw new NotFoundException('Invalid token');
     }
-    if (!user.password_reset_expires || user.password_reset_expires < new Date()) {
+    if (
+      !user?.password_reset_expires ||
+      user.password_reset_expires < new Date()
+    ) {
       throw new UnauthorizedException('Token expired');
     }
     await this.userService.updatePasswordAndClearReset(user.id, newPassword);

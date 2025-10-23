@@ -4,10 +4,13 @@ import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from 'src/users/users.module';
+import { RolesModule } from 'src/roles/roles.module';
+import { AbilityFactory } from './ability.factory';
 
 @Module({
   imports: [
     UsersModule,
+    RolesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -17,7 +20,8 @@ import { UsersModule } from 'src/users/users.module';
       }),
     }),
   ],
-  providers: [AuthService],
+  providers: [AuthService, AbilityFactory],
+  exports: [AbilityFactory],
   controllers: [AuthController],
 })
 export class AuthModule {}
