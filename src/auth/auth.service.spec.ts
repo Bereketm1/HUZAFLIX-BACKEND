@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { SessionsService } from 'src/sessions/sessions.service';
 import { UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
@@ -17,12 +18,19 @@ describe('AuthService', () => {
     create: jest.fn(),
   };
 
+  const mockSessionsService = {
+    create: jest.fn(),
+    findByJti: jest.fn(),
+    markUsed: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: JwtService, useValue: mockJwtService },
         { provide: UsersService, useValue: mockUsersService },
+        { provide: SessionsService, useValue: mockSessionsService },
       ],
     }).compile();
 

@@ -6,6 +6,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './users.entity';
 import { RolesService } from 'src/roles/roles.service';
 import * as bcrypt from 'bcryptjs';
+import { UnprocessableEntityException } from '@nestjs/common';
 jest.mock('bcryptjs', () => ({
   hash: jest.fn().mockResolvedValue('hashed-pass'),
 }));
@@ -69,7 +70,9 @@ describe('UsersService', () => {
 
     it('should throw when password is missing', async () => {
       const dto = { email: 'a@b.com' } as CreateUserDto;
-      await expect(service.create(dto)).rejects.toBeDefined();
+      await expect(service.create(dto)).rejects.toThrow(
+        UnprocessableEntityException,
+      );
     });
   });
 });

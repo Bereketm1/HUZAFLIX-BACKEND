@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
+import { SessionsService } from 'src/sessions/sessions.service';
 import { LoginDto } from './dto/login.dto';
 import bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
@@ -17,6 +18,7 @@ export class AuthService {
   constructor(
     private readonly jwt: JwtService,
     private readonly userService: UsersService,
+    private readonly sessionsService: SessionsService,
   ) {}
 
   async register(user: RegisterDto): Promise<{ message: string }> {
@@ -59,10 +61,23 @@ export class AuthService {
           'If an account with that email exists, a reset token has been sent',
       };
     }
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    await this.userService.setPasswordResetToken(user.id, token, expires);
-    // In production we'd email the token; for tests log/return it
+    // create a session entry with a jti and sign a JWT containing the jti
+    const jti = crypto.randomUUID();
+    const expiresInSeconds = 60 * 60; // 1 hour
+    const expires = new Date(Date.now() + expiresInSeconds * 1000);
+    // sign a JWT that includes the user id and the jti
+    const token = await this.jwt.signAsync(
+      { id: user.id, jti },
+      { expiresIn: `${expiresInSeconds}s` },
+    );
+    await this.sessionsService.create({
+      userId: user.id,
+      jti,
+      token,
+      type: 'password_reset',
+      expiresAt: expires,
+    });
+    // In production we'd email the token; for tests return it
     return {
       message:
         'If an account with that email exists, a reset token has been sent',
@@ -72,23 +87,26 @@ export class AuthService {
 
   async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
     const { token, newPassword } = dto;
-    interface TokenUser {
-      id: number;
-      password_reset_expires?: Date | null;
-    }
-    let user: TokenUser | undefined;
+    // verify token signature and extract jti
+    let payload: unknown;
     try {
-      user = await this.userService.findOneByResetToken(token);
+      payload = (await this.jwt.verifyAsync(token)) as unknown;
     } catch {
       throw new NotFoundException('Invalid token');
     }
-    if (
-      !user?.password_reset_expires ||
-      user.password_reset_expires < new Date()
-    ) {
+    if (!payload || typeof payload !== 'object')
+      throw new NotFoundException('Invalid token');
+    const { id: userId, jti } = payload as { id?: number; jti?: string };
+    if (!userId || !jti) throw new NotFoundException('Invalid token');
+    // find session by jti and validate
+    const session = await this.sessionsService.findByJti(jti);
+    if (session.revoked) throw new UnauthorizedException('Token revoked');
+    if (session.usedAt) throw new UnauthorizedException('Token already used');
+    if (session.expiresAt && session.expiresAt < new Date())
       throw new UnauthorizedException('Token expired');
-    }
-    await this.userService.updatePasswordAndClearReset(user.id, newPassword);
+    // mark used and update password
+    await this.sessionsService.markUsed(session.id);
+    await this.userService.updatePassword(userId, newPassword);
     return { message: 'Password has been reset successfully' };
   }
 

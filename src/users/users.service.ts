@@ -57,29 +57,10 @@ export class UsersService {
     Object.assign(user, dto);
     return await this.userRepository.save(user);
   }
-
-  async setPasswordResetToken(id: number, token: string, expires: Date) {
-    const user = await this.userRepository.findOne({ where: { id } });
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-    user.password_reset_token = token;
-    user.password_reset_expires = expires;
-    return await this.userRepository.save(user);
-  }
-
-  async findOneByResetToken(token: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { password_reset_token: token },
-    });
-    if (!user) throw new NotFoundException(`User with token not found`);
-    return user;
-  }
-
-  async updatePasswordAndClearReset(id: number, newPassword: string) {
+  async updatePassword(id: number, newPassword: string) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
     user.password_hash = await this.hashPassword(newPassword);
-    user.password_reset_token = null;
-    user.password_reset_expires = null;
     return await this.userRepository.save(user);
   }
 

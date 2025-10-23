@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from 'src/users/users.module';
 import { RolesModule } from 'src/roles/roles.module';
+import { SessionsModule } from 'src/sessions/sessions.module';
 import { AbilityFactory } from './ability.factory';
 
 @Module({
@@ -19,6 +20,7 @@ import { AbilityFactory } from './ability.factory';
         signOptions: { expiresIn: '1h' },
       }),
     }),
+    SessionsModule,
   ],
   providers: [AuthService, AbilityFactory],
   exports: [AbilityFactory],
