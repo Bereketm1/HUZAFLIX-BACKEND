@@ -21,7 +21,10 @@ import { AbilityFactory } from './ability.factory';
         // runtime check: ensure JWT_SECRET is configured so sign/verify do not fail at request time
         secret: (() => {
           const s = configService.get<string>('JWT_SECRET');
-          if (!s) throw new Error('JWT_SECRET is not configured. Set JWT_SECRET in your environment');
+          if (!s)
+            throw new Error(
+              'JWT_SECRET is not configured. Set JWT_SECRET in your environment',
+            );
           return s;
         })(),
         signOptions: { expiresIn: '1h' },

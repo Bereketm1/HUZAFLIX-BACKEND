@@ -43,7 +43,9 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto): Promise<User> {
-    const passwordHash = dto.password ? await this.hashPassword(dto.password) : null;
+    const passwordHash = dto.password
+      ? await this.hashPassword(dto.password)
+      : null;
     const user = this.userRepository.create({
       ...dto,
       role: await this.roleService.findOneByName('api_consumer'),

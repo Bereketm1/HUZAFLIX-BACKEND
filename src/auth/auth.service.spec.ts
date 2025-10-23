@@ -87,7 +87,10 @@ describe('AuthService', () => {
         { id: userRecord.id, email: userRecord.email },
         { expiresIn: '15m' },
       );
-      expect(result).toEqual({ access_token: 'mocked-jwt-token', message: 'User logged in successfully' });
+      expect(result).toEqual({
+        access_token: 'mocked-jwt-token',
+        message: 'User logged in successfully',
+      });
     });
 
     it('should throw UnauthorizedException if user not found', async () => {

@@ -12,6 +12,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as crypto from 'crypto';
+import type { User } from 'src/users/users.entity';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +29,9 @@ export class AuthService {
     };
   }
 
-  async login(user: LoginDto): Promise<{ access_token: string; message: string }> {
+  async login(
+    user: LoginDto,
+  ): Promise<{ access_token: string; message: string }> {
     const { email, password } = user;
     const res = await this.userService.findOneByEmail(email);
     if (
@@ -119,13 +122,17 @@ export class AuthService {
       throw new Error('Invalid OAuth profile');
     }
     const email = profile.email;
-    let user;
+    let user: User | undefined;
     try {
       user = await this.userService.findOneByEmail(email);
     } catch {
       // user not found, create one with a random password
       const randomPassword = crypto.randomUUID();
-      user = await this.userService.create({ email, password: randomPassword, name: profile.name });
+      user = await this.userService.create({
+        email,
+        password: randomPassword,
+        name: profile.name,
+      });
     }
     const payload = { id: user.id, email: user.email };
     return {
