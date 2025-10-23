@@ -1,24 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RolePermission } from './role-permission.entity';
+import { Role } from './roles.entity';
 import { Permission } from './permission.entity';
 
 @Injectable()
 export class PermissionsService {
   constructor(
-    @InjectRepository(RolePermission)
-    private readonly rolePermRepo: Repository<RolePermission>,
+    @InjectRepository(Role)
+    private readonly roleRepo: Repository<Role>,
     @InjectRepository(Permission)
     private readonly permRepo: Repository<Permission>,
   ) {}
 
   async getPermissionsForRole(roleId: number): Promise<Permission[]> {
-    // join role_permissions -> permissions to return permission rows
-    const rows = await this.rolePermRepo.find({
-      where: { role: { id: roleId } },
-      relations: ['permission'],
+    // Load the role with its rolePermissions -> permission relation
+    const role = await this.roleRepo.findOne({
+      where: { id: roleId },
+      relations: ['rolePermissions', 'rolePermissions.permission'],
     });
-    return rows.map((r) => r.permission);
+    if (!role) throw new NotFoundException('Role not found');
+    if (!role.rolePermissions) return [];
+    return role.rolePermissions.map((rp) => rp.permission);
   }
 }

@@ -6,13 +6,13 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import { SessionsService } from 'src/sessions/sessions.service';
+import { Session } from 'src/sessions/sessions.entity';
 import { LoginDto } from './dto/login.dto';
 import bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-// crypto was previously used for UUID generation; removed in favor of
-// using the session row id as the jti. Keep import removed to satisfy linter.
+
 import type { User } from 'src/users/users.entity';
 
 @Injectable()
@@ -70,8 +70,11 @@ export class AuthService {
     const expiresInSeconds = 60 * 60; // 1 hour
     const expires = new Date(Date.now() + expiresInSeconds * 1000);
     // create session first so we have an integer id to use as jti
+    // create a lightweight User reference to satisfy the relation without
+    // loading the full entity from the database
+    const userRef = { id: user.id } as User;
     const created = await this.sessionsService.create({
-      userId: user.id,
+      user: userRef,
       type: 'password_reset',
       expiresAt: expires,
     });
@@ -81,15 +84,17 @@ export class AuthService {
       { id: user.id, jti },
       { expiresIn: `${expiresInSeconds}s` },
     );
-    // update the session with jti and token (repo.save will perform an update when id is present)
-    await this.sessionsService.create({
+    // update the session with jti and token (use save for updates)
+    await this.sessionsService.save({
       id: created.id,
-      userId: user.id,
+      user: userRef,
       jti,
       token,
       type: 'password_reset',
       expiresAt: expires,
-    });
+      createdAt: created.createdAt,
+      updatedAt: created.updatedAt,
+    } as Session);
     // In production we'd email the token; for tests return it
     return {
       message:

@@ -6,6 +6,7 @@ import {
   Query,
   Res,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -48,6 +49,8 @@ export class AuthController {
    */
   @Get('google')
   googleRedirect(@Res() res: Response) {
+    const enabled = this.config.get('ENABLE_GOOGLE_OAUTH') === 'true';
+    if (!enabled) throw new NotFoundException();
     const clientId = this.config.get<string>('GOOGLE_CLIENT_ID') ?? '';
     const callback =
       this.config.get<string>('GOOGLE_CALLBACK_URL') ??
@@ -70,6 +73,8 @@ export class AuthController {
    */
   @Get('google/callback')
   async googleCallback(@Query('code') code: string) {
+    const enabled = this.config.get('ENABLE_GOOGLE_OAUTH') === 'true';
+    if (!enabled) throw new NotFoundException();
     if (!code) throw new BadRequestException('Missing code');
     const clientId = this.config.get<string>('GOOGLE_CLIENT_ID') ?? '';
     const clientSecret = this.config.get<string>('GOOGLE_CLIENT_SECRET') ?? '';

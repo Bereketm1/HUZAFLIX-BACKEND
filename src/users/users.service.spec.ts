@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from './users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './users.entity';
 import { RolesService } from 'src/roles/roles.service';
+import { Role } from 'src/roles/roles.entity';
 import * as bcrypt from 'bcryptjs';
-// import { UnprocessableEntityException } from '@nestjs/common'; (unused)
+import { Repository } from 'typeorm';
 jest.mock('bcryptjs', () => ({
   hash: jest.fn().mockResolvedValue('hashed-pass'),
 }));
@@ -14,7 +14,7 @@ jest.mock('bcryptjs', () => ({
 describe('UsersService', () => {
   let service: UsersService;
 
-  const mockUserRepository: Partial<Record<string, jest.Mock>> = {
+  const mockUserRepository: Partial<Repository<User>> = {
     find: jest.fn(),
     findOne: jest.fn(),
     save: jest.fn(),
@@ -52,9 +52,11 @@ describe('UsersService', () => {
   describe('create', () => {
     it('should hash password, assign role and save user', async () => {
       const dto: CreateUserDto = { email: 'a@b.com', password: 'plainpass' };
-      const role = { id: 2, name: 'api_consumer' } as any;
+      const role: Partial<Role> = { id: 2, name: 'api_consumer' };
 
-      (mockRolesService.findOneByName as jest.Mock).mockResolvedValue(role);
+      (mockRolesService.findOneByName as jest.Mock).mockResolvedValue(
+        role as Role,
+      );
       (mockUserRepository.create as jest.Mock).mockReturnValue({ ...dto });
       (mockUserRepository.save as jest.Mock).mockImplementation((u) =>
         Promise.resolve({ id: 1, ...u }),

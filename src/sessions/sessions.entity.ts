@@ -20,9 +20,6 @@ export class Session {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ name: 'user_id' })
-  userId: number;
-
   @Column({ type: 'integer', nullable: true })
   jti?: number | null;
 

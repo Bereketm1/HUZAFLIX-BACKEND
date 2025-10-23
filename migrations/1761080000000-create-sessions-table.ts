@@ -19,15 +19,6 @@ export class CreateSessionsTable1761080000000 implements MigrationInterface {
       )`,
     );
 
-    // migrate existing user password reset tokens into sessions table
-    // only migrate non-null tokens
-    await queryRunner.query(
-      `INSERT INTO "sessions" (user_id, token, type, expires_at, created_at, updated_at)
-       SELECT id, password_reset_token, 'password_reset', password_reset_expires, now(), now()
-       FROM "users"
-       WHERE password_reset_token IS NOT NULL`,
-    );
-
     // drop the columns from users
     await queryRunner.query(
       `ALTER TABLE "users" DROP COLUMN IF EXISTS "password_reset_expires"`,

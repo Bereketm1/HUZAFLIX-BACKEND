@@ -17,9 +17,6 @@ export class User {
   @Column({ unique: true, nullable: false })
   email: string;
 
-  // Name moved to user metadata. Keep schema minimal and use `metadata` for
-  // optional profile fields like name, display name, etc.
-
   @Column({ type: 'text', nullable: true })
   password_hash?: string | null;
 
