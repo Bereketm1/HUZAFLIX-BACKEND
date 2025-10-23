@@ -6,8 +6,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from 'src/users/users.module';
 import { RolesModule } from 'src/roles/roles.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
-import { PassportModule } from '@nestjs/passport';
-import { GoogleStrategy } from './google.strategy';
 import { AbilityFactory } from './ability.factory';
 
 @Module({
@@ -31,9 +29,8 @@ import { AbilityFactory } from './ability.factory';
       }),
     }),
     SessionsModule,
-    PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
-  providers: [AuthService, AbilityFactory, GoogleStrategy],
+  providers: [AuthService, AbilityFactory],
   exports: [AbilityFactory],
   controllers: [AuthController],
 })
