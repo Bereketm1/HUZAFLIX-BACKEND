@@ -5,6 +5,8 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UseGuards, Req, Get } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -23,6 +25,21 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User logged in successfully' })
   async login(@Body() dto: LoginDto): Promise<{ access_token: string; message: string }> {
     return this.authService.login(dto);
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  googleAuth() {
+    // initiates the Google OAuth2 login flow
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req: any) {
+    // req.user is populated by GoogleStrategy.validate
+    // process OAuth login and return token
+    const user = req.user as { email?: string; name?: string };
+    return this.authService.loginWithOAuth(user);
   }
 
   @Post('forgot-password')

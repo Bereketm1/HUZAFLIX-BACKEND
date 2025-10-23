@@ -111,6 +111,29 @@ export class AuthService {
     return { message: 'Password has been reset successfully' };
   }
 
+  /**
+   * Handle OAuth login (Google). If user exists, return token. Otherwise create user and return token.
+   */
+  async loginWithOAuth(profile: { email?: string; name?: string }) {
+    if (!profile || !profile.email) {
+      throw new Error('Invalid OAuth profile');
+    }
+    const email = profile.email;
+    let user;
+    try {
+      user = await this.userService.findOneByEmail(email);
+    } catch {
+      // user not found, create one with a random password
+      const randomPassword = crypto.randomUUID();
+      user = await this.userService.create({ email, password: randomPassword, name: profile.name });
+    }
+    const payload = { id: user.id, email: user.email };
+    return {
+      access_token: await this.signJwt(payload),
+      message: 'User logged in successfully',
+    };
+  }
+
   private async signJwt(payload: Record<string, unknown>) {
     try {
       return await this.jwt.signAsync(payload, { expiresIn: '15m' });

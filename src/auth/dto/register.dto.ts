@@ -12,6 +12,11 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
+  @ApiProperty({ example: 'Jane Doe', required: false })
+  @IsOptional()
+  @IsNotEmpty()
+  name?: string;
+
   @ApiProperty({ example: 'strongPassword123' })
   @IsNotEmpty()
   @MinLength(8)

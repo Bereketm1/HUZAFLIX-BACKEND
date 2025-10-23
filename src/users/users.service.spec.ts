@@ -27,6 +27,7 @@ describe('UsersService', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
@@ -68,11 +69,17 @@ describe('UsersService', () => {
       expect(res).toHaveProperty('id');
     });
 
-    it('should throw when password is missing', async () => {
+    it('should allow creation when password is missing (used by OAuth flows)', async () => {
       const dto = { email: 'a@b.com' } as CreateUserDto;
-      await expect(service.create(dto)).rejects.toThrow(
-        UnprocessableEntityException,
+      (mockUserRepository.create as jest.Mock).mockReturnValue({ ...dto });
+      (mockUserRepository.save as jest.Mock).mockImplementation((u) =>
+        Promise.resolve({ id: 1, ...u }),
       );
+
+      const res = await service.create(dto);
+      expect(res).toHaveProperty('id');
+      // bcrypt.hash should not be called when password is not provided
+      expect(bcrypt.hash as jest.Mock).not.toHaveBeenCalled();
     });
   });
 });

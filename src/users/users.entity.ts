@@ -17,8 +17,11 @@ export class User {
   @Column({ unique: true, nullable: false })
   email: string;
 
-  @Column({ type: 'text', nullable: false })
-  password_hash?: string;
+  @Column({ nullable: true })
+  name?: string;
+
+  @Column({ type: 'text', nullable: true })
+  password_hash?: string | null;
 
   @Column({ type: 'text', nullable: true })
   password_reset_token?: string | null;
