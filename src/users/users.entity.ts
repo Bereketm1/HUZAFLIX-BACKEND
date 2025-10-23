@@ -20,6 +20,12 @@ export class User {
   @Column({ type: 'text', nullable: false })
   password_hash?: string;
 
+  @Column({ type: 'text', nullable: true })
+  password_reset_token?: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  password_reset_expires?: Date | null;
+
   @ManyToOne(() => Role, (role) => role.users, { eager: true })
   @JoinColumn({ name: 'role_id' })
   role: Role;

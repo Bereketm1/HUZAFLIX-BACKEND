@@ -3,6 +3,10 @@ import { UsersService } from './users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './users.entity';
 import { RolesService } from 'src/roles/roles.service';
+import * as bcrypt from 'bcryptjs';
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn().mockResolvedValue('hashed-pass'),
+}));
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -15,6 +19,10 @@ describe('UsersService', () => {
     delete: jest.fn(),
   };
 
+  const mockRolesService = {
+    findOneByName: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -25,7 +33,7 @@ describe('UsersService', () => {
         },
         {
           provide: RolesService,
-          useValue: {},
+          useValue: mockRolesService,
         },
       ],
     }).compile();
@@ -35,5 +43,30 @@ describe('UsersService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('create', () => {
+    it('should hash password, assign role and save user', async () => {
+      const dto = { email: 'a@b.com', password: 'plainpass' } as any;
+      const role = { id: 2, name: 'user' } as any;
+      const createdUser = { id: 1, email: dto.email } as any;
+
+      mockRolesService.findOneByName.mockResolvedValue(role);
+      mockUserRepository.create.mockReturnValue({ ...dto });
+      mockUserRepository.save.mockImplementation(async (u) => ({ id: 1, ...u }));
+
+  const res = await service.create(dto);
+
+  expect(mockRolesService.findOneByName).toHaveBeenCalledWith('user');
+  expect((bcrypt.hash as jest.Mock)).toHaveBeenCalledWith(dto.password, 10);
+      expect(mockUserRepository.create).toHaveBeenCalled();
+      expect(mockUserRepository.save).toHaveBeenCalled();
+      expect(res).toHaveProperty('id');
+    });
+
+    it('should throw when password is missing', async () => {
+      const dto = { email: 'a@b.com' } as any;
+      await expect(service.create(dto)).rejects.toBeDefined();
+    });
   });
 });
