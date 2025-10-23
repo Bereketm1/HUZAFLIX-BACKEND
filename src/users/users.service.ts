@@ -43,18 +43,27 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto): Promise<User> {
+    const role = await this.roleService.findOneById(dto.role_id);
     const user = this.userRepository.create({
       ...dto,
-      role: await this.roleService.findOneByName('user'),
       password_hash: await this.hashPassword(dto.password),
     });
-    return await this.userRepository.save(user);
+    return await this.userRepository.save({ ...user, role });
   }
 
   async update(id: number, dto: UpdateUserDto): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-    Object.assign(user, dto);
+    const role = await this.roleService.findOneById(
+      dto.role_id || user?.role.id,
+    );
+    if (user?.role?.id != dto.role_id) {
+      delete dto.role_id;
+      Object.assign(user, { ...dto, updated_at: new Date(), role: role });
+    } else {
+      delete dto.role_id;
+      Object.assign(user, { ...dto, updated_at: new Date() });
+    }
     return await this.userRepository.save(user);
   }
 
