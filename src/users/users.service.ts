@@ -46,7 +46,9 @@ export class UsersService {
     const role = await this.roleService.findOneById(dto.role_id);
     const user = this.userRepository.create({
       ...dto,
-      password_hash: await this.hashPassword(dto.password),
+      password_hash: dto.password
+        ? await this.hashPassword(dto.password)
+        : null,
     });
     return await this.userRepository.save({ ...user, role });
   }
@@ -64,6 +66,12 @@ export class UsersService {
       delete dto.role_id;
       Object.assign(user, { ...dto, updated_at: new Date() });
     }
+    return await this.userRepository.save(user);
+  }
+  async updatePassword(id: number, newPassword: string) {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+    user.password_hash = await this.hashPassword(newPassword);
     return await this.userRepository.save(user);
   }
 
