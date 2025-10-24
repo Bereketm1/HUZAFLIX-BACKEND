@@ -14,8 +14,12 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiHeader } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 
@@ -175,14 +179,13 @@ export class AuthController {
 
   @Post('reset-password')
   @ApiOperation({ summary: 'Reset password using token' })
-  @ApiHeader({ name: 'Authorization', description: 'Bearer <reset-token>' })
+  @ApiBearerAuth()
   async resetPassword(
     @Headers('authorization') authorization: string | undefined,
     @Body() dto: ResetPasswordDto,
   ) {
     if (!authorization)
       throw new BadRequestException('Missing Authorization header');
-    // Accept either "Bearer <token>" or raw token in the header
     const token = authorization.startsWith('Bearer ')
       ? authorization.slice(7).trim()
       : authorization.trim();
