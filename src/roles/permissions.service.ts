@@ -14,13 +14,14 @@ export class PermissionsService {
   ) {}
 
   async getPermissionsForRole(roleId: number): Promise<Permission[]> {
-    // Load the role with its rolePermissions -> permission relation
+    // Load the role with its rolePermissions -> permission relation.
+    // The Role entity exposes a computed `permissions` getter which
+    // maps rolePermissions -> permission so callers can use entity-level API.
     const role = await this.roleRepo.findOne({
       where: { id: roleId },
       relations: ['rolePermissions', 'rolePermissions.permission'],
     });
     if (!role) throw new NotFoundException('Role not found');
-    if (!role.rolePermissions) return [];
-    return role.rolePermissions.map((rp) => rp.permission);
+    return role.permissions ?? [];
   }
 }
