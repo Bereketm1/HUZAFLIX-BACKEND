@@ -7,6 +7,7 @@ import {
   Res,
   BadRequestException,
   NotFoundException,
+  Headers,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -14,6 +15,7 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiHeader } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 
@@ -173,7 +175,18 @@ export class AuthController {
 
   @Post('reset-password')
   @ApiOperation({ summary: 'Reset password using token' })
-  async resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto);
+  @ApiHeader({ name: 'Authorization', description: 'Bearer <reset-token>' })
+  async resetPassword(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() dto: ResetPasswordDto,
+  ) {
+    if (!authorization)
+      throw new BadRequestException('Missing Authorization header');
+    // Accept either "Bearer <token>" or raw token in the header
+    const token = authorization.startsWith('Bearer ')
+      ? authorization.slice(7).trim()
+      : authorization.trim();
+    if (!token) throw new BadRequestException('Missing reset token');
+    return this.authService.resetPassword(token, dto);
   }
 }

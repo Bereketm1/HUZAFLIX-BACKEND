@@ -36,16 +36,6 @@ export class CreateSessionsTable1761080000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "users" ADD COLUMN "password_reset_expires" TIMESTAMP WITH TIME ZONE`,
     );
-
-    // migrate sessions back into users for password_reset type
-    await queryRunner.query(
-      `UPDATE "users" u
-       SET password_reset_token = s.token,
-           password_reset_expires = s.expires_at
-       FROM "sessions" s
-       WHERE s.user_id = u.id AND s.type = 'password_reset'`,
-    );
-
     await queryRunner.query(`DROP TABLE "sessions"`);
   }
 }
