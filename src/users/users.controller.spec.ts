@@ -6,7 +6,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 describe('UsersController', () => {
   let controller: UsersController;
-  let service: UsersService;
 
   const mockUsersService = {
     findAll: jest.fn(),
@@ -27,7 +26,6 @@ describe('UsersController', () => {
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
-    service = module.get<UsersService>(UsersService);
   });
 
   afterEach(() => {
