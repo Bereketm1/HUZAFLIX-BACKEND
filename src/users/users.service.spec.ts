@@ -24,6 +24,7 @@ describe('UsersService', () => {
 
   const mockRolesService: Partial<RolesService> = {
     findOneByName: jest.fn(),
+    findOneById: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -51,7 +52,11 @@ describe('UsersService', () => {
 
   describe('create', () => {
     it('should hash password, assign role and save user', async () => {
-      const dto: CreateUserDto = { email: 'a@b.com', password: 'plainpass' };
+      const dto: CreateUserDto = {
+        email: 'a@b.com',
+        password: 'plainpass',
+        role_id: 1,
+      };
       const role: Partial<Role> = { id: 2, name: 'api_consumer' };
 
       (mockRolesService.findOneByName as jest.Mock).mockResolvedValue(
@@ -64,9 +69,7 @@ describe('UsersService', () => {
 
       const res = await service.create(dto);
 
-      expect(mockRolesService.findOneByName).toHaveBeenCalledWith(
-        'api_consumer',
-      );
+      expect(mockRolesService.findOneById).toHaveBeenCalledWith(1);
       expect(bcrypt.hash as jest.Mock).toHaveBeenCalledWith(dto.password, 10);
       expect(mockUserRepository.create).toHaveBeenCalled();
       expect(mockUserRepository.save).toHaveBeenCalled();
@@ -82,7 +85,6 @@ describe('UsersService', () => {
 
       const res = await service.create(dto);
       expect(res).toHaveProperty('id');
-      // bcrypt.hash should not be called when password is not provided
       expect(bcrypt.hash as jest.Mock).not.toHaveBeenCalled();
     });
   });
