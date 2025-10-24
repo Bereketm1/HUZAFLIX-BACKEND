@@ -34,9 +34,15 @@ export async function seedPermissions() {
   if (admin) {
     const allPerm = await permRepo.findOne({ where: { name: 'all:manage' } });
     if (allPerm) {
-      const existing = await rpRepo.findOne({ where: { role: { id: admin.id }, permission: { id: allPerm.id } }, relations: ['role', 'permission'] });
+      const existing = await rpRepo.findOne({
+        where: { role: { id: admin.id }, permission: { id: allPerm.id } },
+        relations: ['role', 'permission'],
+      });
       if (!existing) {
-        await rpRepo.save({ role: admin, permission: allPerm } as RolePermission);
+        await rpRepo.save({
+          role: admin,
+          permission: allPerm,
+        } as RolePermission);
         console.log(`Assigned all:manage to admin`);
       }
     }
@@ -45,9 +51,15 @@ export async function seedPermissions() {
   if (user) {
     const apisRead = await permRepo.findOne({ where: { name: 'apis:read' } });
     if (apisRead) {
-      const existing = await rpRepo.findOne({ where: { role: { id: user.id }, permission: { id: apisRead.id } }, relations: ['role', 'permission'] });
+      const existing = await rpRepo.findOne({
+        where: { role: { id: user.id }, permission: { id: apisRead.id } },
+        relations: ['role', 'permission'],
+      });
       if (!existing) {
-        await rpRepo.save({ role: user, permission: apisRead } as RolePermission);
+        await rpRepo.save({
+          role: user,
+          permission: apisRead,
+        } as RolePermission);
         console.log(`Assigned apis:read to user`);
       }
     }
