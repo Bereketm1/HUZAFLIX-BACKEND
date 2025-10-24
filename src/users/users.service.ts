@@ -10,6 +10,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { RolesService } from 'src/roles/roles.service';
+import { PaginatedResponse } from 'src/common/dto/paginated.dto';
+import { paginate } from 'src/common/utils/paginate.util';
 
 @Injectable()
 export class UsersService {
@@ -19,8 +21,19 @@ export class UsersService {
     private readonly roleService: RolesService,
   ) {}
 
-  async findAll(): Promise<User[]> {
-    return await this.userRepository.find();
+  async findAll({
+    page,
+    limit,
+  }: {
+    page: number;
+    limit: number;
+  }): Promise<{ data: User[]; meta: PaginatedResponse }> {
+    const [users, total] = await this.userRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return paginate(users, page, limit, total);
   }
 
   async findOneById(id: number): Promise<User> {
