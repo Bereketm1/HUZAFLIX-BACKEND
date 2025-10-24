@@ -49,7 +49,7 @@ export class ResponseInterceptor
 
         if (isObjectWithMessage(data)) {
           message = data.message;
-          responseData = data.data ?? null;
+          responseData = data;
         } else if (typeof data === 'object' && data !== null) {
           responseData = data as Record<string, any>;
         } else {
