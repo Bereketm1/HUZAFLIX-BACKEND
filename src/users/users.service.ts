@@ -43,6 +43,11 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto): Promise<User> {
+    const existingUser = await this.userRepository.findOne({
+      where: { email: dto.email },
+    });
+    if (existingUser)
+      throw new UnprocessableEntityException('Email already exists');
     const role = await this.roleService.findOneById(dto.role_id);
     const user = this.userRepository.create({
       ...dto,
