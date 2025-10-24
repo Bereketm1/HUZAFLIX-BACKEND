@@ -5,6 +5,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  DeleteDateColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -32,4 +33,7 @@ export class User {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz' })
+  deletedAt?: Date;
 }

@@ -10,6 +10,9 @@ export class Users1761074554963 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "users" ADD CONSTRAINT "FK_a2cecd1a3531c0b041e29ba46e1" FOREIGN KEY ("role_id") REFERENCES "roles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
     );
+    await queryRunner.query(
+      `ALTER TABLE "roles" ADD "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), ADD "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

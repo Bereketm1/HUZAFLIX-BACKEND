@@ -10,6 +10,7 @@ import { Session } from 'src/sessions/sessions.entity';
 import { LoginDto } from './dto/login.dto';
 import bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
+import { RolesService } from 'src/roles/roles.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -20,11 +21,13 @@ export class AuthService {
   constructor(
     private readonly jwt: JwtService,
     private readonly userService: UsersService,
+    private readonly roleService: RolesService,
     private readonly sessionsService: SessionsService,
   ) {}
 
   async register(user: RegisterDto): Promise<{ message: string }> {
-    await this.userService.create(user);
+    const role = await this.roleService.findOneByName('user');
+    await this.userService.create({ ...user, role_id: role.id });
     return {
       message: 'User registered successfully',
     };

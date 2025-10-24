@@ -7,12 +7,18 @@ import { Role } from './roles.entity';
 export class RolesService {
   constructor(
     @InjectRepository(Role)
-    private readonly userRepository: Repository<Role>,
+    private readonly roleRepository: Repository<Role>,
   ) {}
 
   async findOneByName(name: string): Promise<Role> {
-    const role = await this.userRepository.findOne({ where: { name } });
+    const role = await this.roleRepository.findOne({ where: { name } });
     if (!role) throw new NotFoundException(`Role with name, ${name} not found`);
+    return role;
+  }
+
+  async findOneById(id: number): Promise<Role> {
+    const role = await this.roleRepository.findOne({ where: { id } });
+    if (!role) throw new NotFoundException(`Role with name, ${id} not found`);
     return role;
   }
 }
