@@ -4,7 +4,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from './users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -28,9 +28,7 @@ export class UsersService {
     page: number;
     limit: number;
   }): Promise<{ data: User[]; meta: PaginatedResponse }> {
-    // Only return users that have not been soft-deleted (deletedAt IS NULL)
     const [users, total] = await this.userRepository.findAndCount({
-      where: { deletedAt: IsNull() },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -48,7 +46,7 @@ export class UsersService {
 
   async findOneById(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
-      where: { id, deletedAt: IsNull() },
+      where: { id },
       relations: ['role'],
     });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
@@ -57,7 +55,7 @@ export class UsersService {
 
   async findOneByEmail(email: string): Promise<User> {
     const user = await this.userRepository.findOne({
-      where: { email, deletedAt: IsNull() },
+      where: { email },
       relations: ['role'],
     });
     if (!user)
