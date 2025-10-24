@@ -1,5 +1,6 @@
 import { User } from 'src/users/users.entity';
 import { RolePermission } from './role-permission.entity';
+import { Permission } from './permission.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -25,6 +26,15 @@ export class Role {
 
   @OneToMany(() => RolePermission, (rp) => rp.role, { cascade: false })
   rolePermissions?: RolePermission[];
+
+  /**
+   * Convenience computed property that returns the list of permissions
+   * for this role by mapping the rolePermissions relation.
+   * Note: callers should ensure `rolePermissions` is loaded when using this.
+   */
+  get permissions(): Permission[] | undefined {
+    return this.rolePermissions?.map((rp) => rp.permission);
+  }
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

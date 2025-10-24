@@ -191,8 +191,8 @@ describe('AuthService - password reset', () => {
   });
 
   it('resetPassword should succeed with valid token', async () => {
+    const token = 'tok';
     const dto: ResetPasswordDto = {
-      token: 'tok',
       newPassword: 'newPass123',
     } as ResetPasswordDto;
     (mockJwtService2.verifyAsync as jest.Mock).mockResolvedValue({
@@ -208,7 +208,7 @@ describe('AuthService - password reset', () => {
     });
     (mockUsersService2.updatePassword as jest.Mock).mockResolvedValue(true);
 
-    const res = await service.resetPassword(dto);
+  const res = await service.resetPassword(token, dto);
     expect(res).toEqual({ message: 'Password has been reset successfully' });
     expect(mockSessionsService2.markUsed).toHaveBeenCalledWith(1);
     expect(mockUsersService2.updatePassword).toHaveBeenCalledWith(
@@ -218,21 +218,25 @@ describe('AuthService - password reset', () => {
   });
 
   it('resetPassword should throw on invalid token', async () => {
+    const token = 'bad';
     const dto: ResetPasswordDto = {
-      token: 'bad',
       newPassword: 'newPass123',
     } as ResetPasswordDto;
     (mockJwtService2.verifyAsync as jest.Mock).mockRejectedValue(
       new Error('invalid token'),
     );
 
-    await expect(service.resetPassword(dto)).rejects.toThrow(NotFoundException);
-    await expect(service.resetPassword(dto)).rejects.toThrow('Invalid token');
+    await expect(service.resetPassword(token, dto)).rejects.toThrow(
+      NotFoundException,
+    );
+    await expect(service.resetPassword(token, dto)).rejects.toThrow(
+      'Invalid token',
+    );
   });
 
   it('resetPassword should throw on expired token', async () => {
+    const token = 'tok';
     const dto: ResetPasswordDto = {
-      token: 'tok',
       newPassword: 'newPass123',
     } as ResetPasswordDto;
     (mockJwtService2.verifyAsync as jest.Mock).mockResolvedValue({
@@ -247,9 +251,11 @@ describe('AuthService - password reset', () => {
       expiresAt: new Date(Date.now() - 10000),
     });
 
-    await expect(service.resetPassword(dto)).rejects.toThrow(
+    await expect(service.resetPassword(token, dto)).rejects.toThrow(
       UnauthorizedException,
     );
-    await expect(service.resetPassword(dto)).rejects.toThrow('Token expired');
+    await expect(service.resetPassword(token, dto)).rejects.toThrow(
+      'Token expired',
+    );
   });
 });

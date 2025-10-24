@@ -106,8 +106,11 @@ export class AuthService {
     };
   }
 
-  async resetPassword(dto: ResetPasswordDto): Promise<{ message: string }> {
-    const { token, newPassword } = dto;
+  async resetPassword(
+    token: string,
+    dto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    const { newPassword } = dto;
     // verify token signature and extract jti
     let payload: unknown;
     try {
