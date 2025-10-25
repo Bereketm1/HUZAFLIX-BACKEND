@@ -11,6 +11,7 @@ describe('AuthController', () => {
   const mockAuthService = {
     login: jest.fn(),
     register: jest.fn(),
+    refresh: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -66,6 +67,25 @@ describe('AuthController', () => {
       const response = await controller.register(registerDto);
 
       expect(mockAuthService.register).toHaveBeenCalledWith(registerDto);
+      expect(response).toEqual(result);
+    });
+  });
+
+  describe('refresh', () => {
+    it('should call authService.refresh and return its result', async () => {
+      const refreshToken = 'Bearer refresh.token';
+      const result = {
+        access_token: 'jwt.token',
+        refresh_token: 'new.refresh.token',
+      };
+
+      mockAuthService.refresh.mockResolvedValue(result);
+
+      const response = await controller.refresh(refreshToken);
+
+      expect(mockAuthService.refresh).toHaveBeenCalledWith(
+        refreshToken.split(' ')[1],
+      );
       expect(response).toEqual(result);
     });
   });

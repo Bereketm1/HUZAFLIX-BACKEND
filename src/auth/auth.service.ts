@@ -3,10 +3,9 @@ import {
   UnauthorizedException,
   NotFoundException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import { SessionsService } from 'src/sessions/sessions.service';
-import { Session } from 'src/sessions/sessions.entity';
 import { LoginDto } from './dto/login.dto';
 import bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
@@ -26,7 +25,7 @@ export class AuthService {
   ) {}
 
   async register(user: RegisterDto): Promise<{ message: string }> {
-    const role = await this.roleService.findOneByName('user');
+    const role = await this.roleService.findOneByName('api_consumer');
     await this.userService.create({ ...user, role_id: role.id });
     return {
       message: 'User registered successfully',
@@ -35,7 +34,7 @@ export class AuthService {
 
   async login(
     user: LoginDto,
-  ): Promise<{ access_token: string; message: string }> {
+  ): Promise<{ access_token: string; refresh_token: string }> {
     const { email, password } = user;
     const res = await this.userService.findOneByEmail(email);
     if (
@@ -45,9 +44,66 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     const payload = { id: res.id, email: res.email };
+    await this.sessionsService.deactivateAllOldSessions(res.id);
+    const accessSession = await this.sessionsService.create({
+      user: res,
+      jti: res.id,
+      type: 'access',
+      token: await this.signJwt({ ...payload, type: 'access' }),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    });
+
+    const refreshSession = await this.sessionsService.create({
+      user: res,
+      jti: res.id,
+      type: 'refresh',
+      token: await this.signJwt(
+        { ...payload, type: 'refresh' },
+        { expiresIn: '7d' },
+      ),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
     return {
-      access_token: await this.signJwt(payload),
-      message: 'User logged in successfully',
+      access_token: accessSession.token as string,
+      refresh_token: refreshSession.token as string,
+    };
+  }
+
+  async refresh(
+    token: string,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    const session = await this.sessionsService.findByToken(token);
+    if (!session || session.type !== 'refresh') {
+      throw new UnauthorizedException('Invalid token');
+    }
+    const user = await this.userService.findOneById(session.jti as number);
+    if (!user) {
+      throw new UnauthorizedException('Invalid token');
+    }
+    const payload = { id: user.id, email: user.email };
+    await this.sessionsService.deactivateAllOldSessions(user.id);
+    const accessSession = await this.sessionsService.create({
+      user: user,
+      jti: user.id,
+      type: 'access',
+      token: await this.signJwt({ ...payload, type: 'access' }),
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    });
+
+    const refreshSession = await this.sessionsService.create({
+      user: user,
+      jti: user.id,
+      type: 'refresh',
+      token: await this.signJwt(
+        { ...payload, type: 'refresh' },
+        { expiresIn: '7d' },
+      ),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+    return {
+      access_token: accessSession.token as string,
+      refresh_token: refreshSession.token as string,
     };
   }
 
@@ -62,48 +118,27 @@ export class AuthService {
     let user: ResUser | undefined;
     try {
       user = await this.userService.findOneByEmail(email);
+      const created = await this.sessionsService.create({
+        user: user as User,
+        jti: (user as User).id,
+        token: await this.signJwt(
+          { id: user.id, jti: user.id, type: 'reset' },
+          { expiresIn: '5m' },
+        ),
+        type: 'reset',
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      });
+      return {
+        message:
+          'If an account with that email exists, a reset token has been sent',
+        token: created.token as string,
+      };
     } catch {
-      // don't reveal whether email exists
       return {
         message:
           'If an account with that email exists, a reset token has been sent',
       };
     }
-    // create a session entry and use its numeric id as the jti
-    const expiresInSeconds = 60 * 60; // 1 hour
-    const expires = new Date(Date.now() + expiresInSeconds * 1000);
-    // create session first so we have an integer id to use as jti
-    // create a lightweight User reference to satisfy the relation without
-    // loading the full entity from the database
-    const userRef = { id: user.id } as User;
-    const created = await this.sessionsService.create({
-      user: userRef,
-      type: 'password_reset',
-      expiresAt: expires,
-    });
-    const jti = created.id;
-    // sign a JWT that includes the user id and the jti
-    const token = await this.jwt.signAsync(
-      { id: user.id, jti },
-      { expiresIn: `${expiresInSeconds}s` },
-    );
-    // update the session with jti and token (use save for updates)
-    await this.sessionsService.save({
-      id: created.id,
-      user: userRef,
-      jti,
-      token,
-      type: 'password_reset',
-      expiresAt: expires,
-      createdAt: created.createdAt,
-      updatedAt: created.updatedAt,
-    } as Session);
-    // In production we'd email the token; for tests return it
-    return {
-      message:
-        'If an account with that email exists, a reset token has been sent',
-      token,
-    };
   }
 
   async resetPassword(
@@ -123,7 +158,7 @@ export class AuthService {
     const { id: userId, jti } = payload as { id?: number; jti?: number };
     if (!userId || !jti) throw new NotFoundException('Invalid token');
     // find session by jti and validate
-    const session = await this.sessionsService.findByJti(jti);
+    const session = await this.sessionsService.findByToken(token);
     if (session.revoked) throw new UnauthorizedException('Token revoked');
     if (session.usedAt) throw new UnauthorizedException('Token already used');
     if (session.expiresAt && session.expiresAt < new Date())
@@ -167,9 +202,12 @@ export class AuthService {
     };
   }
 
-  private async signJwt(payload: Record<string, unknown>) {
+  private async signJwt(
+    payload: Record<string, unknown>,
+    options?: JwtSignOptions,
+  ) {
     try {
-      return await this.jwt.signAsync(payload, { expiresIn: '15m' });
+      return await this.jwt.signAsync(payload, options || { expiresIn: '15m' });
     } catch (err) {
       // allow Nest to handle the exception but provide a clearer message
       throw new Error(`Failed to sign JWT: ${(err as Error).message}`);

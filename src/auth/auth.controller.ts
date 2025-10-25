@@ -8,6 +8,8 @@ import {
   BadRequestException,
   NotFoundException,
   Headers,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -22,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
+import { RefreshGuard, ResetGuard } from 'src/common/guards/jwt.guard';
 
 type OAuthProfile = { email?: string; name?: string };
 
@@ -45,8 +48,24 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User logged in successfully' })
   async login(
     @Body() dto: LoginDto,
-  ): Promise<{ access_token: string; message: string }> {
+  ): Promise<{ access_token: string; refresh_token: string }> {
     return this.authService.login(dto);
+  }
+
+  @Post('refresh')
+  @UseGuards(RefreshGuard)
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 201,
+    description: 'Access token refreshed successfully',
+  })
+  async refresh(
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    const token = authorization?.split(' ')[1];
+    if (!token) throw new UnauthorizedException('Invalid token');
+    return this.authService.refresh(token);
   }
 
   /**
@@ -178,6 +197,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
+  @UseGuards(ResetGuard)
   @ApiOperation({ summary: 'Reset password using token' })
   @ApiBearerAuth()
   async resetPassword(

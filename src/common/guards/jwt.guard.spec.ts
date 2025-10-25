@@ -2,6 +2,7 @@ import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtAuthGuard } from './jwt.guard';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
+import { SessionsService } from 'src/sessions/sessions.service';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
@@ -14,8 +15,16 @@ describe('JwtAuthGuard', () => {
     findOneById: jest.fn(),
   } as any as UsersService;
 
+  const mockSessionService = {
+    findByToken: jest.fn(),
+  } as any as SessionsService;
+
   beforeEach(() => {
-    guard = new JwtAuthGuard(mockJwtService, mockUsersService);
+    guard = new JwtAuthGuard(
+      mockJwtService,
+      mockUsersService,
+      mockSessionService,
+    );
     jest.clearAllMocks();
   });
 
@@ -36,6 +45,12 @@ describe('JwtAuthGuard', () => {
     (mockUsersService.findOneById as jest.Mock).mockResolvedValue({
       id: 1,
       email: 'a@b.com',
+    });
+
+    (mockSessionService.findByToken as jest.Mock).mockResolvedValue({
+      id: 1,
+      userId: 1,
+      expiresAt: new Date(Date.now() + 1000),
     });
 
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
@@ -65,6 +80,48 @@ describe('JwtAuthGuard', () => {
     (mockUsersService.findOneById as jest.Mock).mockRejectedValue(
       new Error('not found'),
     );
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('should throw when session not found', async () => {
+    const ctx = makeContext('Bearer valid.token');
+    (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1 });
+    (mockUsersService.findOneById as jest.Mock).mockResolvedValue({
+      id: 1,
+      email: 'a@b.com',
+    });
+    (mockSessionService.findByToken as jest.Mock).mockResolvedValue(null);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('should throw when session is expired', async () => {
+    const ctx = makeContext('Bearer valid.token');
+    (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1 });
+    (mockUsersService.findOneById as jest.Mock).mockResolvedValue({
+      id: 1,
+      email: 'a@b.com',
+    });
+    (mockSessionService.findByToken as jest.Mock).mockResolvedValue({
+      id: 1,
+      userId: 1,
+      expiresAt: new Date(Date.now() - 1000),
+    });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('should throw when session is revoked', async () => {
+    const ctx = makeContext('Bearer valid.token');
+    (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1 });
+    (mockUsersService.findOneById as jest.Mock).mockResolvedValue({
+      id: 1,
+      email: 'a@b.com',
+    });
+    (mockSessionService.findByToken as jest.Mock).mockResolvedValue({
+      id: 1,
+      userId: 1,
+      expiresAt: new Date(Date.now() + 1000),
+      revoked: true,
+    });
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
   });
 });
