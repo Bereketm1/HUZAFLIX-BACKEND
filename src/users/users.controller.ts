@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Delete,
   Post,
   Put,
   Query,
@@ -65,5 +66,13 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Updated user successfully' })
   async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
     return await this.userService.update(id, updateUserDto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete user by ID' })
+  @ApiResponse({ status: 200, description: 'Deleted user successfully' })
+  async remove(@Param('id') id: number) {
+    await this.userService.remove(id);
+    return { message: `User ${id} Deleted` };
   }
 }
