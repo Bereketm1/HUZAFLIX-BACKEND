@@ -65,7 +65,7 @@ export class AuthController {
   ): Promise<{ access_token: string; refresh_token: string }> {
     const token = authorization?.split(' ')[1];
     if (!token) throw new UnauthorizedException('Invalid token');
-    return this.authService.refresh(token);
+    return await this.authService.refresh(token);
   }
 
   /**

@@ -9,6 +9,7 @@ describe('JwtAuthGuard', () => {
 
   const mockJwtService = {
     verifyAsync: jest.fn(),
+    decode: jest.fn(),
   } as any as JwtService;
 
   const mockUsersService = {
@@ -42,6 +43,11 @@ describe('JwtAuthGuard', () => {
       id: 1,
       email: 'a@b.com',
     });
+
+    (mockJwtService.decode as jest.Mock).mockReturnValue({
+      type: 'access',
+    });
+
     (mockUsersService.findOneById as jest.Mock).mockResolvedValue({
       id: 1,
       email: 'a@b.com',
@@ -77,9 +83,7 @@ describe('JwtAuthGuard', () => {
   it('should throw when user not found', async () => {
     const ctx = makeContext('Bearer valid.token');
     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 999 });
-    (mockUsersService.findOneById as jest.Mock).mockRejectedValue(
-      new Error('not found'),
-    );
+    (mockUsersService.findOneById as jest.Mock).mockResolvedValue(null);
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
   });
 

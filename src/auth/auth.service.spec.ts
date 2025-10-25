@@ -108,7 +108,7 @@ describe('AuthService', () => {
         userRecord.password_hash,
       );
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
-        { id: userRecord.id, email: userRecord.email },
+        { id: userRecord.id, email: userRecord.email, type: 'access' },
         { expiresIn: '15m' },
       );
 
@@ -191,8 +191,8 @@ describe('AuthService', () => {
         refresh_token: 'mocked-jwt-token',
       });
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
-        { id: 1, email: 'user@example.com' },
-        { expiresIn: '7d' },
+        { id: 1, email: 'user@example.com', type: 'access' },
+        { expiresIn: '15m' },
       );
     });
   });
@@ -204,8 +204,12 @@ describe('AuthService', () => {
         id: 1,
         email: dto.email,
       });
+
       mockJwtService.signAsync.mockResolvedValue('signed-token');
-      mockSessionsService.create.mockResolvedValue(true);
+      mockSessionsService.create.mockResolvedValue({
+        id: 1,
+        token: 'signed-token',
+      });
 
       const res = await service.requestPasswordReset(dto);
       expect(res).toHaveProperty('token', 'signed-token');
@@ -273,7 +277,7 @@ describe('AuthService', () => {
         id: 1,
         jti: 123,
       });
-      mockSessionsService.findByJti.mockResolvedValue({
+      mockSessionsService.findByToken.mockResolvedValue({
         id: 1,
         userId: 1,
         revoked: false,

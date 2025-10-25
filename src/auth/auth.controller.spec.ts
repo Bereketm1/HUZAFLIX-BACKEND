@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RefreshGuard, ResetGuard } from 'src/common/guards/jwt.guard';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -24,7 +25,14 @@ describe('AuthController', () => {
           useValue: { get: jest.fn().mockReturnValue('') },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(RefreshGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .overrideGuard(ResetGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });
