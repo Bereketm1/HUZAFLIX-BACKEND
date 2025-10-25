@@ -36,6 +36,14 @@ export class UsersService {
     return paginate(users, page, limit, total);
   }
 
+  async remove(id: number): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+    // softRemove will set the delete date (DeleteDateColumn) instead of hard-deleting
+    await this.userRepository.softRemove(user);
+    return;
+  }
+
   async findOneById(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
