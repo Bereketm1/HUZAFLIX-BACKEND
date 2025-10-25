@@ -9,6 +9,8 @@ describe('DashboardController', () => {
 
   const mockDashboardService = {
     totalUsers: jest.fn(),
+    totalActiveUsers: jest.fn(),
+    totalInactiveUsers: jest.fn(),
     newUsersToday: jest.fn(),
     newUsersThisWeek: jest.fn(),
     newUsersThisMonth: jest.fn(),
@@ -48,6 +50,8 @@ describe('DashboardController', () => {
     it('should return user statistics', async () => {
       const mockStats = {
         total: 100,
+        active: 80,
+        inactive: 20,
         today: 5,
         week: 20,
         month: 50,
@@ -55,6 +59,10 @@ describe('DashboardController', () => {
       };
 
       mockDashboardService.totalUsers.mockResolvedValue(mockStats.total);
+      mockDashboardService.totalActiveUsers.mockResolvedValue(mockStats.active);
+      mockDashboardService.totalInactiveUsers.mockResolvedValue(
+        mockStats.inactive,
+      );
       mockDashboardService.newUsersToday.mockResolvedValue(mockStats.today);
       mockDashboardService.newUsersThisWeek.mockResolvedValue(mockStats.week);
       mockDashboardService.newUsersThisMonth.mockResolvedValue(mockStats.month);
@@ -63,6 +71,8 @@ describe('DashboardController', () => {
       const result = await controller.getUserStats();
 
       expect(mockDashboardService.totalUsers).toHaveBeenCalled();
+      expect(mockDashboardService.totalActiveUsers).toHaveBeenCalled();
+      expect(mockDashboardService.totalInactiveUsers).toHaveBeenCalled();
       expect(mockDashboardService.newUsersToday).toHaveBeenCalled();
       expect(mockDashboardService.newUsersThisWeek).toHaveBeenCalled();
       expect(mockDashboardService.newUsersThisMonth).toHaveBeenCalled();

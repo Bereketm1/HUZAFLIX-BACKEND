@@ -26,6 +26,8 @@ export class DashboardController {
   @Roles('administrator')
   async getUserStats() {
     const total = await this.dashboardService.totalUsers();
+    const active = await this.dashboardService.totalActiveUsers();
+    const inactive = await this.dashboardService.totalInactiveUsers();
     const today = await this.dashboardService.newUsersToday();
     const week = await this.dashboardService.newUsersThisWeek();
     const month = await this.dashboardService.newUsersThisMonth();
@@ -33,6 +35,8 @@ export class DashboardController {
 
     return {
       total,
+      active,
+      inactive,
       today,
       week,
       month,
