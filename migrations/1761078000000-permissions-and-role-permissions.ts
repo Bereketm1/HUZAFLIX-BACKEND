@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class PermissionsAndRolePermissions1761078000000 implements MigrationInterface {
+export class PermissionsAndRolePermissions1761078000000
+  implements MigrationInterface
+{
   name = 'PermissionsAndRolePermissions1761078000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -19,8 +21,12 @@ export class PermissionsAndRolePermissions1761078000000 implements MigrationInte
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_permission"`);
-    await queryRunner.query(`ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_role"`);
+    await queryRunner.query(
+      `ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_permission"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "role_permissions" DROP CONSTRAINT "FK_role_permissions_role"`,
+    );
     await queryRunner.query(`DROP TABLE "role_permissions"`);
     await queryRunner.query(`DROP TABLE "permissions"`);
   }

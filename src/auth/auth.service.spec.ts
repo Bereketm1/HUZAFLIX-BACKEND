@@ -19,6 +19,7 @@ describe('AuthService', () => {
 
   const mockUsersService = {
     findOneByEmail: jest.fn(),
+    findOneById: jest.fn(),
     create: jest.fn(),
     updatePassword: jest.fn(),
   };
@@ -28,6 +29,8 @@ describe('AuthService', () => {
     findByJti: jest.fn(),
     markUsed: jest.fn(),
     save: jest.fn(),
+    findByToken: jest.fn(),
+    deactivateAllOldSessions: jest.fn(),
   };
 
   const mockRolesService = {
@@ -92,7 +95,9 @@ describe('AuthService', () => {
       const bcryptCompare = jest.fn().mockResolvedValue(true);
       (bcrypt.compare as jest.Mock) = bcryptCompare;
       mockJwtService.signAsync.mockResolvedValue('mocked-jwt-token');
-
+      mockSessionsService.create.mockResolvedValue({
+        token: 'mocked-jwt-token',
+      });
       const result = await service.login(loginDto);
 
       expect(mockUsersService.findOneByEmail).toHaveBeenCalledWith(
@@ -103,12 +108,13 @@ describe('AuthService', () => {
         userRecord.password_hash,
       );
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
-        { id: userRecord.id, email: userRecord.email },
+        { id: userRecord.id, email: userRecord.email, type: 'access' },
         { expiresIn: '15m' },
       );
+
       expect(result).toEqual({
         access_token: 'mocked-jwt-token',
-        message: 'User logged in successfully',
+        refresh_token: 'mocked-jwt-token',
       });
     });
 
@@ -131,6 +137,66 @@ describe('AuthService', () => {
     });
   });
 
+  describe('refreshToken', () => {
+    it('should throw UnauthorizedException if session not found', async () => {
+      mockSessionsService.findByToken.mockResolvedValue(null);
+
+      await expect(service.refresh('invalid-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw UnauthorizedException if session type is not refresh', async () => {
+      mockSessionsService.findByToken.mockResolvedValue({
+        id: 1,
+        type: 'access',
+      });
+
+      await expect(service.refresh('invalid-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should throw UnauthorizedException if user not found', async () => {
+      mockSessionsService.findByToken.mockResolvedValue({
+        id: 1,
+        type: 'refresh',
+        user: { id: 1 },
+      });
+      mockUsersService.findOneById.mockResolvedValue(null);
+
+      await expect(service.refresh('invalid-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should return new access token if session is valid', async () => {
+      mockSessionsService.findByToken.mockResolvedValue({
+        id: 1,
+        type: 'refresh',
+        user: { id: 1 },
+      });
+      mockUsersService.findOneById.mockResolvedValue({
+        id: 1,
+        email: 'user@example.com',
+      });
+      mockJwtService.signAsync.mockResolvedValue('new-access-token');
+      mockSessionsService.create.mockResolvedValue({
+        token: 'mocked-jwt-token',
+      });
+
+      const res = await service.refresh('valid-token');
+      expect(res).toEqual({
+        access_token: 'mocked-jwt-token',
+        refresh_token: 'mocked-jwt-token',
+      });
+      expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+        { id: 1, email: 'user@example.com', type: 'access' },
+        { expiresIn: '15m' },
+      );
+    });
+  });
+
   describe('AuthService - password reset', () => {
     it('requestPasswordReset returns token when email exists', async () => {
       const dto: ForgotPasswordDto = { email: 'a@b.com' } as ForgotPasswordDto;
@@ -138,8 +204,12 @@ describe('AuthService', () => {
         id: 1,
         email: dto.email,
       });
+
       mockJwtService.signAsync.mockResolvedValue('signed-token');
-      mockSessionsService.create.mockResolvedValue(true);
+      mockSessionsService.create.mockResolvedValue({
+        id: 1,
+        token: 'signed-token',
+      });
 
       const res = await service.requestPasswordReset(dto);
       expect(res).toHaveProperty('token', 'signed-token');
@@ -207,7 +277,7 @@ describe('AuthService', () => {
         id: 1,
         jti: 123,
       });
-      mockSessionsService.findByJti.mockResolvedValue({
+      mockSessionsService.findByToken.mockResolvedValue({
         id: 1,
         userId: 1,
         revoked: false,

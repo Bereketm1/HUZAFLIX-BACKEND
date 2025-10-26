@@ -49,6 +49,11 @@ export class SessionsService {
     return s;
   }
 
+  async deactivateAllOldSessions(jti: number): Promise<number> {
+    const result = await this.repo.update({ jti }, { revoked: true });
+    return result.affected ?? 0;
+  }
+
   async markUsed(id: number): Promise<void> {
     await this.repo.update({ id }, { usedAt: new Date() } as Partial<Session>);
   }

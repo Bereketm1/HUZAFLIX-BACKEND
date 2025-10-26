@@ -27,7 +27,9 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document);
+  SwaggerModule.setup('api-docs', app, document, {
+    jsonDocumentUrl: 'api-docs/json',
+  });
   app.useGlobalInterceptors(new ResponseInterceptor());
 
   await app.listen(process.env.APP_PORT || 3000);

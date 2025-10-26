@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { User } from 'src/users/users.entity';
 
-export type SessionType = 'refresh' | 'password_reset' | 'other';
+export type SessionType = 'refresh' | 'reset' | 'access';
 
 @Entity('sessions')
 export class Session {

@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RefreshGuard, ResetGuard } from 'src/common/guards/jwt.guard';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -11,6 +12,7 @@ describe('AuthController', () => {
   const mockAuthService = {
     login: jest.fn(),
     register: jest.fn(),
+    refresh: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -23,7 +25,14 @@ describe('AuthController', () => {
           useValue: { get: jest.fn().mockReturnValue('') },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(RefreshGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .overrideGuard(ResetGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });
@@ -66,6 +75,25 @@ describe('AuthController', () => {
       const response = await controller.register(registerDto);
 
       expect(mockAuthService.register).toHaveBeenCalledWith(registerDto);
+      expect(response).toEqual(result);
+    });
+  });
+
+  describe('refresh', () => {
+    it('should call authService.refresh and return its result', async () => {
+      const refreshToken = 'Bearer refresh.token';
+      const result = {
+        access_token: 'jwt.token',
+        refresh_token: 'new.refresh.token',
+      };
+
+      mockAuthService.refresh.mockResolvedValue(result);
+
+      const response = await controller.refresh(refreshToken);
+
+      expect(mockAuthService.refresh).toHaveBeenCalledWith(
+        refreshToken.split(' ')[1],
+      );
       expect(response).toEqual(result);
     });
   });

@@ -5,66 +5,80 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
+import { SessionsService } from 'src/sessions/sessions.service';
 import { UsersService } from 'src/users/users.service';
 
 interface JwtPayload {
   id?: number;
+  type?: string;
   [key: string]: unknown;
+}
+
+interface RequestWithUser extends Request {
+  user?: unknown;
 }
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
+  protected readonly validatingType: string = 'access';
+
   constructor(
-    private readonly jwtService: JwtService,
+    protected readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly sessionsService: SessionsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // get request as unknown then narrow to a typed shape to avoid `any`
-    // getRequest is typed as any by the framework; narrow via unknown.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const rawRequest = context.switchToHttp().getRequest();
-    const request = rawRequest as {
-      headers?: Record<string, string | string[]>;
-      user?: unknown;
-    };
-    const rawAuth = request.headers?.authorization;
-    const authHeader = Array.isArray(rawAuth) ? rawAuth[0] : rawAuth;
-    if (!authHeader || typeof authHeader !== 'string')
-      throw new UnauthorizedException('Missing Authorization');
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
+    const authHeader = request.headers.authorization;
 
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2)
-      throw new UnauthorizedException('Invalid authorization header');
-    const [scheme, token] = parts;
+    if (typeof authHeader !== 'string')
+      throw new UnauthorizedException('Missing Authorization header');
+
+    const [scheme, token] = authHeader.split(' ');
+
     if (scheme !== 'Bearer' || !token)
-      throw new UnauthorizedException('Invalid authorization header');
+      throw new UnauthorizedException('Invalid Authorization format');
 
-    let payload: JwtPayload | undefined;
+    const decoded: JwtPayload | null = this.jwtService.decode(token);
+    if (!decoded?.type || decoded.type !== this.validatingType)
+      throw new UnauthorizedException('Invalid token type');
+
+    const payload = await this.verifyToken(token);
+
+    const session = await this.sessionsService.findByToken(token);
+    if (!session || session.revoked || session.usedAt)
+      throw new UnauthorizedException('Invalid or revoked token');
+
+    if (session.expiresAt && session.expiresAt < new Date())
+      throw new UnauthorizedException('Expired token');
+
+    const user = await this.usersService.findOneById(payload.id as number);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    request.user = user;
+    return true;
+  }
+
+  private async verifyToken(token: string): Promise<JwtPayload> {
     try {
-      if (typeof token !== 'string')
-        throw new UnauthorizedException('Invalid token');
-      // verifyAsync returns unknown; cast safely after runtime checks
-      const verified = (await this.jwtService.verifyAsync(token)) as unknown;
+      const verified: JwtPayload = await this.jwtService.verifyAsync(token);
       if (!verified || typeof verified !== 'object')
-        throw new UnauthorizedException('Invalid or expired token');
-      payload = verified as JwtPayload;
+        throw new UnauthorizedException('Invalid token');
+      return verified;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
-
-    if (!payload?.id) throw new UnauthorizedException();
-
-    let user: Awaited<ReturnType<UsersService['findOneById']>> | undefined;
-    try {
-      user = await this.usersService.findOneById(payload.id);
-    } catch {
-      throw new UnauthorizedException();
-    }
-
-    if (!user) throw new UnauthorizedException();
-    // assign with an explicit cast to avoid unsafe-member-access lint issues
-    request.user = user as unknown;
-    return true;
   }
+}
+
+@Injectable()
+export class RefreshGuard extends JwtAuthGuard {
+  protected readonly validatingType = 'refresh';
+}
+
+@Injectable()
+export class ResetGuard extends JwtAuthGuard {
+  protected readonly validatingType = 'reset';
 }
