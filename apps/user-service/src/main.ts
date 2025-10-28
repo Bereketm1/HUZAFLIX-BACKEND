@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { DataSource } from 'typeorm';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from './common/interceptors/response.interceptors';
+import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -32,6 +33,15 @@ async function bootstrap() {
   });
   app.useGlobalInterceptors(new ResponseInterceptor());
 
+  app.connectMicroservice({
+    transport: Transport.REDIS,
+    options: {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    },
+  });
+
+  await app.startAllMicroservices();
   await app.listen(process.env.APP_PORT || 3000);
 }
 void bootstrap();

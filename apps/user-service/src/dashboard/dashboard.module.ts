@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/users/users.entity';
-import { DashboardController } from './dashboard.controller';
 import { CommonModule } from 'src/common/common.module';
 import { UsersModule } from 'src/users/users.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
+import { DashboardMessageController } from './dashboard.message.controller';
 
 @Module({
   imports: [
@@ -14,7 +14,7 @@ import { SessionsModule } from 'src/sessions/sessions.module';
     TypeOrmModule.forFeature([User]),
     CommonModule,
   ],
+  controllers: [DashboardMessageController],
   providers: [DashboardService],
-  controllers: [DashboardController],
 })
 export class DashboardModule {}

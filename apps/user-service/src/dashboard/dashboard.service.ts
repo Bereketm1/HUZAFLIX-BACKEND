@@ -74,4 +74,20 @@ export class DashboardService {
       .limit(limit)
       .getMany();
   }
+
+  async getAggregatedStat() {
+    const total = await this.totalUsers();
+    const today = await this.newUsersToday();
+    const week = await this.newUsersThisWeek();
+    const month = await this.newUsersThisMonth();
+    const latest = await this.latestUsers();
+
+    return {
+      total,
+      today,
+      week,
+      month,
+      latest,
+    };
+  }
 }
