@@ -62,6 +62,46 @@ describe('DashboardService', () => {
     });
   });
 
+  describe('totalActiveUsers', () => {
+    it('should return total count of active api_consumer users', async () => {
+      mockQueryBuilder.getCount.mockResolvedValue(3);
+
+      const result = await service.totalActiveUsers();
+
+      expect(mockUserRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'user',
+      );
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'role.name = :roleName',
+        { roleName: 'api_consumer' },
+      );
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'user.deletedAt IS NULL',
+      );
+      expect(result).toBe(3);
+    });
+  });
+
+  describe('totalInactiveUsers', () => {
+    it('should return total count of inactive api_consumer users', async () => {
+      mockQueryBuilder.getCount.mockResolvedValue(2);
+
+      const result = await service.totalInactiveUsers();
+
+      expect(mockUserRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'user',
+      );
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'role.name = :roleName',
+        { roleName: 'api_consumer' },
+      );
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'user.deletedAt IS NOT NULL',
+      );
+      expect(result).toBe(2);
+    });
+  });
+
   describe('newUsersToday', () => {
     it('should count users created today', async () => {
       mockQueryBuilder.getCount.mockResolvedValue(3);

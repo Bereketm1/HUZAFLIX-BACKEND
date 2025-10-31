@@ -21,6 +21,16 @@ export class DashboardService {
     return this.apiConsumerQuery().getCount();
   }
 
+  async totalActiveUsers(): Promise<number> {
+    return this.apiConsumerQuery().where('user.deletedAt IS NULL').getCount();
+  }
+
+  async totalInactiveUsers(): Promise<number> {
+    return this.apiConsumerQuery()
+      .where('user.deletedAt IS NOT NULL')
+      .getCount();
+  }
+
   async newUsersThisMonth(): Promise<number> {
     const start = new Date();
     start.setDate(1);
