@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { lastValueFrom } from 'rxjs';
 import { Request } from 'express';
-import { getJwtServiceSingleton, getSessionClientSingleton, getUserClientSingleton } from '../internal/singletons';
+import {
+  getJwtServiceSingleton,
+  getSessionClientSingleton,
+} from '../internal/singletons';
 
 interface JwtPayload {
   id?: number;
@@ -46,14 +49,13 @@ export class JwtAuthGuard implements CanActivate {
     if (scheme !== 'Bearer' || !token)
       throw new UnauthorizedException('Invalid Authorization format');
 
-    // Verify token and check type
     const payload = await this.verifyToken(token);
     if (!payload || payload.type !== this.validatingType)
       throw new UnauthorizedException('Invalid token type');
 
-    // Fetch session dynamically via microservice
     const sessionClient = getSessionClientSingleton();
-    if (!sessionClient) throw new UnauthorizedException('Session service unavailable');
+    if (!sessionClient)
+      throw new UnauthorizedException('Session service unavailable');
 
     try {
       await sessionClient.connect();
@@ -67,7 +69,9 @@ export class JwtAuthGuard implements CanActivate {
         sessionClient.send<SessionRecord>('get_session_by_token', token),
       );
     } catch {
-      throw new UnauthorizedException('Failed to fetch session from microservice');
+      throw new UnauthorizedException(
+        'Failed to fetch session from microservice',
+      );
     }
 
     if (!session) throw new UnauthorizedException('Session not found');
@@ -76,27 +80,17 @@ export class JwtAuthGuard implements CanActivate {
     if (session.expiresAt && new Date(session.expiresAt) < new Date())
       throw new UnauthorizedException('Token expired');
 
-    const userClient = getUserClientSingleton();
-    if (!userClient) throw new UnauthorizedException('User service unavailable');
-
-    try {
-      await userClient.connect();
-    } catch {
-      throw new UnauthorizedException('User service unavailable');
-    }
-
     let user: UserRecord | null = null;
     try {
       user = await lastValueFrom(
-        userClient.send<UserRecord>('get_user_by_id', payload.id),
+        sessionClient.send<UserRecord>('get_user_by_id', payload.id),
       );
     } catch {
       throw new UnauthorizedException('Failed to fetch user from microservice');
     }
     if (user) {
       request.user = user;
-    }
-    else {
+    } else {
       request.user = null;
     }
 
@@ -105,7 +99,8 @@ export class JwtAuthGuard implements CanActivate {
 
   private async verifyToken(token: string): Promise<JwtPayload> {
     const jwtService = getJwtServiceSingleton();
-    if (!jwtService) throw new UnauthorizedException('Token service unavailable');
+    if (!jwtService)
+      throw new UnauthorizedException('Token service unavailable');
     try {
       const verified: JwtPayload = await jwtService.verifyAsync(token);
       if (!verified || typeof verified !== 'object')
@@ -116,8 +111,6 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 }
-
-// ---------------- Access / Refresh / Reset Guards ----------------
 
 @Injectable()
 export class RefreshGuard extends JwtAuthGuard {

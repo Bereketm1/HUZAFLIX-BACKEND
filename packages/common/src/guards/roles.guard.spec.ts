@@ -11,7 +11,6 @@ describe('RolesGuard', () => {
   });
 
   const makeCtx = (rolesMeta: string[] | undefined, user: unknown) => {
-    // mock reflector
     jest
       .spyOn(reflector, 'getAllAndOverride')
       .mockReturnValue(rolesMeta as any);

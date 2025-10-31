@@ -6,8 +6,10 @@ import { initCommonSingletons } from './internal/singletons';
 @Global()
 @Module({})
 export class CommonModule {
-  static forRoot(options: JwtModuleOptions): DynamicModule {
-    // Initialize internal singletons for DI-less access
+  static forRoot(
+    options: JwtModuleOptions,
+    redisOptions: { host: string; port: number },
+  ): DynamicModule {
     initCommonSingletons(options);
 
     return {
@@ -19,16 +21,8 @@ export class CommonModule {
             name: 'SESSION_SERVICE',
             transport: Transport.REDIS,
             options: {
-              host: process.env.REDIS_HOST || 'localhost',
-              port: parseInt(process.env.REDIS_PORT || '6379', 10),
-            },
-          },
-          {
-            name: 'USER_SERVICE',
-            transport: Transport.REDIS,
-            options: {
-              host: process.env.REDIS_HOST || 'localhost',
-              port: parseInt(process.env.REDIS_PORT || '6379', 10),
+              host: redisOptions.host,
+              port: redisOptions.port,
             },
           },
         ]),

@@ -2,23 +2,33 @@ image: node:20
 
 stages:
   - install
-  - lint
-  - test
+  - lint_common
+  - test_common
+  - lint_user_services
+  - test_user_services
 
 before_script:
   - corepack enable
   - corepack prepare pnpm@latest --activate
   - pnpm install
-  - pnpm tsc -b ./packages/common
+  - pnpm common build
 
-lint-job:
-  stage: test
+lint_common_job:
+  stage: lint_common
   script:
-    - pnpm --filter user-service run lint
-    - pnpm --filter payment-service run lint
+    - pnpm common lint
 
-test-job:
-  stage: test
+test_common_job:
+  stage: test_common
   script:
-    - pnpm --filter user-service run test
-    - pnpm --filter payment-service run test
+    - pnpm common test
+
+lint_user_services_job:
+  stage: lint_user_services
+  script:
+    - pnpm user lint
+
+test_user_services_job:
+  stage: test_user_services
+  script:
+    - pnpm user test

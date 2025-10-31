@@ -1,129 +1,100 @@
-// import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
-// import { JwtAuthGuard } from './jwt.guard';
-// import { JwtService } from '@nestjs/jwt';
+import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { JwtAuthGuard } from './jwt.guard';
+import { JwtService } from '@nestjs/jwt';
+jest.mock('../internal/singletons', () => ({
+  getJwtServiceSingleton: jest.fn(),
+  getSessionClientSingleton: jest.fn(),
+}));
 
-// describe('JwtAuthGuard (no service version)', () => {
-//   let guard: JwtAuthGuard;
+import {
+  getJwtServiceSingleton,
+  getSessionClientSingleton,
+} from '../internal/singletons';
+import { of } from 'rxjs';
 
-//   const mockJwtService = {
-//     verifyAsync: jest.fn(),
-//     decode: jest.fn(),
-//   } as any as JwtService;
+const mockJwtService = {
+  verifyAsync: jest.fn(),
+} as unknown as JwtService;
 
-//   const makeContext = (authHeader?: string) => {
-//     return {
-//       switchToHttp: () => ({
-//         getRequest: () => ({
-//           headers: { authorization: authHeader },
-//           user: null,
-//           session: null,
-//         }),
-//       }),
-//     } as unknown as ExecutionContext;
-//   };
+const mockSessionClient = {
+  connect: jest.fn(),
+  send: jest.fn(),
+};
 
-//   const validUser = { id: 1, email: 'a@b.com' };
-//   const validSession = {
-//     token: 'valid.token',
-//     revoked: false,
-//     usedAt: null,
-//     expiresAt: new Date(Date.now() + 1000),
-//   };
+const validUser = { id: 1, email: 'a@b.com' };
+const validSession = {
+  token: 'valid.token',
+  revoked: false,
+  usedAt: null,
+  expiresAt: new Date(Date.now() + 1000),
+};
 
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
+const makeContext = (authHeader?: string) =>
+  ({
+    switchToHttp: () => ({
+      getRequest: () => ({
+        headers: { authorization: authHeader },
+        user: null,
+        session: null,
+      }),
+    }),
+  }) as unknown as ExecutionContext;
 
-//   it('should allow when token, user, and session are valid', async () => {
-//     const ctx = makeContext('Bearer valid.token');
+describe('JwtAuthGuard (mocked singletons)', () => {
+  let guard: JwtAuthGuard;
 
-//     (mockJwtService.decode as jest.Mock).mockReturnValue({
-//       type: 'access',
-//     });
-//     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1 });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (getJwtServiceSingleton as jest.Mock).mockReturnValue(mockJwtService);
+    (getSessionClientSingleton as jest.Mock).mockReturnValue(mockSessionClient);
+    guard = new JwtAuthGuard();
+  });
 
-//     guard = new JwtAuthGuard(mockJwtService, validSession, validUser);
+  it('should allow when token, user, and session are valid', async () => {
+    const ctx = makeContext('Bearer valid.token');
 
-//     await expect(guard.canActivate(ctx)).resolves.toBe(true);
-//   });
+    (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({
+      id: 1,
+      type: 'access',
+    });
 
-//   it('should throw when missing authorization header', async () => {
-//     const ctx = makeContext(undefined);
-//     guard = new JwtAuthGuard(mockJwtService, validSession, validUser);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
+    mockSessionClient.connect.mockResolvedValue(true);
+    mockSessionClient.send
+      .mockReturnValueOnce(of(validSession))
+      .mockReturnValueOnce(of(validUser));
 
-//   it('should throw when authorization scheme is not Bearer', async () => {
-//     const ctx = makeContext('Basic abc');
-//     guard = new JwtAuthGuard(mockJwtService, validSession, validUser);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+  });
 
-//   it('should throw when token type is invalid', async () => {
-//     const ctx = makeContext('Bearer valid.token');
-//     (mockJwtService.decode as jest.Mock).mockReturnValue({ type: 'refresh' });
-//     guard = new JwtAuthGuard(mockJwtService, validSession, validUser);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
+  it('should throw when missing authorization header', async () => {
+    const ctx = makeContext(undefined);
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
 
-//   it('should throw when token verification fails', async () => {
-//     const ctx = makeContext('Bearer bad.token');
-//     (mockJwtService.decode as jest.Mock).mockReturnValue({ type: 'access' });
-//     (mockJwtService.verifyAsync as jest.Mock).mockRejectedValue(
-//       new Error('bad'),
-//     );
+  it('should throw when authorization scheme is not Bearer', async () => {
+    const ctx = makeContext('Basic abc');
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
 
-//     guard = new JwtAuthGuard(mockJwtService, validSession, validUser);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
+  it('should throw when token verification fails', async () => {
+    const ctx = makeContext('Bearer bad.token');
+    (mockJwtService.verifyAsync as jest.Mock).mockRejectedValue(new Error());
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
 
-//   it('should throw when session is missing', async () => {
-//     const ctx = makeContext('Bearer valid.token');
-//     (mockJwtService.decode as jest.Mock).mockReturnValue({ type: 'access' });
-//     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1 });
+  it('should throw when session is expired', async () => {
+    const ctx = makeContext('Bearer valid.token');
+    (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({
+      id: 1,
+      type: 'access',
+    });
+    const expired = { ...validSession, expiresAt: new Date(Date.now() - 1000) };
 
-//     guard = new JwtAuthGuard(mockJwtService, null, validUser);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
+    mockSessionClient.connect.mockResolvedValue(true);
+    mockSessionClient.send
+      .mockReturnValueOnce(of(expired))
+      .mockReturnValueOnce(of(validUser));
 
-//   it('should throw when session is expired', async () => {
-//     const expiredSession = {
-//       ...validSession,
-//       expiresAt: new Date(Date.now() - 1000),
-//     };
-//     const ctx = makeContext('Bearer valid.token');
-//     (mockJwtService.decode as jest.Mock).mockReturnValue({ type: 'access' });
-//     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1 });
-
-//     guard = new JwtAuthGuard(mockJwtService, expiredSession, validUser);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
-
-//   it('should throw when session is revoked', async () => {
-//     const revokedSession = { ...validSession, revoked: true };
-//     const ctx = makeContext('Bearer valid.token');
-//     (mockJwtService.decode as jest.Mock).mockReturnValue({ type: 'access' });
-//     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1 });
-
-//     guard = new JwtAuthGuard(mockJwtService, revokedSession, validUser);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
-
-//   it('should throw when user is missing', async () => {
-//     const ctx = makeContext('Bearer valid.token');
-//     (mockJwtService.decode as jest.Mock).mockReturnValue({ type: 'access' });
-//     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 1 });
-
-//     guard = new JwtAuthGuard(mockJwtService, validSession, null);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
-
-//   it('should throw when user id mismatches payload', async () => {
-//     const ctx = makeContext('Bearer valid.token');
-//     (mockJwtService.decode as jest.Mock).mockReturnValue({ type: 'access' });
-//     (mockJwtService.verifyAsync as jest.Mock).mockResolvedValue({ id: 2 });
-
-//     guard = new JwtAuthGuard(mockJwtService, validSession, validUser);
-//     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
-//   });
-// });
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+  });
+});

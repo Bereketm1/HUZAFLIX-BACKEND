@@ -1,5 +1,9 @@
 import { JwtService, JwtModuleOptions } from '@nestjs/jwt';
-import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
+import {
+  ClientProxy,
+  ClientProxyFactory,
+  Transport,
+} from '@nestjs/microservices';
 
 let jwtServiceInstance: JwtService | null = null;
 let sessionClientInstance: ClientProxy | null = null;
@@ -12,11 +16,9 @@ function redisOptionsFromEnv() {
 }
 
 export function initCommonSingletons(options: JwtModuleOptions): void {
-  // Create a standalone JwtService without DI
   jwtServiceInstance = new JwtService(options);
 
   const redis = redisOptionsFromEnv();
-  // Create a standalone microservice client using Redis transport to match app
   sessionClientInstance = ClientProxyFactory.create({
     transport: Transport.REDIS,
     options: {
@@ -33,10 +35,3 @@ export function getJwtServiceSingleton(): JwtService | null {
 export function getSessionClientSingleton(): ClientProxy | null {
   return sessionClientInstance;
 }
-
-export function getUserClientSingleton(): ClientProxy | null {
-  // Reuse the same Redis client for user messages
-  return sessionClientInstance;
-}
-
-

@@ -22,9 +22,7 @@ export class RolesGuard implements CanActivate {
     );
     if (!requiredRoles || requiredRoles.length === 0) return true;
 
-    // getRequest is typed as any by the framework; narrow via unknown then typed shape
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const rawRequest = context.switchToHttp().getRequest();
+    const rawRequest: ExecutionContext = context.switchToHttp().getRequest();
     const request = rawRequest as { user?: { role?: { name?: string } } };
     const roleName: string | undefined = request.user?.role?.name;
     if (!roleName) throw new ForbiddenException('Access denied');

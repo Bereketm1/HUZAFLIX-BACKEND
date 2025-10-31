@@ -66,7 +66,10 @@ const jwtOptions: JwtModuleOptions = {
       ttl: parseInt(process.env.CACHE_TTL || '60000', 10),
       isGlobal: true,
     }),
-    CommonModule.forRoot(jwtOptions),
+    CommonModule.forRoot(jwtOptions, {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    }),
     RolesModule,
     UsersModule,
     AuthModule,

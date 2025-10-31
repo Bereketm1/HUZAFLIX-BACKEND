@@ -11,5 +11,3 @@ export class UserMessageController {
     return await this.usersService.findOneById(id);
   }
 }
-
-
