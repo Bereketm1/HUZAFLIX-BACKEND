@@ -2,12 +2,8 @@ image: node:20
 
 stages:
   - install
-  - lint_common
-  - test_common
-  - lint_user_services
-  - test_user_services
-  - lint_gateway_services
-  - test_gateway_services
+  - lint
+  - test
 
 before_script:
   - corepack enable
@@ -16,31 +12,41 @@ before_script:
   - pnpm common build
 
 lint_common_job:
-  stage: lint_common
+  stage: lint
   script:
     - pnpm common lint
 
 test_common_job:
-  stage: test_common
+  stage: test
   script:
     - pnpm common test
 
 lint_user_services_job:
-  stage: lint_user_services
+  stage: lint
   script:
     - pnpm user lint
 
 test_user_services_job:
-  stage: test_user_services
+  stage: test
   script:
     - pnpm user test
 
+lint_analytics_services_job:
+  stage: lint
+  script:
+    - pnpm analytics lint
+
+test_analytics_services_job:
+  stage: test
+  script:
+    - pnpm analytics test
+
 lint_gateway_services_job:
-  stage: lint_gateway_services
+  stage: lint
   script:
     - pnpm gateway lint
 
 test_gateway_services_job:
-  stage: test_gateway_services
+  stage: test
   script:
-    - pnpm user test
+    - pnpm gateway test
