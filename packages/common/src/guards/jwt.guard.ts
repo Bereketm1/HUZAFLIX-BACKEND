@@ -6,8 +6,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { SessionsService } from 'src/sessions/sessions.service';
-import { UsersService } from 'src/users/users.service';
 
 interface JwtPayload {
   id?: number;
@@ -15,8 +13,21 @@ interface JwtPayload {
   [key: string]: unknown;
 }
 
-interface RequestWithUser extends Request {
-  user?: unknown;
+interface SessionRecord {
+  token: string;
+  revoked?: boolean;
+  usedAt?: Date | null;
+  expiresAt?: Date | null;
+}
+
+interface UserRecord {
+  id: number;
+  [key: string]: unknown;
+}
+
+interface RequestWithAuth extends Request {
+  user?: UserRecord | null;
+  session?: SessionRecord | null;
 }
 
 @Injectable()
@@ -25,12 +36,12 @@ export class JwtAuthGuard implements CanActivate {
 
   constructor(
     protected readonly jwtService: JwtService,
-    private readonly usersService: UsersService,
-    private readonly sessionsService: SessionsService,
+    private readonly session?: SessionRecord | null,
+    private readonly user?: UserRecord | null,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<RequestWithUser>();
+    const request = context.switchToHttp().getRequest<RequestWithAuth>();
     const authHeader = request.headers.authorization;
 
     if (typeof authHeader !== 'string')
@@ -47,17 +58,21 @@ export class JwtAuthGuard implements CanActivate {
 
     const payload = await this.verifyToken(token);
 
-    const session = await this.sessionsService.findByToken(token);
-    if (!session || session.revoked || session.usedAt)
-      throw new UnauthorizedException('Invalid or revoked token');
+    if (!this.session) throw new UnauthorizedException('Session not provided');
+    if (this.session.token !== token)
+      throw new UnauthorizedException('Token does not match session');
+    if (this.session.revoked)
+      throw new UnauthorizedException('Token has been revoked');
+    if (this.session.usedAt)
+      throw new UnauthorizedException('Token has already been used');
+    if (this.session.expiresAt && this.session.expiresAt < new Date())
+      throw new UnauthorizedException('Token has expired');
 
-    if (session.expiresAt && session.expiresAt < new Date())
-      throw new UnauthorizedException('Expired token');
+    if (!this.user || this.user.id !== payload.id)
+      throw new UnauthorizedException('User not provided or mismatched');
 
-    const user = await this.usersService.findOneById(payload.id as number);
-    if (!user) throw new UnauthorizedException('User not found');
+    request.user = this.user;
 
-    request.user = user;
     return true;
   }
 
