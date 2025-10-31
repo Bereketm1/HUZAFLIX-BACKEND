@@ -6,7 +6,13 @@ import { AppService } from './app.service';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { CommonModule } from '@huzaflix/common';
+import {
+  CommonModule,
+  JwtAuthGuard,
+  RefreshGuard,
+  ResetGuard,
+  RolesGuard,
+} from '@huzaflix/common';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -60,16 +66,19 @@ const jwtOptions: JwtModuleOptions = {
       ttl: parseInt(process.env.CACHE_TTL || '60000', 10),
       isGlobal: true,
     }),
+    CommonModule.forRoot(jwtOptions),
     RolesModule,
     UsersModule,
     AuthModule,
-    CommonModule.forRoot(jwtOptions),
-
     DashboardModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    JwtAuthGuard,
+    RefreshGuard,
+    ResetGuard,
+    RolesGuard,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
