@@ -4,6 +4,7 @@ stages:
   - install
   - lint
   - test
+  - build
 
 before_script:
   - corepack enable
@@ -21,6 +22,11 @@ test_common_job:
   script:
     - pnpm common test
 
+build_common_job:
+  stage: build
+  script:
+    - pnpm common build
+
 lint_user_services_job:
   stage: lint
   script:
@@ -30,6 +36,11 @@ test_user_services_job:
   stage: test
   script:
     - pnpm user test
+
+build_user_services_job:
+  stage: build
+  script:
+    - pnpm user build
 
 lint_analytics_services_job:
   stage: lint
@@ -41,6 +52,11 @@ test_analytics_services_job:
   script:
     - pnpm analytics test
 
+build_analytics_services_job:
+  stage: build
+  script:
+    - pnpm analytics build
+
 lint_gateway_services_job:
   stage: lint
   script:
@@ -50,3 +66,8 @@ test_gateway_services_job:
   stage: test
   script:
     - pnpm gateway test
+
+build_gateway_services_job:
+  stage: build
+  script:
+    - pnpm gateway build
