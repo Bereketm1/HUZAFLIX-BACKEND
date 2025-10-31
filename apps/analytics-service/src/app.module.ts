@@ -17,6 +17,7 @@ import Redis from 'ioredis';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-redis-store';
 import { JwtModuleOptions } from '@nestjs/jwt';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 export type RedisClient = Redis;
 
@@ -47,6 +48,16 @@ const jwtOptions: JwtModuleOptions = {
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production',
     }),
+    ClientsModule.register([
+      {
+        name: 'DASHBOARD_SERVICE',
+        transport: Transport.REDIS,
+        options: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        },
+      },
+    ]),
     ThrottlerModule.forRoot({
       throttlers: [
         {
