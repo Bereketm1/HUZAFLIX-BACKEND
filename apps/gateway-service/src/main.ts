@@ -1,47 +1,28 @@
-import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DataSource } from 'typeorm';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ResponseInterceptor } from '@huzaflix/common';
-import { Transport } from '@nestjs/microservices';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: true });
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  const services = {
+    '/auth': 'http://localhost:4001',
+  };
 
-  const dataSource = app.get(DataSource);
-  try {
-    await dataSource.query('SELECT NOW()');
-    console.log('✅ Database connected successfully!');
-  } catch (err) {
-    console.error('❌ Database connection failed:', (err as Error).message);
+  for (const [route, target] of Object.entries(services)) {
+    app.use(
+      route,
+      createProxyMiddleware({
+        target,
+        changeOrigin: true,
+        pathRewrite: (path) => path,
+      }),
+    );
   }
 
-  const config = new DocumentBuilder()
-    .setTitle('Huzaflix Gateway API Documentation')
-    .setDescription('API documentation for Huzaflix Backend')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document, {
-    jsonDocumentUrl: 'api-docs/json',
-  });
-  app.useGlobalInterceptors(new ResponseInterceptor());
-
-  app.connectMicroservice({
-    transport: Transport.REDIS,
-    options: {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    },
-  });
-
-  await app.startAllMicroservices();
-  await app.listen(process.env.APP_PORT || 3001);
+  await app.listen(3000);
+  console.log('🚀 Gateway running on http://localhost:3000');
 }
 void bootstrap();

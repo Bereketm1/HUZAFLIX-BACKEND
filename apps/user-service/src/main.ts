@@ -24,6 +24,7 @@ async function bootstrap() {
     .setTitle('Huzaflix User Services API Documentation')
     .setDescription('API documentation for Huzaflix Backend')
     .setVersion('1.0')
+    .addServer('http://localhost:3000/auth', 'Local Development')
     .addBearerAuth()
     .build();
 
