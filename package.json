@@ -5,7 +5,8 @@
   "scripts": {
     "common": "pnpm --filter common run",
     "gateway": "pnpm --filter gateway-service run",
-    "user": "pnpm --filter user-service run"
+    "user": "pnpm --filter user-service run",
+    "analytics": "pnpm --filter analytics-service run"
   },
   "dependencies": {
     "@casl/ability": "^6.5.0",

@@ -9,6 +9,7 @@ async function bootstrap() {
 
   const services = {
     '/auth': 'http://localhost:4001',
+    '/analytics': 'http://localhost:4002',
   };
 
   for (const [route, target] of Object.entries(services)) {
