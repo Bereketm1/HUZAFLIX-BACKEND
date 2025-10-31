@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "common": "pnpm --filter common run",
     "user": "pnpm --filter user-service run"
   },
   "dependencies": {

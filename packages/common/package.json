@@ -4,12 +4,7 @@
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "tsc -b",
-    "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
     "test": "jest --config jest.config.ts"
   }

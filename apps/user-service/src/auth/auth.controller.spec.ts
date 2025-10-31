@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { RefreshGuard, ResetGuard } from 'src/common/guards/jwt.guard';
+import { RefreshGuard, ResetGuard } from '@huzaflix/common';
 
 describe('AuthController', () => {
   let controller: AuthController;

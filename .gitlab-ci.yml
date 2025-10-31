@@ -9,6 +9,7 @@ before_script:
   - corepack enable
   - corepack prepare pnpm@latest --activate
   - pnpm install
+  - pnpm tsc -b ./packages/common
 
 lint-job:
   stage: test

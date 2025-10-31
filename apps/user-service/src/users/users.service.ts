@@ -10,8 +10,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { RolesService } from 'src/roles/roles.service';
-import { PaginatedResponse } from 'src/common/dto/paginated.dto';
-import { paginate } from 'src/common/utils/paginate.util';
+import { PaginatedResponse } from '@huzaflix/common';
+import { paginate } from '@huzaflix/common';
 
 @Injectable()
 export class UsersService {

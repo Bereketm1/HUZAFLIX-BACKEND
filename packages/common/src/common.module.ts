@@ -7,11 +7,7 @@ export class CommonModule {
   static forRoot(options: JwtModuleOptions): DynamicModule {
     return {
       module: CommonModule,
-      imports: [
-        JwtModule.register({
-          ...options,
-        }),
-      ],
+      imports: [JwtModule.register(options)],
       exports: [JwtModule],
     };
   }

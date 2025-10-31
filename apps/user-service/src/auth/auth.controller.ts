@@ -24,7 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
-import { RefreshGuard, ResetGuard } from 'src/common/guards/jwt.guard';
+import { RefreshGuard, ResetGuard } from '@huzaflix/common';
 
 type OAuthProfile = { email?: string; name?: string };
 

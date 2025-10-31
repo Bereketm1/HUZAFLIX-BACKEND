@@ -6,7 +6,7 @@ import { AppService } from './app.service';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { CommonModule } from './common/common.module';
+import { CommonModule } from '@huzaflix/common';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -14,6 +14,7 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
 import Redis from 'ioredis';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-redis-store';
+import { JwtModuleOptions } from '@nestjs/jwt';
 
 export type RedisClient = Redis;
 
@@ -22,6 +23,11 @@ const redisClient = new Redis({
   port: parseInt(process.env.REDIS_PORT || '6379', 10),
   password: process.env.REDIS_PASSWORD,
 });
+
+const jwtOptions: JwtModuleOptions = {
+  secret: 'defaultSecret',
+  signOptions: { expiresIn: '1h' },
+};
 
 @Module({
   imports: [
@@ -57,7 +63,8 @@ const redisClient = new Redis({
     RolesModule,
     UsersModule,
     AuthModule,
-    CommonModule,
+    CommonModule.forRoot(jwtOptions),
+
     DashboardModule,
   ],
   controllers: [AppController],
