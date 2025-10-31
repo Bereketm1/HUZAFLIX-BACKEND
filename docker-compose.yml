@@ -33,6 +33,20 @@ services:
       - postgres
       - redis
 
+  gateway-service:
+    build:
+      context: ./apps/gateway-service
+      dockerfile: Dockerfile
+    container_name: huzaflix_gateway_service
+    restart: unless-stopped
+    env_file:
+      - ./apps/gateway-service/.env
+    ports:
+      - '${GATEWAY_SERVICE_PORT}:3001'
+    depends_on:
+      - postgres
+      - redis
+
 volumes:
   postgres_data:
 

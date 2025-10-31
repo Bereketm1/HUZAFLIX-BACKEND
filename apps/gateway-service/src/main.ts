@@ -21,7 +21,7 @@ async function bootstrap() {
   }
 
   const config = new DocumentBuilder()
-    .setTitle('Huzaflix User Services API Documentation')
+    .setTitle('Huzaflix Gateway API Documentation')
     .setDescription('API documentation for Huzaflix Backend')
     .setVersion('1.0')
     .addBearerAuth()
@@ -42,6 +42,6 @@ async function bootstrap() {
   });
 
   await app.startAllMicroservices();
-  await app.listen(process.env.APP_PORT || 3000);
+  await app.listen(process.env.APP_PORT || 3001);
 }
 void bootstrap();
