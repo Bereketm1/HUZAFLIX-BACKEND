@@ -6,6 +6,8 @@ stages:
   - test_common
   - lint_user_services
   - test_user_services
+  - lint_gateway_services
+  - test_gateway_services
 
 before_script:
   - corepack enable
@@ -30,5 +32,15 @@ lint_user_services_job:
 
 test_user_services_job:
   stage: test_user_services
+  script:
+    - pnpm user test
+
+lint_gateway_services_job:
+  stage: lint_gateway_services
+  script:
+    - pnpm gateway lint
+
+test_gateway_services_job:
+  stage: test_gateway_services
   script:
     - pnpm user test
