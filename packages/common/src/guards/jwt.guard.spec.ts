@@ -25,8 +25,8 @@ const validUser = { id: 1, email: 'a@b.com' };
 const validSession = {
   token: 'valid.token',
   revoked: false,
-  usedAt: null,
-  expiresAt: new Date(Date.now() + 1000),
+  used_at: null,
+  expires_at: new Date(Date.now() + 1000),
 };
 
 const makeContext = (authHeader?: string) =>
@@ -88,7 +88,10 @@ describe('JwtAuthGuard (mocked singletons)', () => {
       id: 1,
       type: 'access',
     });
-    const expired = { ...validSession, expiresAt: new Date(Date.now() - 1000) };
+    const expired = {
+      ...validSession,
+      expires_at: new Date(Date.now() - 1000),
+    };
 
     mockSessionClient.connect.mockResolvedValue(true);
     mockSessionClient.send

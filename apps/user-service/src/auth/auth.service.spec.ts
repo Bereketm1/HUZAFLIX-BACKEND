@@ -239,8 +239,8 @@ describe('AuthService', () => {
         id: 1,
         userId: 1,
         revoked: false,
-        usedAt: null,
-        expiresAt: new Date(Date.now() + 10000),
+        used_at: null,
+        expires_at: new Date(Date.now() + 10000),
       });
       mockUsersService.updatePassword.mockResolvedValue(true);
 
@@ -281,8 +281,8 @@ describe('AuthService', () => {
         id: 1,
         userId: 1,
         revoked: false,
-        usedAt: null,
-        expiresAt: new Date(Date.now() - 10000),
+        used_at: null,
+        expires_at: new Date(Date.now() - 10000),
       });
 
       await expect(service.resetPassword(token, dto)).rejects.toThrow(
