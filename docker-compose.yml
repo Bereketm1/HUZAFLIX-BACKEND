@@ -65,6 +65,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./apps/gateway-service/.env
+    ports:
+      - 3000:3000
 
   prometheus:
     image: prom/prometheus:latest
