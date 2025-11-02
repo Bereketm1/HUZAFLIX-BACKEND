@@ -1,0 +1,13 @@
+{
+  "name": "@huzaflix/common",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "jest --config jest.config.ts"
+  }
+}

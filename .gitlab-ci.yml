@@ -1,26 +1,73 @@
-# Use an official Node.js image as the base for our jobs
-image: node:18
+image: node:20
 
-# Define the stages of our pipeline. Jobs run in this order.
 stages:
-  - build
+  - install
+  - lint
   - test
+  - build
 
-# This block runs before any job in the pipeline
 before_script:
-  - echo "Installing dependencies..."
-  - npm install
+  - corepack enable
+  - corepack prepare pnpm@latest --activate
+  - pnpm install
+  - pnpm common build
 
-# First job: Linting our code for style and errors
-lint-job:
-  stage: test # Runs in the 'test' stage
+lint_common_job:
+  stage: lint
   script:
-    - echo "Running linter..."
-    - npm run lint
+    - pnpm common lint
 
-# Second job: Running our unit/integration tests
-test-job:
-  stage: test # Also runs in the 'test' stage
+test_common_job:
+  stage: test
   script:
-    - echo "Running tests..."
-    - npm run test
+    - pnpm common test
+
+build_common_job:
+  stage: build
+  script:
+    - pnpm common build
+
+lint_user_services_job:
+  stage: lint
+  script:
+    - pnpm user lint
+
+test_user_services_job:
+  stage: test
+  script:
+    - pnpm user test
+
+build_user_services_job:
+  stage: build
+  script:
+    - pnpm user build
+
+lint_analytics_services_job:
+  stage: lint
+  script:
+    - pnpm analytics lint
+
+test_analytics_services_job:
+  stage: test
+  script:
+    - pnpm analytics test
+
+build_analytics_services_job:
+  stage: build
+  script:
+    - pnpm analytics build
+
+lint_gateway_services_job:
+  stage: lint
+  script:
+    - pnpm gateway lint
+
+test_gateway_services_job:
+  stage: test
+  script:
+    - pnpm gateway test
+
+build_gateway_services_job:
+  stage: build
+  script:
+    - pnpm gateway build

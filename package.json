@@ -1,27 +1,14 @@
 {
-  "name": ".nest_tmp",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "huza-flix-backend",
   "private": true,
-  "license": "UNLICENSED",
+  "version": "1.0.0",
   "scripts": {
-    "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "migration:generate": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d ./data-source.ts",
-    "migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d ./data-source.ts",
-    "migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d ./data-source.ts",
-    "seed": "npx ts-node -r tsconfig-paths/register ./seeds",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "common": "pnpm --filter common run",
+    "gateway": "pnpm --filter gateway-service run",
+    "user": "pnpm --filter user-service run",
+    "analytics": "pnpm --filter analytics-service run",
+    "all:test": "pnpm --filter common run test && pnpm --filter gateway-service run test && pnpm --filter user-service run test && pnpm --filter analytics-service run test",
+    "all:lint": "pnpm --filter common run lint && pnpm --filter gateway-service run lint && pnpm --filter user-service run lint && pnpm --filter analytics-service run lint"
   },
   "dependencies": {
     "@casl/ability": "^6.5.0",
@@ -31,6 +18,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.1",
+    "@nestjs/microservices": "^11.1.8",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.1",
     "@nestjs/throttler": "^6.4.0",
@@ -39,6 +27,8 @@
     "cache-manager-redis-store": "^3.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "dotenv": "^17.2.3",
+    "http-proxy-middleware": "^3.0.5",
     "ioredis": "^5.8.2",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
@@ -71,25 +61,5 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": ".",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/src/$1"
-    },
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }
