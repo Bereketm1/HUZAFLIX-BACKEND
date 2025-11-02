@@ -4,7 +4,6 @@ dist/
 .env
 .DS_Store
 npm-debug.log*
-pnpm-lock.yaml
 yarn.lock
 coverage/
 .idea/
