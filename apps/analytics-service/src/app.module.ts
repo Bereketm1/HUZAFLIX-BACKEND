@@ -18,6 +18,7 @@ import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-redis-store';
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 export type RedisClient = Redis;
 
@@ -34,6 +35,7 @@ const jwtOptions: JwtModuleOptions = {
 
 @Module({
   imports: [
+    PrometheusModule.register(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],

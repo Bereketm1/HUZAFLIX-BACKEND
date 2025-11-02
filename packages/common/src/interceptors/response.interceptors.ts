@@ -7,7 +7,7 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiResponse } from '../dto/response.dto';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 
 @Injectable()
 export class ResponseInterceptor
@@ -19,6 +19,12 @@ export class ResponseInterceptor
   ): Observable<ApiResponse> {
     const ctx = context.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+
+    // ❌ Exclude /metrics endpoint
+    if (request.url === '/metrics') {
+      return next.handle() as Observable<ApiResponse>;
+    }
 
     function isObjectWithMessage(
       obj: unknown,

@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'gateway'
+    static_configs:
+      - targets: ['gateway-service:3000']
+
+  - job_name: 'user-service'
+    static_configs:
+      - targets: ['user-service:3000']
+
+  - job_name: 'analytics-service'
+    static_configs:
+      - targets: ['analytics-service:3000']

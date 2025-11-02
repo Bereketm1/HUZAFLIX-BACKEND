@@ -6,7 +6,9 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: ['metrics'],
+  });
 
   const services = {
     '/api/auth': `http://user-service:${process.env.USER_SERVICE_PORT || 3000}`,
