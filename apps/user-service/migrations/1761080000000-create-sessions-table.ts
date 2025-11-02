@@ -11,7 +11,7 @@ export class CreateSessionsTable1761080000000 implements MigrationInterface {
         "jti" integer,
         "token" text,
         "type" text NOT NULL,
-        "expires_at" TIMESTAMP WITH TIME ZONE,
+        "expiresAt" TIMESTAMP WITH TIME ZONE,
         "used_at" TIMESTAMP WITH TIME ZONE,
         "revoked" boolean DEFAULT false,
         "created_at" TIMESTAMP WITH TIME ZONE DEFAULT now(),
