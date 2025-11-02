@@ -19,7 +19,7 @@ export class AppController {
   @ApiBearerAuth()
   @Get('user-stats')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('adminstrator')
+  @Roles('administrator')
   async getUserStats(): Promise<unknown> {
     const stats: unknown = await this.dashboardClient
       .send('get_user_stats', {})
