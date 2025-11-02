@@ -1,7 +1,8 @@
-import { Controller, Get, Inject } from '@nestjs/common';
+import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ClientProxy } from '@nestjs/microservices';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard, Roles, RolesGuard } from '@huzaflix/common';
 
 @Controller()
 export class AppController {
@@ -15,9 +16,10 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @ApiTags('analytics')
   @ApiBearerAuth()
   @Get('user-stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('adminstrator')
   async getUserStats(): Promise<unknown> {
     const stats: unknown = await this.dashboardClient
       .send('get_user_stats', {})

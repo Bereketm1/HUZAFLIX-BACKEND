@@ -4,48 +4,78 @@ services:
     container_name: huzaflix_postgres
     restart: unless-stopped
     env_file:
-      - ./.env.postgres
+      - ./.env
     ports:
-      - '${POSTGRES_PORT}:5432'
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:latest
     container_name: huzaflix_redis
     restart: unless-stopped
     env_file:
-      - ./.env.redis
+      - ./.env
     ports:
-      - '${REDIS_PORT}:6379'
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   user-service:
     build:
-      context: ./apps/user-service
-      dockerfile: Dockerfile
-    container_name: huzaflix_user_service
+      context: .
+      dockerfile: ./apps/user-service/Dockerfile
+    container_name: user_service
     restart: unless-stopped
     env_file:
       - ./apps/user-service/.env
-    ports:
-      - '${USER_SERVICE_PORT}:3000'
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: ./apps/analytics-service/Dockerfile
+    container_name: analytics_service
+    restart: unless-stopped
+    env_file:
+      - ./apps/analytics-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   gateway-service:
     build:
-      context: ./apps/gateway-service
-      dockerfile: Dockerfile
-    container_name: huzaflix_gateway_service
+      context: .
+      dockerfile: ./apps/gateway-service/Dockerfile
+    container_name: gateway_service
     restart: unless-stopped
     env_file:
       - ./apps/gateway-service/.env
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    restart: unless-stopped
     ports:
-      - '${GATEWAY_SERVICE_PORT}:3001'
+      - '80:80'
     depends_on:
-      - postgres
-      - redis
+      - gateway-service
 
 volumes:
   postgres_data:

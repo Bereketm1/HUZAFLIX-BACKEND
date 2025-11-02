@@ -29,7 +29,7 @@ import { RefreshGuard, ResetGuard } from '@huzaflix/common';
 type OAuthProfile = { email?: string; name?: string };
 
 @ApiTags('auth')
-@Controller('auth')
+@Controller('')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

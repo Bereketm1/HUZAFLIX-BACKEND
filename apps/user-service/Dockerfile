@@ -1,34 +1,36 @@
-# Stage 1: build
-FROM node:20-alpine AS builder
+FROM node:20
 WORKDIR /app
 
-# Install dependencies
-COPY package*.json ./
-RUN npm ci --silent
+RUN npm install -g pnpm && apt-get update && apt-get install -y netcat-openbsd postgresql-client && rm -rf /var/lib/apt/lists/*
 
-# Copy source and build
-COPY . .
-RUN npm run build
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Stage 2: production image
-FROM node:20-alpine
-WORKDIR /app
+COPY packages/common/package.json ./packages/common/
+COPY packages/common/tsconfig.json ./packages/common/
+COPY packages/common/src ./packages/common/src
 
-# Copy package.json and install prod deps only
-COPY package*.json ./
-# Copy package.json (kept for metadata)
-COPY package*.json ./
-# Copy node_modules from the builder stage to avoid re-installing during final image build
-COPY --from=builder /app/node_modules ./node_modules
-# install netcat so we can wait for the database in the entrypoint script
-RUN apk add --no-cache netcat-openbsd
+COPY apps/user-service/package.json ./apps/user-service/
+COPY apps/user-service/tsconfig.json ./apps/user-service/
+COPY apps/user-service/tsconfig.build.json ./apps/user-service/
+COPY apps/user-service/nest-cli.json ./apps/user-service/
+COPY apps/user-service/data-source.ts ./apps/user-service/
+COPY apps/user-service/tsconfig.migrations.json ./apps/user-service/
 
-# Copy the entire built app from the builder stage (includes dist and other generated files)
-COPY --from=builder /app /app
-# copy wait script
-COPY wait-for-postgres.sh ./
-RUN chmod +x ./wait-for-postgres.sh
-RUN sed -i 's/\r$//' ./wait-for-postgres.sh || true
+RUN pnpm install --frozen-lockfile
 
-EXPOSE 3000
-CMD ["sh", "./wait-for-postgres.sh", "node", "dist/src/main.js"]
+RUN pnpm common build
+
+COPY apps/user-service/src ./apps/user-service/src
+COPY apps/user-service/migrations ./apps/user-service/migrations
+COPY apps/user-service/seeds ./apps/user-service/seeds
+
+RUN pnpm user build
+
+COPY apps/user-service/wait-for-postgres.sh ./apps/user-service/wait-for-postgres.sh
+RUN chmod +x ./apps/user-service/wait-for-postgres.sh && sed -i 's/\r$//' ./apps/user-service/wait-for-postgres.sh || true
+
+WORKDIR /app/apps/user-service
+
+EXPOSE ${APP_PORT:-3000}
+
+CMD ["sh", "./wait-for-postgres.sh", "pnpm", "start:prod"]

@@ -8,8 +8,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   const services = {
-    '/auth': 'http://localhost:4001',
-    '/analytics': 'http://localhost:4002',
+    '/auth': `http://user-service:${process.env.USER_SERVICE_PORT || 3000}`,
+    '/analytics': `http://analytics-service:${process.env.ANALYTICS_SERVICE_PORT || 3000}`,
   };
 
   for (const [route, target] of Object.entries(services)) {
