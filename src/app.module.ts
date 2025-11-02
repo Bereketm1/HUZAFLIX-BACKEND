@@ -9,11 +9,19 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import Redis from 'ioredis';
+import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-store';
 
 export type RedisClient = Redis;
+
+const redisClient = new Redis({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: parseInt(process.env.REDIS_PORT || '6379', 10),
+  password: process.env.REDIS_PASSWORD,
+});
 
 @Module({
   imports: [
@@ -38,13 +46,13 @@ export type RedisClient = Redis;
           limit: parseInt(process.env.THROTTLER_LIMIT || '100', 10),
         },
       ],
-      storage: new ThrottlerStorageRedisService(
-        new Redis({
-          host: process.env.REDIS_HOST || 'localhost',
-          port: parseInt(process.env.REDIS_PORT || '6379', 10),
-          password: process.env.REDIS_PASSWORD,
-        }),
-      ),
+      storage: new ThrottlerStorageRedisService(redisClient),
+    }),
+    CacheModule.register({
+      store: redisStore,
+      redisInstance: redisClient,
+      ttl: parseInt(process.env.CACHE_TTL || '60000', 10),
+      isGlobal: true,
     }),
     RolesModule,
     UsersModule,
@@ -58,6 +66,10 @@ export type RedisClient = Redis;
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
     },
   ],
 })
