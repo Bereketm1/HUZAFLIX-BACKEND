@@ -6,10 +6,11 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.setGlobalPrefix('api');
 
   const services = {
-    '/auth': `http://user-service:${process.env.USER_SERVICE_PORT || 3000}`,
-    '/analytics': `http://analytics-service:${process.env.ANALYTICS_SERVICE_PORT || 3000}`,
+    '/api/auth': `http://user-service:${process.env.USER_SERVICE_PORT || 3000}`,
+    '/api/analytics': `http://analytics-service:${process.env.ANALYTICS_SERVICE_PORT || 3000}`,
   };
 
   for (const [route, target] of Object.entries(services)) {
