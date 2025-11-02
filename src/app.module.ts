@@ -8,6 +8,12 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/common.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import Redis from 'ioredis';
+
+export type RedisClient = Redis;
 
 @Module({
   imports: [
@@ -25,6 +31,21 @@ import { DashboardModule } from './dashboard/dashboard.module';
       autoLoadEntities: true,
       synchronize: process.env.NODE_ENV !== 'production',
     }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: parseInt(process.env.THROTTLER_TTL || '60000', 10),
+          limit: parseInt(process.env.THROTTLER_LIMIT || '100', 10),
+        },
+      ],
+      storage: new ThrottlerStorageRedisService(
+        new Redis({
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
+          password: process.env.REDIS_PASSWORD,
+        }),
+      ),
+    }),
     RolesModule,
     UsersModule,
     AuthModule,
@@ -32,6 +53,12 @@ import { DashboardModule } from './dashboard/dashboard.module';
     DashboardModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
