@@ -20,8 +20,8 @@ interface JwtPayload {
 interface SessionRecord {
   token: string;
   revoked?: boolean;
-  usedAt?: Date | null;
-  expiresAt?: Date | null;
+  used_at?: Date | null;
+  expires_at?: Date | null;
 }
 
 interface UserRecord {
@@ -76,8 +76,8 @@ export class JwtAuthGuard implements CanActivate {
 
     if (!session) throw new UnauthorizedException('Session not found');
     if (session.revoked) throw new UnauthorizedException('Token revoked');
-    if (session.usedAt) throw new UnauthorizedException('Token already used');
-    if (session.expiresAt && new Date(session.expiresAt) < new Date())
+    if (session.used_at) throw new UnauthorizedException('Token already used');
+    if (session.expires_at && new Date(session.expires_at) < new Date())
       throw new UnauthorizedException('Token expired');
 
     let user: UserRecord | null = null;

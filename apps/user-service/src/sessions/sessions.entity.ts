@@ -30,10 +30,10 @@ export class Session {
   type: SessionType;
 
   @Column({ type: 'timestamptz', nullable: true })
-  expiresAt?: Date | null;
+  expires_at?: Date | null;
 
   @Column({ type: 'timestamptz', nullable: true })
-  usedAt?: Date | null;
+  used_at?: Date | null;
 
   @Column({ type: 'boolean', default: false })
   revoked: boolean;

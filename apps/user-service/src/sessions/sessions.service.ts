@@ -8,8 +8,8 @@ export type CreateSessionDto = {
   jti?: Session['jti'];
   token?: Session['token'];
   type: Session['type'];
-  expiresAt?: Session['expiresAt'];
-  usedAt?: Session['usedAt'];
+  expires_at?: Session['expires_at'];
+  used_at?: Session['used_at'];
   revoked?: Session['revoked'];
 };
 
@@ -55,7 +55,7 @@ export class SessionsService {
   }
 
   async markUsed(id: number): Promise<void> {
-    await this.repo.update({ id }, { usedAt: new Date() } as Partial<Session>);
+    await this.repo.update({ id }, { used_at: new Date() } as Partial<Session>);
   }
 
   async revoke(id: number): Promise<void> {

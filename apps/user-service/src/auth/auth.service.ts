@@ -50,7 +50,7 @@ export class AuthService {
       jti: res.id,
       type: 'access',
       token: await this.signJwt({ ...payload, type: 'access' }),
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      expires_at: new Date(Date.now() + 15 * 60 * 1000),
     });
 
     const refreshSession = await this.sessionsService.create({
@@ -61,7 +61,7 @@ export class AuthService {
         { ...payload, type: 'refresh' },
         { expiresIn: '7d' },
       ),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
     return {
@@ -88,7 +88,7 @@ export class AuthService {
       jti: user.id,
       type: 'access',
       token: await this.signJwt({ ...payload, type: 'access' }),
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      expires_at: new Date(Date.now() + 15 * 60 * 1000),
     });
 
     const refreshSession = await this.sessionsService.create({
@@ -99,7 +99,7 @@ export class AuthService {
         { ...payload, type: 'refresh' },
         { expiresIn: '7d' },
       ),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
     return {
       access_token: accessSession.token as string,
@@ -126,7 +126,7 @@ export class AuthService {
           { expiresIn: '5m' },
         ),
         type: 'reset',
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        expires_at: new Date(Date.now() + 5 * 60 * 1000),
       });
       return {
         message:
@@ -160,8 +160,8 @@ export class AuthService {
     // find session by jti and validate
     const session = await this.sessionsService.findByToken(token);
     if (session.revoked) throw new UnauthorizedException('Token revoked');
-    if (session.usedAt) throw new UnauthorizedException('Token already used');
-    if (session.expiresAt && session.expiresAt < new Date())
+    if (session.used_at) throw new UnauthorizedException('Token already used');
+    if (session.expires_at && session.expires_at < new Date())
       throw new UnauthorizedException('Token expired');
     // mark used and update password
     await this.sessionsService.markUsed(session.id);
