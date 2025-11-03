@@ -62,7 +62,10 @@ describe('UsersService', () => {
         10,
       ]);
 
-      const result = await service.findAll({ page: 1, limit: 2 });
+      const result = (await service.findAll({ page: 1, limit: 2 })) as {
+        data: User[];
+        meta: PaginatedResponse;
+      };
 
       expect(result.data).toEqual(mockUsers);
       expect(result.meta).toBeInstanceOf(PaginatedResponse);

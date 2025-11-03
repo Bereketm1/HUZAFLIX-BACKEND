@@ -25,9 +25,12 @@ export class UsersService {
     page,
     limit,
   }: {
-    page: number;
-    limit: number;
-  }): Promise<{ data: User[]; meta: PaginatedResponse }> {
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: User[]; meta: PaginatedResponse } | User[]> {
+    if (!page || !limit) {
+      return this.userRepository.find();
+    }
     const [users, total] = await this.userRepository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
