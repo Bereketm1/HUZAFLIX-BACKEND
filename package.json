@@ -11,7 +11,6 @@
     "all:lint": "pnpm --filter common run lint && pnpm --filter gateway-service run lint && pnpm --filter user-service run lint && pnpm --filter analytics-service run lint"
   },
   "dependencies": {
-    "@casl/ability": "^6.5.0",
     "@nest-lab/throttler-storage-redis": "^1.1.0",
     "@nestjs/cache-manager": "^3.0.1",
     "@nestjs/common": "^11.0.1",
