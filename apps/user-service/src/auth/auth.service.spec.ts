@@ -15,6 +15,7 @@ describe('AuthService', () => {
   const mockJwtService = {
     signAsync: jest.fn(),
     verifyAsync: jest.fn(),
+    decode: jest.fn(),
   };
 
   const mockUsersService = {
@@ -291,6 +292,18 @@ describe('AuthService', () => {
       await expect(service.resetPassword(token, dto)).rejects.toThrow(
         'Token expired',
       );
+    });
+
+    describe('logout', () => {
+      it('logout should deactivate all old sessions', async () => {
+        mockJwtService.decode.mockResolvedValue({
+          id: 1,
+        });
+        await service.logout('token');
+        expect(
+          mockSessionsService.deactivateAllOldSessions,
+        ).toHaveBeenCalledWith(1);
+      });
     });
   });
 });

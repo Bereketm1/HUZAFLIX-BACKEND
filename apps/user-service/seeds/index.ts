@@ -1,13 +1,11 @@
 import { AppDataSource } from '../data-source';
 import { seedRoles } from './roles.seed';
-import { seedPermissions } from './permissions.seed';
 import { seedAdmins } from './admin.seed';
 
 async function run() {
   try {
     await AppDataSource.initialize();
     await seedRoles();
-    await seedPermissions();
     await seedAdmins();
     console.log('Seeding completed');
   } catch (err) {
@@ -18,4 +16,4 @@ async function run() {
   }
 }
 
-run();
+void run();
