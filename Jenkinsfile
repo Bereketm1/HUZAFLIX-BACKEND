@@ -1,5 +1,5 @@
 pipeline {
-  agent none // We'll define agent per stage
+  agent any
 
   environment {
     PNPM_HOME = '/root/.local/share/pnpm'
@@ -9,7 +9,6 @@ pipeline {
   stages {
 
     stage('Checkout Code') {
-      agent any
       steps {
         git branch: 'develop',
             url: 'git@gitlab.com:huzalabs-products/huzaflix-backend.git',
@@ -18,38 +17,33 @@ pipeline {
     }
 
     stage('Install Dependencies') {
-      agent {
-        docker {
-          image 'node:20'
-          reuseNode true // Reuse the same workspace/node
-        }
-      }
       steps {
-        sh '''
-          corepack enable
-          corepack prepare pnpm@latest --activate
-          pnpm install --frozen-lockfile
-        '''
+        script {
+          docker.image('node:20').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
+            sh '''
+              corepack enable
+              corepack prepare pnpm@latest --activate
+              pnpm install --frozen-lockfile
+            '''
+          }
+        }
       }
     }
 
     stage('Lint & Test') {
-      agent {
-        docker {
-          image 'node:20'
-          reuseNode true
-        }
-      }
       steps {
-        sh '''
-          pnpm all:lint
-          pnpm all:test
-        '''
+        script {
+          docker.image('node:20').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
+            sh '''
+              pnpm all:lint
+              pnpm all:test
+            '''
+          }
+        }
       }
     }
 
     stage('Build All Services') {
-      agent any
       steps {
         sh "docker-compose -f $DOCKER_COMPOSE_FILE build"
       }
@@ -57,19 +51,17 @@ pipeline {
 
     stage('Stop Containers') {
       when {
-        expression { currentBuild.currentResult == 'SUCCESS' }
+        expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
       }
-      agent any
       steps {
-        sh "docker-compose -f $DOCKER_COMPOSE_FILE down"
+        sh "docker-compose -f $DOCKER_COMPOSE_FILE down || true"
       }
     }
 
     stage('Deploy Containers') {
       when {
-        expression { currentBuild.currentResult == 'SUCCESS' }
+        expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
       }
-      agent any
       steps {
         sh "docker-compose -f $DOCKER_COMPOSE_FILE up -d"
       }
