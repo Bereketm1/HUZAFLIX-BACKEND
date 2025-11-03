@@ -6,9 +6,6 @@ pipeline {
     DOCKER_COMPOSE_FILE = 'docker-compose.yml'
   }
 
-  triggers {
-  }
-
   stages {
 
     stage('Checkout Code') {
@@ -21,23 +18,27 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
-        docker.image('node:20').inside {
-          sh '''
-            corepack enable
-            corepack prepare pnpm@latest --activate
-            pnpm install
-          '''
+        script {
+          docker.image('node:20').inside {
+            sh '''
+              corepack enable
+              corepack prepare pnpm@latest --activate
+              pnpm install
+            '''
+          }
         }
       }
     }
 
     stage('Lint & Test') {
       steps {
-        docker.image('node:20').inside {
-          sh '''
-            pnpm all:lint
-            pnpm all:test
-          '''
+        script {
+          docker.image('node:20').inside {
+            sh '''
+              pnpm all:lint
+              pnpm all:test
+            '''
+          }
         }
       }
     }
@@ -50,9 +51,7 @@ pipeline {
 
     stage('Stop Containers') {
       when {
-        expression {
-          currentBuild.currentResult == 'SUCCESS'
-        }
+        expression { currentBuild.currentResult == 'SUCCESS' }
       }
       steps {
         sh "docker-compose -f $DOCKER_COMPOSE_FILE down"
@@ -61,9 +60,7 @@ pipeline {
 
     stage('Deploy Containers') {
       when {
-        expression {
-          currentBuild.currentResult == 'SUCCESS'
-        }
+        expression { currentBuild.currentResult == 'SUCCESS' }
       }
       steps {
         sh "docker-compose -f $DOCKER_COMPOSE_FILE up -d"
@@ -73,11 +70,7 @@ pipeline {
   }
 
   post {
-    success {
-      echo '✅ Deployment successful'
-    }
-    failure {
-      echo '❌ Deployment failed, containers unchanged'
-    }
+    success { echo '✅ Deployment successful' }
+    failure { echo '❌ Deployment failed, containers unchanged' }
   }
 }
