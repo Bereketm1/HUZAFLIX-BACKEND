@@ -1,5 +1,5 @@
 pipeline {
-  agent any
+  agent none // We'll define agent per stage
 
   environment {
     PNPM_HOME = '/root/.local/share/pnpm'
@@ -9,6 +9,7 @@ pipeline {
   stages {
 
     stage('Checkout Code') {
+      agent any
       steps {
         git branch: 'develop',
             url: 'git@gitlab.com:huzalabs-products/huzaflix-backend.git',
@@ -17,33 +18,38 @@ pipeline {
     }
 
     stage('Install Dependencies') {
-      steps {
-        script {
-          docker.image('node:20').inside {
-            sh '''
-              corepack enable
-              corepack prepare pnpm@latest --activate
-              pnpm install
-            '''
-          }
+      agent {
+        docker {
+          image 'node:20'
+          reuseNode true // Reuse the same workspace/node
         }
+      }
+      steps {
+        sh '''
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm install --frozen-lockfile
+        '''
       }
     }
 
     stage('Lint & Test') {
-      steps {
-        script {
-          docker.image('node:20').inside {
-            sh '''
-              pnpm all:lint
-              pnpm all:test
-            '''
-          }
+      agent {
+        docker {
+          image 'node:20'
+          reuseNode true
         }
+      }
+      steps {
+        sh '''
+          pnpm all:lint
+          pnpm all:test
+        '''
       }
     }
 
     stage('Build All Services') {
+      agent any
       steps {
         sh "docker-compose -f $DOCKER_COMPOSE_FILE build"
       }
@@ -53,6 +59,7 @@ pipeline {
       when {
         expression { currentBuild.currentResult == 'SUCCESS' }
       }
+      agent any
       steps {
         sh "docker-compose -f $DOCKER_COMPOSE_FILE down"
       }
@@ -62,6 +69,7 @@ pipeline {
       when {
         expression { currentBuild.currentResult == 'SUCCESS' }
       }
+      agent any
       steps {
         sh "docker-compose -f $DOCKER_COMPOSE_FILE up -d"
       }
@@ -70,7 +78,7 @@ pipeline {
   }
 
   post {
-    success { echo '✅ Deployment successful' }
-    failure { echo '❌ Deployment failed, containers unchanged' }
+    success { echo 'Deployment successful' }
+    failure { echo 'Deployment failed, containers unchanged' }
   }
 }
