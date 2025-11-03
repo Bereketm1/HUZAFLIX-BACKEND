@@ -22,6 +22,7 @@ import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-redis-store';
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { RolesController } from 'src/roles/roles.controller';
 
 export type RedisClient = Redis;
 
@@ -77,7 +78,7 @@ const jwtOptions: JwtModuleOptions = {
     AuthModule,
     DashboardModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, RolesController],
   providers: [
     AppService,
     JwtAuthGuard,

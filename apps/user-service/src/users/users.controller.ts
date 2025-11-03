@@ -36,10 +36,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Fetched all users successfully' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  async findAll(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-  ) {
+  async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
     return await this.userService.findAll({
       page,
       limit,
