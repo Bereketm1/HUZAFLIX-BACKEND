@@ -94,7 +94,7 @@ describe('FilesService', () => {
       service = new MinioService();
 
       await expect(service.getFile('file.jpg')).rejects.toThrow(
-        'Minio client not initialized',
+        'Failed to get a file',
       );
     });
   });
@@ -140,7 +140,7 @@ describe('FilesService', () => {
       service = new MinioService();
 
       await expect(service.uploadFile(mockFile)).rejects.toThrow(
-        'Minio client not initialized',
+        'Failed to upload file',
       );
     });
   });
