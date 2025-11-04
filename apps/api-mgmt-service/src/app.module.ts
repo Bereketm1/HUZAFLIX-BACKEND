@@ -18,6 +18,7 @@ import * as redisStore from 'cache-manager-redis-store';
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ApiModule } from './api/api.module';
 
 export type RedisClient = Redis;
 
@@ -68,6 +69,7 @@ const jwtOptions: JwtModuleOptions = {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
     }),
+    ApiModule,
   ],
   controllers: [AppController],
   providers: [
