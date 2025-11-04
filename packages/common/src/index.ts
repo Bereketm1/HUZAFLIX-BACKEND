@@ -5,5 +5,5 @@ export { ApiResponse } from './dto/response.dto';
 export { ResetGuard, RefreshGuard, JwtAuthGuard } from './guards/jwt.guard';
 export { RolesGuard } from './guards/roles.guard';
 export { ResponseInterceptor } from './interceptors/response.interceptors';
-export { paginate } from './utils/paginate.util';
 export { MinioService } from './services/minio/minio.service';
+export { paginate } from './utils/paginate.util';
