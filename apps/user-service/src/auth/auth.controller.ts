@@ -24,7 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
-import { RefreshGuard, ResetGuard } from '@huzaflix/common';
+import { JwtAuthGuard, RefreshGuard, ResetGuard } from '@huzaflix/common';
 
 type OAuthProfile = { email?: string; name?: string };
 
@@ -211,5 +211,17 @@ export class AuthController {
       : authorization.trim();
     if (!token) throw new BadRequestException('Missing reset token');
     return this.authService.resetPassword(token, dto);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiBearerAuth()
+  async logout(
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<{ message: string }> {
+    const token = authorization?.split(' ')[1];
+    if (!token) throw new UnauthorizedException('Invalid token');
+    return await this.authService.logout(token);
   }
 }

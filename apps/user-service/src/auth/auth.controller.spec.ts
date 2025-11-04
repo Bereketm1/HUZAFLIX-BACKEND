@@ -13,6 +13,7 @@ describe('AuthController', () => {
     login: jest.fn(),
     register: jest.fn(),
     refresh: jest.fn(),
+    logout: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -94,6 +95,20 @@ describe('AuthController', () => {
       expect(mockAuthService.refresh).toHaveBeenCalledWith(
         refreshToken.split(' ')[1],
       );
+      expect(response).toEqual(result);
+    });
+  });
+
+  describe('logout', () => {
+    it('should call authService.logout and return its result', async () => {
+      const token = 'Bearer token';
+      const result = { message: 'User logged out successfully' };
+
+      mockAuthService.logout.mockResolvedValue(result);
+
+      const response = await controller.logout(token);
+
+      expect(mockAuthService.logout).toHaveBeenCalledWith(token.split(' ')[1]);
       expect(response).toEqual(result);
     });
   });

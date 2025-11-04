@@ -202,6 +202,17 @@ export class AuthService {
     };
   }
 
+  async logout(token: string) {
+    const decodedToken: { id: number } = this.jwt.decode(token);
+    const id = decodedToken.id;
+    const user = await this.userService.findOneById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    await this.sessionsService.deactivateAllOldSessions(user.id);
+    return { message: 'User logged out successfully' };
+  }
+
   private async signJwt(
     payload: Record<string, unknown>,
     options?: JwtSignOptions,
