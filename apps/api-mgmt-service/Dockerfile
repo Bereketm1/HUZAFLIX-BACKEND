@@ -22,8 +22,11 @@ COPY apps/api-mgmt-service/src ./apps/api-mgmt-service/src
 
 RUN pnpm api-mgmt build
 
+COPY apps/api-mgmt-service/wait-for-postgres.sh ./apps/api-mgmt-service/wait-for-postgres.sh
+RUN chmod +x ./apps/api-mgmt-service/wait-for-postgres.sh && sed -i 's/\r$//' ./apps/api-mgmt-service/wait-for-postgres.sh || true
+
 WORKDIR /app/apps/api-mgmt-service
 
 EXPOSE ${APP_PORT:-3000}
 
-CMD ["pnpm", "start:prod"]
+CMD ["sh", "./wait-for-postgres.sh", "pnpm", "start:prod"]
