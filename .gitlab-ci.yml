@@ -18,10 +18,11 @@ lint_common_job:
     - pnpm common lint
   rules:
     - changes:
-        - packages/common/*
+        - packages/common/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 test_common_job:
   stage: test
@@ -29,10 +30,11 @@ test_common_job:
     - pnpm common test
   rules:
     - changes:
-        - packages/common/*
+        - packages/common/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 build_common_job:
   stage: build
@@ -40,10 +42,11 @@ build_common_job:
     - pnpm common build
   rules:
     - changes:
-        - packages/common/*
+        - packages/common/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 lint_user_services_job:
   stage: lint
@@ -51,10 +54,11 @@ lint_user_services_job:
     - pnpm user lint
   rules:
     - changes:
-        - apps/user-services/*
+        - apps/user-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 test_user_services_job:
   stage: test
@@ -62,10 +66,11 @@ test_user_services_job:
     - pnpm user test
   rules:
     - changes:
-        - apps/user-services/*
+        - apps/user-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 build_user_services_job:
   stage: build
@@ -73,10 +78,11 @@ build_user_services_job:
     - pnpm user build
   rules:
     - changes:
-        - apps/user-services/*
+        - apps/user-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 lint_analytics_services_job:
   stage: lint
@@ -84,10 +90,11 @@ lint_analytics_services_job:
     - pnpm analytics lint
   rules:
     - changes:
-        - apps/analytics-services/*
+        - apps/analytics-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 test_analytics_services_job:
   stage: test
@@ -95,10 +102,11 @@ test_analytics_services_job:
     - pnpm analytics test
   rules:
     - changes:
-        - apps/analytics-services/*
+        - apps/analytics-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 build_analytics_services_job:
   stage: build
@@ -106,10 +114,11 @@ build_analytics_services_job:
     - pnpm analytics build
   rules:
     - changes:
-        - apps/analytics-services/*
+        - apps/analytics-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 lint_api_mgmt_services_job:
   stage: lint
@@ -117,10 +126,11 @@ lint_api_mgmt_services_job:
     - pnpm api-mgmt lint
   rules:
     - changes:
-        - apps/api-mgmt-services/*
+        - apps/api-mgmt-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 test_api_mgmt_services_job:
   stage: test
@@ -128,10 +138,11 @@ test_api_mgmt_services_job:
     - pnpm api-mgmt test
   rules:
     - changes:
-        - apps/api-mgmt-services/*
+        - apps/api-mgmt-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 build_api_mgmt_services_job:
   stage: build
@@ -139,10 +150,11 @@ build_api_mgmt_services_job:
     - pnpm api-mgmt build
   rules:
     - changes:
-        - apps/api-mgmt-services/*
+        - apps/api-mgmt-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 lint_gateway_services_job:
   stage: lint
@@ -150,10 +162,11 @@ lint_gateway_services_job:
     - pnpm gateway lint
   rules:
     - changes:
-        - apps/gateway-services/*
+        - apps/gateway-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 test_gateway_services_job:
   stage: test
@@ -161,10 +174,11 @@ test_gateway_services_job:
     - pnpm gateway test
   rules:
     - changes:
-        - apps/gateway-services/*
+        - apps/gateway-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
 
 build_gateway_services_job:
   stage: build
@@ -172,7 +186,8 @@ build_gateway_services_job:
     - pnpm gateway build
   rules:
     - changes:
-        - apps/gateway-services/*
+        - apps/gateway-services/**
         - gitlab-ci.yml
         - package.json
-      when: always
+      when: on_success
+    - when: never
