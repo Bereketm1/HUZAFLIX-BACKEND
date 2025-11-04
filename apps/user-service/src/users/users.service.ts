@@ -42,7 +42,6 @@ export class UsersService {
   async remove(id: number): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException(`User with ID ${id} not found`);
-    // softRemove will set the delete date (DeleteDateColumn) instead of hard-deleting
     await this.userRepository.softRemove(user);
     return;
   }

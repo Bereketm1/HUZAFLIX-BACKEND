@@ -37,6 +37,7 @@ interface RequestWithAuth extends Request {
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   protected readonly validatingType: string = 'access';
+  protected readonly validateIsCurrentUser: boolean = false;
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithAuth>();
@@ -94,6 +95,12 @@ export class JwtAuthGuard implements CanActivate {
       request.user = null;
     }
 
+    if (this.validateIsCurrentUser) {
+      if (user.role == 'administrator') return true;
+      if (user.id !== parseInt(request.params.id))
+        throw new UnauthorizedException('Invalid user');
+    }
+
     return true;
   }
 
@@ -120,4 +127,9 @@ export class RefreshGuard extends JwtAuthGuard {
 @Injectable()
 export class ResetGuard extends JwtAuthGuard {
   protected readonly validatingType = 'reset';
+}
+
+@Injectable()
+export class UserGuard extends JwtAuthGuard {
+  protected readonly validateIsCurrentUser = true;
 }

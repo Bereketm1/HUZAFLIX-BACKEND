@@ -14,6 +14,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 import type { User } from 'src/users/users.entity';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -105,6 +106,22 @@ export class AuthService {
       access_token: accessSession.token as string,
       refresh_token: refreshSession.token as string,
     };
+  }
+
+  async updatePassword(
+    userId: number,
+    dto: UpdatePasswordDto,
+  ): Promise<{ message: string }> {
+    const { currentPassword, newPassword } = dto;
+    const user = await this.userService.findOneById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    const isMatch: boolean = await this.comparePasswords(
+      currentPassword,
+      user.password_hash as string,
+    );
+    if (!isMatch) throw new UnauthorizedException('Invalid password');
+    await this.userService.updatePassword(userId, newPassword);
+    return { message: 'Password updated successfully' };
   }
 
   async requestPasswordReset(

@@ -22,6 +22,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '@huzaflix/common';
 import { RolesGuard } from '@huzaflix/common';
 import { Roles } from '@huzaflix/common';
+import { UserGuard } from '@huzaflix/common';
 
 @ApiTags('users')
 @Controller('users')
@@ -46,6 +47,8 @@ export class UsersController {
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, description: 'Fetched user successfully' })
+  @Roles('api_consumer')
+  @UseGuards(UserGuard)
   async findOne(@Param('id') id: number) {
     const user = await this.userService.findOneById(id);
     return user;
@@ -61,6 +64,8 @@ export class UsersController {
   @Put(':id')
   @ApiOperation({ summary: 'Update user by ID' })
   @ApiResponse({ status: 200, description: 'Updated user successfully' })
+  @Roles('api_consumer')
+  @UseGuards(UserGuard)
   async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
     return await this.userService.update(id, updateUserDto);
   }
@@ -68,6 +73,8 @@ export class UsersController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user by ID' })
   @ApiResponse({ status: 200, description: 'Deleted user successfully' })
+  @Roles('api_consumer')
+  @UseGuards(UserGuard)
   async remove(@Param('id') id: number) {
     await this.userService.remove(id);
     return { message: `User ${id} Deleted` };
