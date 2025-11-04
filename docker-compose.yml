@@ -53,6 +53,20 @@ services:
       redis:
         condition: service_healthy
 
+  api-mgmt-service:
+    build:
+      context: .
+      dockerfile: ./apps/api-mgmt-service/Dockerfile
+    container_name: api_mgmt_service
+    restart: unless-stopped
+    env_file:
+      - ./apps/api-mgmt-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   gateway-service:
     build:
       context: .

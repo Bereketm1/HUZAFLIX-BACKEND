@@ -13,6 +13,7 @@ async function bootstrap() {
   const services = {
     '/api/auth': `http://user-service:${process.env.USER_SERVICE_PORT || 3000}`,
     '/api/analytics': `http://analytics-service:${process.env.ANALYTICS_SERVICE_PORT || 3000}`,
+    '/api/api-management': `http://api-management-service:${process.env.API_MANAGEMENT_SERVICE_PORT || 3000}`,
   };
 
   for (const [route, target] of Object.entries(services)) {

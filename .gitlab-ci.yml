@@ -111,6 +111,39 @@ build_analytics_services_job:
         - package.json
       when: always
 
+lint_api_mgmt_services_job:
+  stage: lint
+  script:
+    - pnpm api-mgmt lint
+  rules:
+    - changes:
+        - apps/api-mgmt-services/*
+        - gitlab-ci.yml
+        - package.json
+      when: always
+
+test_api_mgmt_services_job:
+  stage: test
+  script:
+    - pnpm api-mgmt test
+  rules:
+    - changes:
+        - apps/api-mgmt-services/*
+        - gitlab-ci.yml
+        - package.json
+      when: always
+
+build_api_mgmt_services_job:
+  stage: build
+  script:
+    - pnpm api-mgmt build
+  rules:
+    - changes:
+        - apps/api-mgmt-services/*
+        - gitlab-ci.yml
+        - package.json
+      when: always
+
 lint_gateway_services_job:
   stage: lint
   script:
