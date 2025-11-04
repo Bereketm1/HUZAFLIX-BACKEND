@@ -10,3 +10,4 @@ coverage/
 .vscode/
 /.turbo/
 /*.local
+minio-data

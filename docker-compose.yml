@@ -53,6 +53,20 @@ services:
       redis:
         condition: service_healthy
 
+  api-mgmt-service:
+    build:
+      context: .
+      dockerfile: ./apps/api-mgmt-service/Dockerfile
+    container_name: api_mgmt_service
+    restart: unless-stopped
+    env_file:
+      - ./apps/api-mgmt-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   gateway-service:
     build:
       context: .
@@ -94,6 +108,26 @@ services:
       - grafana_data:/var/lib/grafana:z
     depends_on:
       - prometheus
+
+  minio:
+    image: minio/minio:latest
+    container_name: huzaflix-minio
+    restart: unless-stopped
+    command: server /data --console-address ":${MINIO_CONSOLE_PORT}"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - '${MINIO_PORT}:9000' # API
+      - '${MINIO_CONSOLE_PORT}:9001' # Console
+    volumes:
+      - ${MINIO_DATA_DIR}:/data:z
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   postgres_data:

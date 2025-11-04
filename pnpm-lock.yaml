@@ -163,6 +163,12 @@ importers:
         specifier: file:../../packages/common
         version: link:../../packages/common
 
+  apps/api-mgmt-service:
+    dependencies:
+      '@huzaflix/common':
+        specifier: file:../../packages/common
+        version: link:../../packages/common
+
   apps/gateway-service: {}
 
   apps/user-service:
