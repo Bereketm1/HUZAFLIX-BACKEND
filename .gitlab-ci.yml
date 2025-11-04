@@ -16,163 +16,73 @@ lint_common_job:
   stage: lint
   script:
     - pnpm common lint
-  rules:
-    - changes:
-        - packages/common/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 test_common_job:
   stage: test
   script:
     - pnpm common test
-  rules:
-    - changes:
-        - packages/common/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 build_common_job:
   stage: build
   script:
     - pnpm common build
-  rules:
-    - changes:
-        - packages/common/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 lint_user_services_job:
   stage: lint
   script:
     - pnpm user lint
-  rules:
-    - changes:
-        - apps/user-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 test_user_services_job:
   stage: test
   script:
     - pnpm user test
-  rules:
-    - changes:
-        - apps/user-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 build_user_services_job:
   stage: build
   script:
     - pnpm user build
-  rules:
-    - changes:
-        - apps/user-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 lint_analytics_services_job:
   stage: lint
   script:
     - pnpm analytics lint
-  rules:
-    - changes:
-        - apps/analytics-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 test_analytics_services_job:
   stage: test
   script:
     - pnpm analytics test
-  rules:
-    - changes:
-        - apps/analytics-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 build_analytics_services_job:
   stage: build
   script:
     - pnpm analytics build
-  rules:
-    - changes:
-        - apps/analytics-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 lint_api_mgmt_services_job:
   stage: lint
   script:
     - pnpm api-mgmt lint
-  rules:
-    - changes:
-        - apps/api-mgmt-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 test_api_mgmt_services_job:
   stage: test
   script:
     - pnpm api-mgmt test
-  rules:
-    - changes:
-        - apps/api-mgmt-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 build_api_mgmt_services_job:
   stage: build
   script:
     - pnpm api-mgmt build
-  rules:
-    - changes:
-        - apps/api-mgmt-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 lint_gateway_services_job:
   stage: lint
   script:
     - pnpm gateway lint
-  rules:
-    - changes:
-        - apps/gateway-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 test_gateway_services_job:
   stage: test
   script:
     - pnpm gateway test
-  rules:
-    - changes:
-        - apps/gateway-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always
 
 build_gateway_services_job:
   stage: build
   script:
     - pnpm gateway build
-  rules:
-    - changes:
-        - apps/gateway-services/*
-        - gitlab-ci.yml
-        - package.json
-      when: always

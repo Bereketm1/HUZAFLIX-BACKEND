@@ -26,8 +26,8 @@ async function bootstrap() {
     .setVersion('1.0')
     .addServer(
       process.env.NODE_ENV === 'production'
-        ? `http://${process.env.SERVER_HOST || 'localhost'}/analytics`
-        : 'http://localhost:3000/analytics',
+        ? `http://${process.env.SERVER_HOST || 'localhost'}/api-management`
+        : 'http://localhost:3000/api/api-management',
       'Local Development',
     )
     .addBearerAuth()
@@ -45,6 +45,12 @@ async function bootstrap() {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
     },
+  });
+
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
   await app.startAllMicroservices();
