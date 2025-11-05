@@ -24,7 +24,14 @@ import {
 } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
-import { JwtAuthGuard, RefreshGuard, ResetGuard } from '@huzaflix/common';
+import {
+  CurrentUser,
+  JwtAuthGuard,
+  RefreshGuard,
+  ResetGuard,
+} from '@huzaflix/common';
+import { User } from 'src/users/users.entity';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 type OAuthProfile = { email?: string; name?: string };
 
@@ -66,6 +73,33 @@ export class AuthController {
     const token = authorization?.split(' ')[1];
     if (!token) throw new UnauthorizedException('Invalid token');
     return await this.authService.refresh(token);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current user' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Current user retrieved successfully',
+  })
+  getUser(@CurrentUser() user: User): User {
+    return user;
+  }
+
+  @Post('update-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get current user' })
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Current user retrieved successfully',
+  })
+  async updatePassword(
+    @CurrentUser() user: User,
+    @Body() body: UpdatePasswordDto,
+  ): Promise<{ message: string }> {
+    return await this.authService.updatePassword(user.id, body);
   }
 
   /**

@@ -27,7 +27,7 @@ async function bootstrap() {
     .addServer(
       process.env.NODE_ENV === 'production'
         ? `http://${process.env.SERVER_HOST || 'localhost'}/auth`
-        : 'http://localhost:3000',
+        : 'http://localhost:3000/api/auth',
       'Local Development',
     )
     .addBearerAuth()
