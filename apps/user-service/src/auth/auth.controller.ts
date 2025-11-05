@@ -29,7 +29,6 @@ import {
   JwtAuthGuard,
   RefreshGuard,
   ResetGuard,
-  UserGuard,
 } from '@huzaflix/common';
 import { User } from 'src/users/users.entity';
 import { UpdatePasswordDto } from './dto/update-password.dto';
