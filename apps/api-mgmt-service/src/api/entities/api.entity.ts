@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { ApiKey } from './entities/api-key.entity';
+import { ApiKey } from './api-key.entity';
 
 export enum ApiStatus {
   DRAFT = 'draft',
@@ -26,7 +26,13 @@ export class Api {
   @Column({ type: 'text', nullable: true })
   description?: string | null;
 
-  @Column({ type: 'varchar', length: 255, name: 'base_path', unique: true, nullable: false })
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'base_path',
+    unique: true,
+    nullable: false,
+  })
   base_path: string;
 
   @Column({ type: 'varchar', length: 50, nullable: false })
@@ -35,10 +41,21 @@ export class Api {
   @Column({ type: 'enum', enum: ApiStatus, default: ApiStatus.DRAFT })
   status: ApiStatus;
 
-  @Column({ type: 'varchar', length: 512, name: 'openapi_spec_key', unique: true, nullable: false })
+  @Column({
+    type: 'varchar',
+    length: 512,
+    name: 'openapi_spec_key',
+    unique: true,
+    nullable: false,
+  })
   openapi_spec_key: string;
 
-  @Column({ type: 'varchar', length: 1024, name: 'openapi_spec_url', nullable: false })
+  @Column({
+    type: 'varchar',
+    length: 1024,
+    name: 'openapi_spec_url',
+    nullable: false,
+  })
   openapi_spec_url: string;
 
   // remote user service reference - plain bigint column

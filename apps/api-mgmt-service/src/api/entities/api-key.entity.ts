@@ -6,7 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
 } from 'typeorm';
-import { Api } from '../api.entity';
+import { Api } from './api.entity';
 
 export enum KeyStatus {
   ACTIVE = 'active',
