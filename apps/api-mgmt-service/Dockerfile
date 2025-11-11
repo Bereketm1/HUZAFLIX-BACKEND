@@ -14,6 +14,7 @@ COPY apps/api-mgmt-service/tsconfig.json ./apps/api-mgmt-service/
 COPY apps/api-mgmt-service/tsconfig.build.json ./apps/api-mgmt-service/
 COPY apps/api-mgmt-service/tsconfig.migrations.json ./apps/api-mgmt-service/
 COPY apps/api-mgmt-service/nest-cli.json ./apps/api-mgmt-service/
+COPY apps/user-service/data-source.ts ./apps/user-service/
 
 RUN pnpm install --frozen-lockfile
 
