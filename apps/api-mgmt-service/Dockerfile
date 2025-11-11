@@ -20,6 +20,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm common build
 
 COPY apps/api-mgmt-service/src ./apps/api-mgmt-service/src
+COPY apps/api-mgmt-service/migrations ./apps/api-mgmt-service/migrations
 
 RUN pnpm api-mgmt build
 
