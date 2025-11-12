@@ -17,12 +17,10 @@ export class ApiKey {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: string;
 
-  // remote user service reference - store as plain bigint, not a relation
   @Column({ type: 'bigint', name: 'user_id', nullable: false })
   user_id: string;
 
-  // local relation to Api entity
-  @ManyToOne(() => Api, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Api, (api) => api.apiKeys, { eager: true })
   @JoinColumn({ name: 'api_id' })
   api: Api;
 

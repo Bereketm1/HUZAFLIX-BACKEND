@@ -10,6 +10,7 @@ import { ApiKey } from './api-key.entity';
 
 export enum ApiStatus {
   DRAFT = 'draft',
+  PUBLISHED = 'published',
 }
 
 @Entity({ name: 'apis' })
@@ -58,7 +59,6 @@ export class Api {
   })
   openapi_spec_url: string;
 
-  // remote user service reference - plain bigint column
   @Column({ type: 'bigint', name: 'created_by', nullable: false })
   created_by: string;
 
