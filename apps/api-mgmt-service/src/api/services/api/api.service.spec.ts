@@ -3,7 +3,7 @@ import { ApiService } from './api.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { PaginatedResponse } from '@huzaflix/common';
+import { MinioService, PaginatedResponse } from '@huzaflix/common';
 import { Api, ApiStatus } from 'src/api/entities/api.entity';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
@@ -19,6 +19,11 @@ describe('ApiService', () => {
     save: jest.fn(),
   };
 
+  const mockMinioService = {
+    uploadFile: jest.fn(),
+    getFile: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -28,6 +33,10 @@ describe('ApiService', () => {
         {
           provide: getRepositoryToken(Api),
           useValue: mockApiRepository,
+        },
+        {
+          provide: MinioService,
+          useValue: mockMinioService,
         },
       ],
     }).compile();

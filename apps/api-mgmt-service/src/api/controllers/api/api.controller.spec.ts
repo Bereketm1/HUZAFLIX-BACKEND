@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ApiController } from './api.controller';
-import { PaginatedResponse } from '@huzaflix/common';
+import { JwtAuthGuard, PaginatedResponse, RolesGuard } from '@huzaflix/common';
 import { NotFoundException } from '@nestjs/common';
 import { ApiService } from 'src/api/services/api/api.service';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
@@ -25,7 +25,14 @@ describe('ApiController', () => {
           useValue: mockApiService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<ApiController>(ApiController);
   });
@@ -85,17 +92,17 @@ describe('ApiController', () => {
         slug: 'new-api',
         base_path: '/new',
         version: '1.0',
-        openapi_spec_key: 'key123',
-        openapi_spec_url: 'https://example.com/spec',
-        created_by: 'user1',
       };
 
       const createdApi = { id: '1', ...dto };
       mockApiService.create.mockResolvedValue(createdApi);
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, { id: '1' });
 
-      expect(mockApiService.create).toHaveBeenCalledWith(dto);
+      expect(mockApiService.create).toHaveBeenCalledWith({
+        ...dto,
+        created_by: '1',
+      });
       expect(result).toEqual(createdApi);
     });
   });

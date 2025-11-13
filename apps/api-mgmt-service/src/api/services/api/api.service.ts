@@ -1,4 +1,4 @@
-import { paginate, PaginatedResponse } from '@huzaflix/common';
+import { MinioService, paginate, PaginatedResponse } from '@huzaflix/common';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
@@ -11,6 +11,7 @@ export class ApiService {
   constructor(
     @InjectRepository(Api)
     private readonly apiRepository: Repository<Api>,
+    private readonly minioService: MinioService,
   ) {}
 
   async findAll({
@@ -39,7 +40,7 @@ export class ApiService {
     return api;
   }
 
-  async create(data: CreateApiDto): Promise<Api> {
+  async create(data: CreateApiDto & { created_by: string }): Promise<Api> {
     const api = this.apiRepository.create(data);
     return this.apiRepository.save(api);
   }
@@ -61,5 +62,23 @@ export class ApiService {
     api.status = ApiStatus.PUBLISHED;
     api.published_at = new Date();
     return this.apiRepository.save(api);
+  }
+
+  async uploadDocs(id: number, file: Express.Multer.File): Promise<Api> {
+    const api = await this.findOneById(id);
+    if (!api) {
+      throw new NotFoundException(`API with id ${id} not found`);
+    }
+    const uploadFile = await this.minioService.uploadFile(file);
+    api.openapi_spec_url =
+      process.env.NODE_ENV === 'production'
+        ? `https://${process.env.SERVER_HOST}/api-management/apis/docs/${uploadFile.filename}`
+        : `http://${process.env.SERVER_HOST}/api/api-management/apis/docs/${uploadFile.filename}`;
+    return this.apiRepository.save(api);
+  }
+
+  async getDocs(filename: string): Promise<string> {
+    const fileUrl = await this.minioService.getFile(filename);
+    return fileUrl?.url;
   }
 }

@@ -47,7 +47,7 @@ export class Api {
     length: 512,
     name: 'openapi_spec_key',
     unique: true,
-    nullable: false,
+    nullable: true,
   })
   openapi_spec_key: string;
 
@@ -55,7 +55,7 @@ export class Api {
     type: 'varchar',
     length: 1024,
     name: 'openapi_spec_url',
-    nullable: false,
+    nullable: true,
   })
   openapi_spec_url: string;
 
