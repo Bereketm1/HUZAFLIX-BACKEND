@@ -50,7 +50,11 @@ export class AuthService {
       user: res,
       jti: res.id,
       type: 'access',
-      token: await this.signJwt({ ...payload, type: 'access' }),
+      token: await this.signJwt({
+        ...payload,
+        type: 'access',
+        role: res.role.name,
+      }),
       expires_at: new Date(Date.now() + 15 * 60 * 1000),
     });
 
@@ -96,10 +100,11 @@ export class AuthService {
       user: user,
       jti: user.id,
       type: 'refresh',
-      token: await this.signJwt(
-        { ...payload, type: 'refresh' },
-        { expiresIn: '7d' },
-      ),
+      token: await this.signJwt({
+        ...payload,
+        type: 'access',
+        role: user.role.name,
+      }),
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
     return {

@@ -89,6 +89,7 @@ describe('AuthService', () => {
       id: '1',
       email: 'test@example.com',
       password_hash: 'hashed-password',
+      role: { id: '1', name: 'user' },
     };
 
     it('should return access_token if credentials are correct', async () => {
@@ -109,8 +110,21 @@ describe('AuthService', () => {
         userRecord.password_hash,
       );
       expect(mockJwtService.signAsync).toHaveBeenCalledWith(
-        { id: userRecord.id, email: userRecord.email, type: 'access' },
+        {
+          id: userRecord.id,
+          email: userRecord.email,
+          type: 'access',
+          role: userRecord.role.name,
+        },
         { expiresIn: '15m' },
+      );
+      expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+        {
+          id: userRecord.id,
+          email: userRecord.email,
+          type: 'refresh',
+        },
+        { expiresIn: '7d' },
       );
 
       expect(result).toEqual({
@@ -180,6 +194,7 @@ describe('AuthService', () => {
       mockUsersService.findOneById.mockResolvedValue({
         id: 1,
         email: 'user@example.com',
+        role: { id: 1, name: 'user' },
       });
       mockJwtService.signAsync.mockResolvedValue('new-access-token');
       mockSessionsService.create.mockResolvedValue({
