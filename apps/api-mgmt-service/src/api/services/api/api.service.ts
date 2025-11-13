@@ -72,7 +72,7 @@ export class ApiService {
     const uploadFile = await this.minioService.uploadFile(file);
     api.openapi_spec_url =
       process.env.NODE_ENV === 'production'
-        ? `https://${process.env.SERVER_HOST}/api-management/apis/docs/${uploadFile.filename}`
+        ? `http://${process.env.SERVER_HOST}/api-management/apis/docs/${uploadFile.filename}`
         : `http://${process.env.SERVER_HOST}/api/api-management/apis/docs/${uploadFile.filename}`;
     return this.apiRepository.save(api);
   }
