@@ -8,6 +8,7 @@ import {
 import {
   Body,
   Controller,
+  Delete,
   Get,
   InternalServerErrorException,
   Param,
@@ -198,5 +199,15 @@ export class ApiController {
       console.error(error);
       throw new InternalServerErrorException('Failed to serve OpenAPI spec');
     }
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrator')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete API' })
+  @ApiResponse({ status: 200, description: 'Deleted successfully' })
+  async delete(@Param('id') id: number) {
+    await this.apiService.delete(id);
   }
 }

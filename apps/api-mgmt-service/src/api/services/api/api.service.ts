@@ -128,6 +128,19 @@ export class ApiService {
     return categories.map((row: { category: string }) => row.category);
   }
 
+  async delete(id: number): Promise<void> {
+    const api = await this.apiRepository.findOneBy({ id });
+    if (!api) {
+      throw new NotFoundException(`API with id ${id} not found`);
+    }
+    if (api.status === ApiStatus.ACTIVE) {
+      throw new ForbiddenException(
+        `API with id ${id} is active, you cannot delete an active api please deactivate it first`,
+      );
+    }
+    await this.apiRepository.remove(api);
+  }
+
   async filterByCategory(
     category: string,
     role?: string,
