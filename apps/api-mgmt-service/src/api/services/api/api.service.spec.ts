@@ -89,14 +89,14 @@ describe('ApiService', () => {
       expect(mockApiRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: 2,
-        where: { status: ApiStatus.PUBLISHED },
+        where: { status: ApiStatus.ACTIVE },
       });
     });
   });
 
   describe('findOneById', () => {
     it('should return API if found', async () => {
-      const api = { id: '1', status: ApiStatus.PUBLISHED };
+      const api = { id: '1', status: ApiStatus.ACTIVE };
       (mockApiRepository.findOne as jest.Mock).mockResolvedValue(api);
 
       const result = await service.findOneById(1);
@@ -105,7 +105,7 @@ describe('ApiService', () => {
       expect(mockApiRepository.findOne).toHaveBeenCalledWith({
         where: {
           id: 1,
-          status: ApiStatus.PUBLISHED,
+          status: ApiStatus.ACTIVE,
         },
       });
     });
@@ -127,6 +127,7 @@ describe('ApiService', () => {
         base_api_key: 'key123',
         category: 'category1',
         tags: ['tag1', 'tag2'],
+        avg_response_time: 0.56,
       };
 
       const req = {
@@ -183,12 +184,12 @@ describe('ApiService', () => {
     });
   });
 
-  describe('publish', () => {
-    it('should publish an existing API', async () => {
+  describe('activate', () => {
+    it('should activate an existing API', async () => {
       const existingApi = {
         id: '1',
         name: 'Old Name',
-        status: ApiStatus.DRAFT,
+        status: ApiStatus.INACTIVE,
       };
 
       (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(existingApi);
@@ -196,21 +197,21 @@ describe('ApiService', () => {
         Promise.resolve(u),
       );
 
-      const result = await service.publish(1);
+      const result = await service.activate(1);
 
-      expect(result.status).toBe(ApiStatus.PUBLISHED);
+      expect(result.status).toBe(ApiStatus.ACTIVE);
       expect(mockApiRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
       expect(mockApiRepository.save).toHaveBeenCalledWith({
         ...existingApi,
-        status: ApiStatus.PUBLISHED,
-        published_at: new Date(),
+        status: ApiStatus.ACTIVE,
+        activated_at: new Date(),
       });
     });
 
     it('should throw NotFoundException if API not found', async () => {
       (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.publish(999)).rejects.toThrow(NotFoundException);
+      await expect(service.activate(999)).rejects.toThrow(NotFoundException);
     });
   });
 });

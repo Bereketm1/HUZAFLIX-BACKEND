@@ -49,8 +49,8 @@ describe('ApiController', () => {
   describe('findAll', () => {
     it('should call apiService.findAll and return list of APIs', async () => {
       const apis = [
-        { id: '1', name: 'API 1', status: ApiStatus.PUBLISHED },
-        { id: '2', name: 'API 2', status: ApiStatus.PUBLISHED },
+        { id: '1', name: 'API 1', status: ApiStatus.ACTIVE },
+        { id: '2', name: 'API 2', status: ApiStatus.ACTIVE },
       ];
       const paginated = {
         data: apis,
@@ -93,6 +93,7 @@ describe('ApiController', () => {
         category: 'category',
         tags: ['tag1', 'tag2'],
         base_api_key: 'base_api_key',
+        avg_response_time: 12.5,
       };
 
       const createdApi = { id: '1', ...dto };

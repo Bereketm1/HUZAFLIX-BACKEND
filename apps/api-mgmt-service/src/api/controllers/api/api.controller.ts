@@ -132,24 +132,24 @@ export class ApiController {
     return await this.apiService.update(id, updateApiDto);
   }
 
-  @Post(':id/publish')
+  @Post(':id/activate')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrator')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Publish by ID' })
-  @ApiResponse({ status: 200, description: 'Published successfully' })
+  @ApiOperation({ summary: 'Activate by ID' })
+  @ApiResponse({ status: 200, description: 'Activated successfully' })
   async publish(@Param('id') id: number) {
-    return await this.apiService.publish(id);
+    return await this.apiService.activate(id);
   }
 
-  @Post(':id/unpublish')
+  @Post(':id/deactivate')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrator')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Publish by ID' })
-  @ApiResponse({ status: 200, description: 'Published successfully' })
+  @ApiOperation({ summary: 'Deactivate by ID' })
+  @ApiResponse({ status: 200, description: 'Deactivated successfully' })
   async unpublish(@Param('id') id: number) {
-    return await this.apiService.unpublish(id);
+    return await this.apiService.deactivate(id);
   }
 
   @Post(':id/upload-docs')

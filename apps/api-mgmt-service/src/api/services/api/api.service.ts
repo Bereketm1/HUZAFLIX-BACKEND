@@ -40,13 +40,13 @@ export class ApiService {
     if (!isPaginated) {
       return isAdmin
         ? this.apiRepository.find()
-        : this.apiRepository.find({ where: { status: ApiStatus.PUBLISHED } });
+        : this.apiRepository.find({ where: { status: ApiStatus.ACTIVE } });
     }
 
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const where = isAdmin ? {} : { status: ApiStatus.PUBLISHED };
+    const where = isAdmin ? {} : { status: ApiStatus.ACTIVE };
 
     const [apis, total] = await this.apiRepository.findAndCount({
       where,
@@ -59,9 +59,7 @@ export class ApiService {
 
   async findOneById(id: number, role?: string): Promise<Api> {
     const isAdmin = role === 'administrator';
-    const where = isAdmin
-      ? { id: id }
-      : { id: id, status: ApiStatus.PUBLISHED };
+    const where = isAdmin ? { id: id } : { id: id, status: ApiStatus.ACTIVE };
 
     const api = await this.apiRepository.findOne({
       where: where,
@@ -84,8 +82,8 @@ export class ApiService {
       throw new NotFoundException(`API with id ${id} not found`);
     }
 
-    if (api.status == ApiStatus.PUBLISHED) {
-      throw new ForbiddenException('Cannot update published API');
+    if (api.status == ApiStatus.ACTIVE) {
+      throw new ForbiddenException('Cannot update an active API');
     }
 
     if (data.base_api_key) {
@@ -98,23 +96,26 @@ export class ApiService {
     return this.apiRepository.save(api);
   }
 
-  async publish(id: number): Promise<Api> {
+  async activate(id: number): Promise<Api> {
     const api = await this.apiRepository.findOneBy({ id });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }
-    api.status = ApiStatus.PUBLISHED;
-    api.published_at = new Date();
+    if (api.status == ApiStatus.ACTIVE) {
+      throw new ForbiddenException('You Cannot activate an active api');
+    }
+    api.status = ApiStatus.ACTIVE;
+    api.activated_at = new Date();
     return this.apiRepository.save(api);
   }
 
-  async unpublish(id: number): Promise<Api> {
+  async deactivate(id: number): Promise<Api> {
     const api = await this.apiRepository.findOneBy({ id });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }
-    api.status = ApiStatus.DRAFT;
-    api.published_at = null;
+    api.status = ApiStatus.INACTIVE;
+    api.activated_at = null;
     return this.apiRepository.save(api);
   }
 
@@ -139,13 +140,13 @@ export class ApiService {
     if (!isPaginated) {
       return isAdmin
         ? this.apiRepository.find({ where: { category } })
-        : this.apiRepository.find({ where: { status: ApiStatus.PUBLISHED } });
+        : this.apiRepository.find({ where: { status: ApiStatus.ACTIVE } });
     }
 
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const where = isAdmin ? { category } : { status: ApiStatus.PUBLISHED };
+    const where = isAdmin ? { category } : { status: ApiStatus.ACTIVE };
 
     const [apis, total] = await this.apiRepository.findAndCount({
       where,

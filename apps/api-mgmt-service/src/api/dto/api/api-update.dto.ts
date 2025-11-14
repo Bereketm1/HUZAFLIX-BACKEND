@@ -1,5 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsOptional, IsString, IsUrl, Length } from 'class-validator';
+import {
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Length,
+} from 'class-validator';
 
 export class UpdateApiDto {
   @ApiPropertyOptional({ description: 'Name of the API', maxLength: 255 })
@@ -16,6 +23,11 @@ export class UpdateApiDto {
   @IsOptional()
   @Length(1, 255)
   slug?: string;
+
+  @ApiPropertyOptional({ description: 'Average response time of the api' })
+  @IsOptional()
+  @IsNumber()
+  avg_response_time?: number;
 
   @ApiPropertyOptional({ description: 'Category of the API', maxLength: 255 })
   @IsString()

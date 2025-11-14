@@ -9,8 +9,8 @@ import {
 import { ApiKey } from './api-key.entity';
 
 export enum ApiStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
+  INACTIVE = 'inactive',
+  ACTIVE = 'active',
 }
 
 @Entity({ name: 'apis' })
@@ -23,6 +23,9 @@ export class Api {
 
   @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
   slug: string;
+
+  @Column({ type: 'decimal', nullable: false })
+  avg_response_time: number;
 
   @Column({
     type: 'varchar',
@@ -75,7 +78,7 @@ export class Api {
   @Column({ type: 'varchar', length: 50, nullable: false })
   version: string;
 
-  @Column({ type: 'enum', enum: ApiStatus, default: ApiStatus.DRAFT })
+  @Column({ type: 'enum', enum: ApiStatus, default: ApiStatus.ACTIVE })
   status: ApiStatus;
 
   @Column({
@@ -89,8 +92,8 @@ export class Api {
   @Column({ type: 'bigint', name: 'created_by', nullable: false })
   created_by: string;
 
-  @Column({ type: 'timestamptz', name: 'published_at', nullable: true })
-  published_at?: Date | null;
+  @Column({ type: 'timestamptz', name: 'activated_at', nullable: true })
+  activated_at?: Date | null;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   created_at: Date;

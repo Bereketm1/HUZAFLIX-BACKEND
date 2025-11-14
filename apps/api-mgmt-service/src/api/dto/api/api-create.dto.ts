@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUrl,
@@ -20,6 +21,11 @@ export class CreateApiDto {
   @IsNotEmpty()
   @Length(1, 255)
   slug: string;
+
+  @ApiProperty({ description: 'Average response time of the api' })
+  @IsNumber()
+  @IsNotEmpty()
+  avg_response_time: number;
 
   @ApiProperty({ description: 'Category of the API', maxLength: 255 })
   @IsString()
