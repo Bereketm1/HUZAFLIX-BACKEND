@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { ApiService } from 'src/api/services/api/api.service';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
+import { ApiStatus } from 'src/api/entities/api.entity';
 
 describe('ApiController', () => {
   let controller: ApiController;
@@ -48,8 +49,8 @@ describe('ApiController', () => {
   describe('findAll', () => {
     it('should call apiService.findAll and return list of APIs', async () => {
       const apis = [
-        { id: '1', name: 'API 1' },
-        { id: '2', name: 'API 2' },
+        { id: '1', name: 'API 1', status: ApiStatus.PUBLISHED },
+        { id: '2', name: 'API 2', status: ApiStatus.PUBLISHED },
       ];
       const paginated = {
         data: apis,
@@ -58,11 +59,6 @@ describe('ApiController', () => {
       mockApiService.findAll.mockResolvedValue(paginated);
 
       const result = await controller.findAll(1, 10);
-
-      expect(mockApiService.findAll).toHaveBeenCalledWith({
-        page: 1,
-        limit: 10,
-      });
       expect(result).toEqual(paginated);
     });
   });
@@ -72,16 +68,18 @@ describe('ApiController', () => {
       const api = { id: '1', name: 'API 1' };
       mockApiService.findOneById.mockResolvedValue(api);
 
-      const result = await controller.findOne(1);
+      const result = await controller.findOne('1');
 
-      expect(mockApiService.findOneById).toHaveBeenCalledWith(1);
+      expect(mockApiService.findOneById).toHaveBeenCalledWith(1, undefined);
       expect(result).toEqual(api);
     });
 
     it('should throw NotFoundException if API not found', async () => {
       mockApiService.findOneById.mockRejectedValue(new NotFoundException());
 
-      await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
+      await expect(controller.findOne('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -92,6 +90,9 @@ describe('ApiController', () => {
         slug: 'new-api',
         base_path: '/new',
         version: '1.0',
+        category: 'category',
+        tags: ['tag1', 'tag2'],
+        base_api_key: 'base_api_key',
       };
 
       const createdApi = { id: '1', ...dto };

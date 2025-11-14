@@ -5,7 +5,11 @@ import {
   paginate,
   PaginatedResponse,
 } from '@huzaflix/common';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
@@ -20,27 +24,47 @@ export class ApiService {
     private readonly minioService: MinioService,
   ) {}
 
-  async findAll({
-    page,
-    limit,
-  }: {
-    page?: number;
-    limit?: number;
-  }): Promise<{ data: Api[]; meta: PaginatedResponse } | Api[]> {
-    if (!page || !limit) {
-      return this.apiRepository.find();
+  async findAll(
+    {
+      page,
+      limit,
+    }: {
+      page?: number;
+      limit?: number;
+    },
+    role?: string,
+  ): Promise<{ data: Api[]; meta: PaginatedResponse } | Api[]> {
+    const isAdmin = role === 'administrator';
+    const isPaginated = page && limit;
+
+    if (!isPaginated) {
+      return isAdmin
+        ? this.apiRepository.find()
+        : this.apiRepository.find({ where: { status: ApiStatus.PUBLISHED } });
     }
+
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const where = isAdmin ? {} : { status: ApiStatus.PUBLISHED };
+
     const [apis, total] = await this.apiRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
+      where,
+      skip,
+      take,
     });
 
     return paginate(apis, page, limit, total);
   }
 
-  async findOneById(id: number): Promise<Api | null> {
+  async findOneById(id: number, role?: string): Promise<Api> {
+    const isAdmin = role === 'administrator';
+    const where = isAdmin
+      ? { id: id }
+      : { id: id, status: ApiStatus.PUBLISHED };
+
     const api = await this.apiRepository.findOne({
-      where: { id: id },
+      where: where,
     });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
@@ -55,9 +79,13 @@ export class ApiService {
   }
 
   async update(id: number, data: UpdateApiDto): Promise<Api> {
-    const api = await this.findOneById(id);
+    const api = await this.apiRepository.findOneBy({ id });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
+    }
+
+    if (api.status == ApiStatus.PUBLISHED) {
+      throw new ForbiddenException('Cannot update published API');
     }
 
     if (data.base_api_key) {
@@ -71,7 +99,7 @@ export class ApiService {
   }
 
   async publish(id: number): Promise<Api> {
-    const api = await this.findOneById(id);
+    const api = await this.apiRepository.findOneBy({ id });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }
@@ -81,7 +109,7 @@ export class ApiService {
   }
 
   async unpublish(id: number): Promise<Api> {
-    const api = await this.findOneById(id);
+    const api = await this.apiRepository.findOneBy({ id });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }
@@ -101,24 +129,35 @@ export class ApiService {
 
   async filterByCategory(
     category: string,
+    role?: string,
     page?: number,
     limit?: number,
   ): Promise<{ data: Api[]; meta: PaginatedResponse } | Api[]> {
-    if (!page || !limit) {
-      return this.apiRepository.findBy({ category });
+    const isAdmin = role === 'administrator';
+    const isPaginated = page && limit;
+
+    if (!isPaginated) {
+      return isAdmin
+        ? this.apiRepository.find({ where: { category } })
+        : this.apiRepository.find({ where: { status: ApiStatus.PUBLISHED } });
     }
 
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const where = isAdmin ? { category } : { status: ApiStatus.PUBLISHED };
+
     const [apis, total] = await this.apiRepository.findAndCount({
-      where: { category },
-      skip: (page - 1) * limit,
-      take: limit,
+      where,
+      skip,
+      take,
     });
 
     return paginate(apis, page, limit, total);
   }
 
   async uploadDocs(id: number, file: Express.Multer.File): Promise<Api> {
-    const api = await this.findOneById(id);
+    const api = await this.apiRepository.findOneBy({ id });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }

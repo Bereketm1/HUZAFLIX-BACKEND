@@ -23,6 +23,8 @@ describe('ApiService', () => {
     find: jest.fn(),
     findAndCount: jest.fn(),
     findOneById: jest.fn(),
+    findOne: jest.fn(),
+    findOneBy: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
   };
@@ -87,23 +89,29 @@ describe('ApiService', () => {
       expect(mockApiRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: 2,
+        where: { status: ApiStatus.PUBLISHED },
       });
     });
   });
 
   describe('findOneById', () => {
     it('should return API if found', async () => {
-      const api = { id: '1' };
-      (mockApiRepository.findOneById as jest.Mock).mockResolvedValue(api);
+      const api = { id: '1', status: ApiStatus.PUBLISHED };
+      (mockApiRepository.findOne as jest.Mock).mockResolvedValue(api);
 
       const result = await service.findOneById(1);
 
       expect(result).toEqual(api);
-      expect(mockApiRepository.findOneById).toHaveBeenCalledWith('1');
+      expect(mockApiRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: ApiStatus.PUBLISHED,
+        },
+      });
     });
 
     it('should throw NotFoundException if API not found', async () => {
-      (mockApiRepository.findOneById as jest.Mock).mockResolvedValue(null);
+      (mockApiRepository.findOne as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findOneById(999)).rejects.toThrow(NotFoundException);
     });
@@ -151,9 +159,7 @@ describe('ApiService', () => {
       const existingApi = { id: '1', name: 'Old Name' };
       const dto: UpdateApiDto = { name: 'New Name' };
 
-      (mockApiRepository.findOneById as jest.Mock).mockResolvedValue(
-        existingApi,
-      );
+      (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(existingApi);
       (mockApiRepository.save as jest.Mock).mockImplementation((u) =>
         Promise.resolve(u),
       );
@@ -161,7 +167,7 @@ describe('ApiService', () => {
       const result = await service.update(1, dto);
 
       expect(result.name).toBe('New Name');
-      expect(mockApiRepository.findOneById).toHaveBeenCalledWith('1');
+      expect(mockApiRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
       expect(mockApiRepository.save).toHaveBeenCalledWith({
         ...existingApi,
         ...dto,
@@ -169,7 +175,7 @@ describe('ApiService', () => {
     });
 
     it('should throw NotFoundException if API not found', async () => {
-      (mockApiRepository.findOneById as jest.Mock).mockResolvedValue(null);
+      (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(null);
 
       await expect(service.update(999, {} as UpdateApiDto)).rejects.toThrow(
         NotFoundException,
@@ -185,9 +191,7 @@ describe('ApiService', () => {
         status: ApiStatus.DRAFT,
       };
 
-      (mockApiRepository.findOneById as jest.Mock).mockResolvedValue(
-        existingApi,
-      );
+      (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(existingApi);
       (mockApiRepository.save as jest.Mock).mockImplementation((u) =>
         Promise.resolve(u),
       );
@@ -195,7 +199,7 @@ describe('ApiService', () => {
       const result = await service.publish(1);
 
       expect(result.status).toBe(ApiStatus.PUBLISHED);
-      expect(mockApiRepository.findOneById).toHaveBeenCalledWith('1');
+      expect(mockApiRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
       expect(mockApiRepository.save).toHaveBeenCalledWith({
         ...existingApi,
         status: ApiStatus.PUBLISHED,
@@ -204,7 +208,7 @@ describe('ApiService', () => {
     });
 
     it('should throw NotFoundException if API not found', async () => {
-      (mockApiRepository.findOneById as jest.Mock).mockResolvedValue(null);
+      (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(null);
 
       await expect(service.publish(999)).rejects.toThrow(NotFoundException);
     });

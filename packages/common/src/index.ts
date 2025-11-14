@@ -7,6 +7,7 @@ export {
   RefreshGuard,
   JwtAuthGuard,
   UserGuard,
+  JwtAuthGuardWithPublic,
 } from './guards/jwt.guard';
 export { RolesGuard } from './guards/roles.guard';
 export { ResponseInterceptor } from './interceptors/response.interceptors';

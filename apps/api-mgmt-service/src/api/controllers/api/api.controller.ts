@@ -1,4 +1,10 @@
-import { CurrentUser, JwtAuthGuard, Roles, RolesGuard } from '@huzaflix/common';
+import {
+  CurrentUser,
+  JwtAuthGuard,
+  JwtAuthGuardWithPublic,
+  Roles,
+  RolesGuard,
+} from '@huzaflix/common';
 import {
   Body,
   Controller,
@@ -22,13 +28,12 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { Readable } from 'stream';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 import { ApiService } from 'src/api/services/api/api.service';
 import { ReadableStream } from 'stream/web';
-import { Api } from 'src/api/entities/api.entity';
 
 @Controller('apis')
 export class ApiController {
@@ -36,14 +41,23 @@ export class ApiController {
 
   @Get()
   @ApiOperation({ summary: 'Get all apis' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuardWithPublic)
   @ApiResponse({ status: 200, description: 'Fetched all apis successfully' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
-  async findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
-    return await this.apiService.findAll({
-      page,
-      limit,
-    });
+  async findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @CurrentUser() user?: { role: { name: string } },
+  ) {
+    return await this.apiService.findAll(
+      {
+        page,
+        limit,
+      },
+      user?.role?.name,
+    );
   }
 
   @Get('/categories')
@@ -56,23 +70,40 @@ export class ApiController {
     return await this.apiService.getUniqueApiCategories();
   }
 
-  @Get(':category')
+  @Get('category/:category')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuardWithPublic)
   @ApiOperation({ summary: 'Get all apis by category' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiResponse({
     status: 200,
     description: 'Fetched all apis by category successfully',
   })
-  async findAllByCategory(@Param('category') category: string) {
-    return await this.apiService.filterByCategory(category);
+  async findAllByCategory(
+    @Param('category') category: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @CurrentUser() user?: { role: { name: string } },
+  ) {
+    return await this.apiService.filterByCategory(
+      category,
+      user?.role?.name,
+      page,
+      limit,
+    );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get by ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuardWithPublic)
   @ApiResponse({ status: 200, description: 'Fetched successfully' })
-  async findOne(@Param('id') id: string): Promise<Api | null> {
-    console.log('findOne', id);
-    console.log('findOne', this.apiService.findOneById(Number(id)));
-    return await this.apiService.findOneById(Number(id));
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user?: { role: { name: string } },
+  ) {
+    return await this.apiService.findOneById(Number(id), user?.role?.name);
   }
 
   @Post()

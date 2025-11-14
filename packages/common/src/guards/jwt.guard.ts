@@ -38,10 +38,18 @@ interface RequestWithAuth extends Request {
 export class JwtAuthGuard implements CanActivate {
   protected readonly validatingType: string = 'access';
   protected readonly validateIsCurrentUser: boolean = false;
+  protected readonly allowPublicBypass: boolean = false;
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithAuth>();
     const authHeader = request.headers.authorization;
+
+    if (
+      this.allowPublicBypass &&
+      (!authHeader || typeof authHeader !== 'string')
+    ) {
+      return true;
+    }
 
     if (!authHeader || typeof authHeader !== 'string')
       throw new UnauthorizedException('Missing Authorization header');
@@ -132,4 +140,9 @@ export class ResetGuard extends JwtAuthGuard {
 @Injectable()
 export class UserGuard extends JwtAuthGuard {
   protected readonly validateIsCurrentUser = true;
+}
+
+@Injectable()
+export class JwtAuthGuardWithPublic extends JwtAuthGuard {
+  protected readonly allowPublicBypass = true;
 }
