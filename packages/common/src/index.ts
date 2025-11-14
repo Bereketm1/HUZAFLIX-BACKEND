@@ -12,4 +12,5 @@ export { RolesGuard } from './guards/roles.guard';
 export { ResponseInterceptor } from './interceptors/response.interceptors';
 export { MinioService } from './services/minio/minio.service';
 export { paginate } from './utils/paginate.util';
+export { encrypt, decrypt } from './utils/encryption.util';
 export { CurrentUser } from './decorators/current-user.decorator';

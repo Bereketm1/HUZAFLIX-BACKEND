@@ -16,7 +16,7 @@ export enum ApiStatus {
 @Entity({ name: 'apis' })
 export class Api {
   @PrimaryGeneratedColumn({ type: 'bigint' })
-  id: string;
+  id: number;
 
   @Column({ type: 'varchar', length: 255, nullable: false })
   name: string;
@@ -24,8 +24,38 @@ export class Api {
   @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
   slug: string;
 
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    default: 'Huzalabs',
+  })
+  company_name: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    default: 'info@huzalabs.com',
+  })
+  company_contact_email: string;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    default: '+1234567890',
+  })
+  company_contact_phone: string;
+
   @Column({ type: 'text', nullable: true })
   description?: string | null;
+
+  @Column({ type: 'varchar', length: 255 })
+  category: string;
+
+  @Column('text', { array: true, nullable: true })
+  tags: string[];
 
   @Column({
     type: 'varchar',
@@ -36,20 +66,17 @@ export class Api {
   })
   base_path: string;
 
+  @Column({
+    type: 'text',
+    name: 'base_api_key',
+  })
+  base_api_key: string;
+
   @Column({ type: 'varchar', length: 50, nullable: false })
   version: string;
 
   @Column({ type: 'enum', enum: ApiStatus, default: ApiStatus.DRAFT })
   status: ApiStatus;
-
-  @Column({
-    type: 'varchar',
-    length: 512,
-    name: 'openapi_spec_key',
-    unique: true,
-    nullable: true,
-  })
-  openapi_spec_key: string;
 
   @Column({
     type: 'varchar',

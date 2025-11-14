@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsArray,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -20,6 +21,41 @@ export class CreateApiDto {
   @Length(1, 255)
   slug: string;
 
+  @ApiProperty({ description: 'Category of the API', maxLength: 255 })
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 255)
+  category: string;
+
+  @ApiPropertyOptional({ description: 'Tags of the API' })
+  @IsArray()
+  @IsOptional()
+  tags: string[];
+
+  @ApiPropertyOptional({
+    description: 'Name of the company hosting the API',
+    maxLength: 255,
+  })
+  @IsString()
+  @IsOptional()
+  @Length(1, 255)
+  company_name?: string;
+
+  @ApiPropertyOptional({ description: 'Company contact email', maxLength: 255 })
+  @IsString()
+  @IsOptional()
+  @Length(1, 255)
+  company_contact_email?: string;
+
+  @ApiPropertyOptional({
+    description: 'Company contact phone number',
+    maxLength: 255,
+  })
+  @IsString()
+  @IsOptional()
+  @Length(1, 255)
+  company_contact_phone?: string;
+
   @ApiPropertyOptional({ description: 'Description of the API' })
   @IsString()
   @IsOptional()
@@ -30,6 +66,11 @@ export class CreateApiDto {
   @IsNotEmpty()
   @Length(1, 255)
   base_path: string;
+
+  @ApiProperty({ description: 'Base API key of the API' })
+  @IsString()
+  @IsNotEmpty()
+  base_api_key: string;
 
   @ApiProperty({ description: 'API version', maxLength: 50 })
   @IsString()

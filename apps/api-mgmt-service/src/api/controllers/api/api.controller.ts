@@ -28,6 +28,7 @@ import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 import { ApiService } from 'src/api/services/api/api.service';
 import { ReadableStream } from 'stream/web';
+import { Api } from 'src/api/entities/api.entity';
 
 @Controller('apis')
 export class ApiController {
@@ -45,12 +46,33 @@ export class ApiController {
     });
   }
 
+  @Get('/categories')
+  @ApiOperation({ summary: 'Get all categories' })
+  @ApiResponse({
+    status: 200,
+    description: 'Fetched all categories successfully',
+  })
+  async findAllCategories() {
+    return await this.apiService.getUniqueApiCategories();
+  }
+
+  @Get(':category')
+  @ApiOperation({ summary: 'Get all apis by category' })
+  @ApiResponse({
+    status: 200,
+    description: 'Fetched all apis by category successfully',
+  })
+  async findAllByCategory(@Param('category') category: string) {
+    return await this.apiService.filterByCategory(category);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get by ID' })
   @ApiResponse({ status: 200, description: 'Fetched successfully' })
-  async findOne(@Param('id') id: number) {
-    const user = await this.apiService.findOneById(id);
-    return user;
+  async findOne(@Param('id') id: string): Promise<Api | null> {
+    console.log('findOne', id);
+    console.log('findOne', this.apiService.findOneById(Number(id)));
+    return await this.apiService.findOneById(Number(id));
   }
 
   @Post()
@@ -87,6 +109,16 @@ export class ApiController {
   @ApiResponse({ status: 200, description: 'Published successfully' })
   async publish(@Param('id') id: number) {
     return await this.apiService.publish(id);
+  }
+
+  @Post(':id/unpublish')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('administrator')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Publish by ID' })
+  @ApiResponse({ status: 200, description: 'Published successfully' })
+  async unpublish(@Param('id') id: number) {
+    return await this.apiService.unpublish(id);
   }
 
   @Post(':id/upload-docs')

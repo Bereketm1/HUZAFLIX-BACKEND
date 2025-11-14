@@ -1,4 +1,10 @@
-import { MinioService, paginate, PaginatedResponse } from '@huzaflix/common';
+import {
+  decrypt,
+  encrypt,
+  MinioService,
+  paginate,
+  PaginatedResponse,
+} from '@huzaflix/common';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
@@ -33,7 +39,9 @@ export class ApiService {
   }
 
   async findOneById(id: number): Promise<Api | null> {
-    const api = await this.apiRepository.findOneById(id.toString());
+    const api = await this.apiRepository.findOne({
+      where: { id: id },
+    });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }
@@ -42,6 +50,7 @@ export class ApiService {
 
   async create(data: CreateApiDto & { created_by: string }): Promise<Api> {
     const api = this.apiRepository.create(data);
+    api.base_api_key = encrypt(data.base_api_key);
     return this.apiRepository.save(api);
   }
 
@@ -50,6 +59,13 @@ export class ApiService {
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }
+
+    if (data.base_api_key) {
+      if (decrypt(api.base_api_key) !== data.base_api_key) {
+        data.base_api_key = encrypt(data.base_api_key);
+      }
+    }
+
     Object.assign(api, data);
     return this.apiRepository.save(api);
   }
@@ -62,6 +78,43 @@ export class ApiService {
     api.status = ApiStatus.PUBLISHED;
     api.published_at = new Date();
     return this.apiRepository.save(api);
+  }
+
+  async unpublish(id: number): Promise<Api> {
+    const api = await this.findOneById(id);
+    if (!api) {
+      throw new NotFoundException(`API with id ${id} not found`);
+    }
+    api.status = ApiStatus.DRAFT;
+    api.published_at = null;
+    return this.apiRepository.save(api);
+  }
+
+  async getUniqueApiCategories(): Promise<string[]> {
+    const categories = await this.apiRepository
+      .createQueryBuilder('api')
+      .select('DISTINCT api.category', 'category')
+      .getRawMany();
+
+    return categories.map((row: { category: string }) => row.category);
+  }
+
+  async filterByCategory(
+    category: string,
+    page?: number,
+    limit?: number,
+  ): Promise<{ data: Api[]; meta: PaginatedResponse } | Api[]> {
+    if (!page || !limit) {
+      return this.apiRepository.findBy({ category });
+    }
+
+    const [apis, total] = await this.apiRepository.findAndCount({
+      where: { category },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return paginate(apis, page, limit, total);
   }
 
   async uploadDocs(id: number, file: Express.Multer.File): Promise<Api> {

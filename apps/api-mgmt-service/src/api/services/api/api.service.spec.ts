@@ -8,6 +8,14 @@ import { Api, ApiStatus } from 'src/api/entities/api.entity';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 
+jest.mock('@huzaflix/common', (): unknown => {
+  const actual: object = jest.requireActual('@huzaflix/common');
+  return {
+    ...actual,
+    encrypt: jest.fn().mockReturnValue('encrypted-value'),
+  };
+});
+
 describe('ApiService', () => {
   let service: ApiService;
 
@@ -108,19 +116,33 @@ describe('ApiService', () => {
         slug: 'test-api',
         base_path: '/test',
         version: '1.0',
-        openapi_spec_key: 'key123',
-        openapi_spec_url: 'https://example.com/spec',
-        created_by: 'user1',
+        base_api_key: 'key123',
+        category: 'category1',
+        tags: ['tag1', 'tag2'],
       };
 
-      (mockApiRepository.create as jest.Mock).mockReturnValue(dto);
-      (mockApiRepository.save as jest.Mock).mockResolvedValue(dto);
+      const req = {
+        ...dto,
+        created_by: '1',
+        base_api_key: 'encrypted-value',
+      };
 
-      const result = await service.create(dto);
+      (mockApiRepository.create as jest.Mock).mockReturnValue({
+        ...dto,
+        created_by: '1',
+      });
 
-      expect(mockApiRepository.create).toHaveBeenCalledWith(dto);
-      expect(mockApiRepository.save).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(dto);
+      (mockApiRepository.save as jest.Mock).mockResolvedValue(req);
+
+      const result = await service.create({ ...dto, created_by: '1' });
+
+      expect(mockApiRepository.create).toHaveBeenCalledWith({
+        ...dto,
+        created_by: '1',
+      });
+
+      expect(mockApiRepository.save).toHaveBeenCalledWith(req);
+      expect(result).toEqual(req);
     });
   });
 
