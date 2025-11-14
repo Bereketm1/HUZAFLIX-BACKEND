@@ -20,25 +20,64 @@ export class AppController {
   @Get('report')
   @UseGuards(JwtAuthGuard)
   getApiReport(): {
-    totalApiHits: number;
+    totalApiHitsToday: {
+      value: number;
+      percentage: number;
+      change: string;
+      period: string;
+    };
+    totalApiPublished: {
+      value: number;
+      percentage: number;
+      change: string;
+      period: string;
+    };
+    totalRevenueThisMonth: {
+      value: number;
+      percentage: number;
+      change: string;
+      period: string;
+    };
     totalSuccessHits: number;
     successRate: number;
     totalErrorHits: number;
     errorRate: number;
   } {
     // Mocked values; replace with real business logic later
-    const totalApiHits = 1000;
+    const totalApiHitsToday = {
+      value: 1000,
+      percentage: 15,
+      change: 'increase',
+      period: 'daily',
+    };
+
+    const totalApiPublished = {
+      value: 100,
+      percentage: 10,
+      change: 'increase',
+      period: 'daily',
+    };
+
+    const totalRevenueThisMonth = {
+      value: 1200,
+      percentage: 20,
+      change: 'increase',
+      period: 'monthly',
+    };
+
     const totalSuccessHits = 920;
-    const totalErrorHits = totalApiHits - totalSuccessHits;
+    const totalErrorHits = totalApiHitsToday.value - totalSuccessHits;
     const successRate = Number(
-      ((totalSuccessHits / totalApiHits) * 100).toFixed(2),
+      ((totalSuccessHits / totalApiHitsToday.value) * 100).toFixed(2),
     );
     const errorRate = Number(
-      ((totalErrorHits / totalApiHits) * 100).toFixed(2),
+      ((totalErrorHits / totalApiHitsToday.value) * 100).toFixed(2),
     );
 
     return {
-      totalApiHits,
+      totalRevenueThisMonth,
+      totalApiHitsToday,
+      totalApiPublished,
       totalSuccessHits,
       successRate,
       totalErrorHits,
