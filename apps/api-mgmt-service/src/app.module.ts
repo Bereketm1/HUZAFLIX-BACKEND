@@ -19,6 +19,7 @@ import { JwtModuleOptions } from '@nestjs/jwt';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiModule } from './api/api.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 export type RedisClient = Redis;
 
@@ -80,6 +81,7 @@ const jwtOptions: JwtModuleOptions = {
       },
     ),
     ApiModule,
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [
