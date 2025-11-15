@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { Api } from 'src/api/entities/api.entity';
 import { ApiKey } from 'src/api/entities/api-key.entity';
 import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
+import { Subscription } from 'src/subscription/entities/subscriptions.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -11,7 +12,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres',
   database: process.env.POSTGRES_DB || 'postgres',
-  entities: [Api, ApiKey, SubscriptionPlan],
+  entities: [Api, ApiKey, SubscriptionPlan, Subscription],
   migrations: ['./migrations/*.ts'],
   synchronize: false,
 });
