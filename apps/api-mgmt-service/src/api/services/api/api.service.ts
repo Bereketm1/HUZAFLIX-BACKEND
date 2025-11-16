@@ -14,6 +14,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 import { Api, ApiStatus } from 'src/api/entities/api.entity';
+import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
+import { PlanService } from 'src/subscription/services/plan/plan.service';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -22,6 +24,7 @@ export class ApiService {
     @InjectRepository(Api)
     private readonly apiRepository: Repository<Api>,
     private readonly minioService: MinioService,
+    private readonly planService: PlanService,
   ) {}
 
   async findAll(
@@ -153,13 +156,17 @@ export class ApiService {
     if (!isPaginated) {
       return isAdmin
         ? this.apiRepository.find({ where: { category } })
-        : this.apiRepository.find({ where: { status: ApiStatus.ACTIVE } });
+        : this.apiRepository.find({
+            where: { category: category, status: ApiStatus.ACTIVE },
+          });
     }
 
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const where = isAdmin ? { category } : { status: ApiStatus.ACTIVE };
+    const where = isAdmin
+      ? { category }
+      : { category: category, status: ApiStatus.ACTIVE };
 
     const [apis, total] = await this.apiRepository.findAndCount({
       where,
@@ -186,5 +193,32 @@ export class ApiService {
   async getDocs(filename: string): Promise<string> {
     const fileUrl = await this.minioService.getFile(filename);
     return fileUrl?.url;
+  }
+
+  async pricing(
+    id: number,
+    role?: string,
+  ): Promise<
+    { name: string; avg_price_per_call: number; call_limit: number }[]
+  > {
+    const api = await this.apiRepository.findOneBy({ id });
+    if (!api) {
+      throw new NotFoundException(`API with id ${id} not found`);
+    }
+    const price = (await this.planService.findAll(
+      {
+        page: undefined,
+        limit: undefined,
+      },
+      role,
+    )) as SubscriptionPlan[];
+
+    const priceList = price.map((plan: SubscriptionPlan) => ({
+      name: plan.name,
+      avg_price_per_call: plan.avg_price_per_call,
+      call_limit: plan.monthly_call_limit,
+    }));
+
+    return priceList;
   }
 }

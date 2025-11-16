@@ -4,9 +4,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { MinioService, PaginatedResponse } from '@huzaflix/common';
-import { Api, ApiStatus } from 'src/api/entities/api.entity';
+import { Api, ApiStatus, ApiType } from 'src/api/entities/api.entity';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
+import { PlanService } from 'src/subscription/services/plan/plan.service';
 
 jest.mock('@huzaflix/common', (): unknown => {
   const actual: object = jest.requireActual('@huzaflix/common');
@@ -34,6 +35,10 @@ describe('ApiService', () => {
     getFile: jest.fn(),
   };
 
+  const mockPlanService = {
+    findAll: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -47,6 +52,10 @@ describe('ApiService', () => {
         {
           provide: MinioService,
           useValue: mockMinioService,
+        },
+        {
+          provide: PlanService,
+          useValue: mockPlanService,
         },
       ],
     }).compile();
@@ -128,6 +137,7 @@ describe('ApiService', () => {
         category: 'category1',
         tags: ['tag1', 'tag2'],
         avg_response_time: 0.56,
+        type: ApiType.REST,
       };
 
       const req = {

@@ -13,6 +13,14 @@ export enum ApiStatus {
   ACTIVE = 'active',
 }
 
+export enum ApiType {
+  REST = 'rest',
+  GRAPHQL = 'graphql',
+  SOAP = 'soap',
+  WEBHOOK = 'webhook',
+  WEBSOCKET = 'websocket',
+}
+
 @Entity({ name: 'apis' })
 export class Api {
   @PrimaryGeneratedColumn({ type: 'bigint' })
@@ -57,6 +65,9 @@ export class Api {
   @Column({ type: 'varchar', length: 255 })
   category: string;
 
+  @Column({ type: 'enum', enum: ApiType })
+  type: string;
+
   @Column('text', { array: true, nullable: true })
   tags: string[];
 
@@ -78,7 +89,7 @@ export class Api {
   @Column({ type: 'varchar', length: 50, nullable: false })
   version: string;
 
-  @Column({ type: 'enum', enum: ApiStatus, default: ApiStatus.ACTIVE })
+  @Column({ type: 'enum', enum: ApiStatus, default: ApiStatus.INACTIVE })
   status: ApiStatus;
 
   @Column({

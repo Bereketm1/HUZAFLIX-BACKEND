@@ -107,6 +107,18 @@ export class ApiController {
     return await this.apiService.findOneById(Number(id), user?.role?.name);
   }
 
+  @Get('/pricing/:id')
+  @ApiOperation({ summary: 'Pricing by api ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuardWithPublic)
+  @ApiResponse({ status: 200, description: 'Fetched successfully' })
+  async pricing(
+    @Param('id') id: string,
+    @CurrentUser() user?: { role: { name: string } },
+  ) {
+    return await this.apiService.pricing(Number(id), user?.role?.name);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrator')

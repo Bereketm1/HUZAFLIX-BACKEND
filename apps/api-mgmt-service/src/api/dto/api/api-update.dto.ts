@@ -1,12 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
   Length,
 } from 'class-validator';
+import { ApiType } from 'src/api/entities/api.entity';
 
 export class UpdateApiDto {
   @ApiPropertyOptional({ description: 'Name of the API', maxLength: 255 })
@@ -34,6 +36,13 @@ export class UpdateApiDto {
   @IsOptional()
   @Length(1, 255)
   category?: string;
+
+  @ApiPropertyOptional({ description: 'Type of the API' })
+  @IsString()
+  @IsEnum(ApiType)
+  @IsOptional()
+  @Length(1, 255)
+  type?: string;
 
   @ApiPropertyOptional({ description: 'Tags of the API' })
   @IsArray()

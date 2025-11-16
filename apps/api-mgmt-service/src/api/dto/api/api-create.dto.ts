@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -8,6 +9,7 @@ import {
   IsUrl,
   Length,
 } from 'class-validator';
+import { ApiType } from 'src/api/entities/api.entity';
 
 export class CreateApiDto {
   @ApiProperty({ description: 'Name of the API', maxLength: 255 })
@@ -32,6 +34,13 @@ export class CreateApiDto {
   @IsNotEmpty()
   @Length(1, 255)
   category: string;
+
+  @ApiProperty({ description: 'Type of the API' })
+  @IsString()
+  @IsEnum(ApiType)
+  @IsNotEmpty()
+  @Length(1, 255)
+  type: string;
 
   @ApiPropertyOptional({ description: 'Tags of the API' })
   @IsArray()
