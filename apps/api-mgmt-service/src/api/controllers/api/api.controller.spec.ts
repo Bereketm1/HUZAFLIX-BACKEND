@@ -6,6 +6,7 @@ import { ApiService } from 'src/api/services/api/api.service';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 import { ApiStatus } from 'src/api/entities/api.entity';
+import { FavouritesService } from 'src/api/services/favourites/favourites.service';
 
 describe('ApiController', () => {
   let controller: ApiController;
@@ -17,6 +18,12 @@ describe('ApiController', () => {
     update: jest.fn(),
   };
 
+  const mockFavouritesService = {
+    createFavourite: jest.fn(),
+    deleteFavourite: jest.fn(),
+    getAllFavourites: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ApiController],
@@ -24,6 +31,10 @@ describe('ApiController', () => {
         {
           provide: ApiService,
           useValue: mockApiService,
+        },
+        {
+          provide: FavouritesService,
+          useValue: mockFavouritesService,
         },
       ],
     })
@@ -88,6 +99,7 @@ describe('ApiController', () => {
       const dto: CreateApiDto = {
         name: 'New API',
         slug: 'new-api',
+        type: 'rest',
         base_path: '/new',
         version: '1.0',
         category: 'category',

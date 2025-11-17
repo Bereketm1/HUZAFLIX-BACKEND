@@ -6,6 +6,7 @@ import {
   RolesGuard,
 } from '@huzaflix/common';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -35,10 +36,14 @@ import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 import { ApiService } from 'src/api/services/api/api.service';
 import { ReadableStream } from 'stream/web';
+import { FavouritesService } from 'src/api/services/favourites/favourites.service';
 
 @Controller('apis')
 export class ApiController {
-  constructor(private readonly apiService: ApiService) {}
+  constructor(
+    private readonly apiService: ApiService,
+    private readonly favouritesService: FavouritesService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all apis' })
@@ -69,6 +74,19 @@ export class ApiController {
   })
   async findAllCategories() {
     return await this.apiService.getUniqueApiCategories();
+  }
+
+  @Get('/favourites')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('api_consumer')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users favourites' })
+  @ApiResponse({
+    status: 200,
+    description: 'Fetched favourites successfully',
+  })
+  async get_favourites(@CurrentUser() user: { id: number }) {
+    return await this.favouritesService.getAllFavourites(user.id);
   }
 
   @Get('category/:category')
@@ -165,6 +183,35 @@ export class ApiController {
     return await this.apiService.deactivate(id);
   }
 
+  @Post(':id/add-favourites')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('api_consumer')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add to favourites' })
+  @ApiResponse({ status: 200, description: 'Added to favourites successfully' })
+  async favourites(
+    @Param('id') id: number,
+    @CurrentUser() user: { id: number },
+  ) {
+    return await this.favouritesService.createFavourite(user?.id, id);
+  }
+
+  @Post(':id/remove-favourites')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('api_consumer')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove from favourites' })
+  @ApiResponse({
+    status: 200,
+    description: 'Removed from favourites successfully',
+  })
+  async remove_favourites(
+    @Param('id') id: number,
+    @CurrentUser() user: { id: number },
+  ) {
+    return await this.favouritesService.deleteFavourite(user?.id, id);
+  }
+
   @Post(':id/upload-docs')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrator')
@@ -219,7 +266,21 @@ export class ApiController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete API' })
   @ApiResponse({ status: 200, description: 'Deleted successfully' })
-  async delete(@Param('id') id: number) {
+  async delete(
+    @Param('id') id: number,
+    @Query('email') email: string,
+    @CurrentUser() user: { email: string },
+  ) {
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    if (email && email !== user.email) {
+      throw new BadRequestException(
+        'Please provide a valid email, attached to your account',
+      );
+    }
+
     await this.apiService.delete(id);
   }
 }

@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateSubscriptionDto } from 'src/subscription/dto/subscription/subscription-create.dto';
-import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
+import {
+  PlanType,
+  SubscriptionPlan,
+} from 'src/subscription/entities/plans.entity';
 import {
   Subscription,
   SubscriptionStatus,
@@ -29,6 +32,12 @@ export class SubscriptionService {
     return end;
   }
 
+  private computeNextYear(date: Date): Date {
+    const end = new Date(date);
+    end.setFullYear(end.getFullYear() + 1);
+    return end;
+  }
+
   async create(
     data: CreateSubscriptionDto,
     user_id: number,
@@ -44,8 +53,12 @@ export class SubscriptionService {
     const subscription = this.subscriptionRepository.create({
       user_id: user_id,
       plan_id: plan.id,
+      api_id: data.api_id,
       start_date: now,
-      end_date: this.computeNextMonth(now),
+      end_date:
+        plan.plan_type === PlanType.MONTHLY
+          ? this.computeNextMonth(now)
+          : this.computeNextYear(now),
       auto_renew: true,
 
       current_cycle_start: now,
@@ -76,8 +89,11 @@ export class SubscriptionService {
 
     if (!isPaginated) {
       return isAdmin
-        ? this.subscriptionRepository.find()
-        : this.subscriptionRepository.find({ where: { user_id } });
+        ? this.subscriptionRepository.find({ relations: ['plan', 'api'] })
+        : this.subscriptionRepository.find({
+            where: { user_id },
+            relations: ['plan', 'api'],
+          });
     }
 
     const skip = (page - 1) * limit;
@@ -88,6 +104,7 @@ export class SubscriptionService {
     const [subscriptions, total] =
       await this.subscriptionRepository.findAndCount({
         where,
+        relations: ['plan', 'api'],
         skip,
         take,
       });
@@ -103,7 +120,7 @@ export class SubscriptionService {
     const isAdmin = role === 'administrator';
     const subscription = await this.subscriptionRepository.findOne({
       where: { id, ...(!isAdmin ? { user_id } : {}) },
-      relations: ['plan'],
+      relations: ['plan', 'api'],
     });
 
     if (!subscription) {

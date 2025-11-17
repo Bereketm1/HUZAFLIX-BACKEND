@@ -68,7 +68,7 @@ describe('SubscriptionService', () => {
         subscription,
       );
 
-      const result = await service.create({ plan_id: 1 }, 1);
+      const result = await service.create({ plan_id: 1, api_id: 1 }, 1);
 
       expect(mockPlanRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -86,9 +86,9 @@ describe('SubscriptionService', () => {
     it('should throw NotFoundException if plan does not exist', async () => {
       (mockPlanRepository.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.create({ plan_id: 999 }, 1)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.create({ plan_id: 999, api_id: 999 }, 1),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -102,7 +102,9 @@ describe('SubscriptionService', () => {
       const result = await service.findAll({}, 1, 'administrator');
 
       expect(result).toEqual(subscriptions);
-      expect(mockSubscriptionRepository.find).toHaveBeenCalledWith();
+      expect(mockSubscriptionRepository.find).toHaveBeenCalledWith({
+        relations: ['plan', 'api'],
+      });
     });
 
     it('should return subscriptions for user when not paginated', async () => {
@@ -116,6 +118,7 @@ describe('SubscriptionService', () => {
       expect(result).toEqual(subscriptions);
       expect(mockSubscriptionRepository.find).toHaveBeenCalledWith({
         where: { user_id: 1 },
+        relations: ['plan', 'api'],
       });
     });
 
@@ -136,6 +139,7 @@ describe('SubscriptionService', () => {
         skip: 0,
         take: 1,
         where: { user_id: 1 },
+        relations: ['plan', 'api'],
       });
       expect(result.data).toEqual(subscriptions);
       expect(result.meta.totalItems).toBe(3);
@@ -154,7 +158,7 @@ describe('SubscriptionService', () => {
       expect(result).toEqual(subscription);
       expect(mockSubscriptionRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, user_id: 1 },
-        relations: ['plan'],
+        relations: ['plan', 'api'],
       });
     });
 

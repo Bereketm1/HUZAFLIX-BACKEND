@@ -3,7 +3,7 @@ import { PlanController } from './plan.controller';
 import { JwtAuthGuard, RolesGuard, PaginatedResponse } from '@huzaflix/common';
 import { NotFoundException } from '@nestjs/common';
 import { PlanService } from 'src/subscription/services/plan/plan.service';
-import { PlanStatus } from 'src/subscription/entities/plans.entity';
+import { PlanStatus, PlanType } from 'src/subscription/entities/plans.entity';
 import { CreateSubscriptionPlanDto } from 'src/subscription/dto/plan/plan-create.dto';
 import { UpdateSubscriptionPlanDto } from 'src/subscription/dto/plan/plan-update.dto';
 
@@ -94,6 +94,9 @@ describe('PlanController', () => {
         monthly_price: 10,
         monthly_call_limit: 1000,
         avg_price_per_call: 0.01,
+        daily_call_limit: 500,
+        plan_type: PlanType.MONTHLY,
+        yearly_price: 100,
       };
 
       const created = { id: 1, ...dto };

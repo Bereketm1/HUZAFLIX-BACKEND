@@ -11,6 +11,11 @@ export enum PlanStatus {
   ACTIVE = 'active',
 }
 
+export enum PlanType {
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
+}
+
 @Entity({ name: 'subscription_plans' })
 export class SubscriptionPlan {
   @PrimaryGeneratedColumn({ type: 'bigint' })
@@ -22,11 +27,23 @@ export class SubscriptionPlan {
   @Column({ type: 'text', nullable: true })
   description: string;
 
+  @Column({ type: 'enum', enum: PlanType, default: PlanType.MONTHLY })
+  plan_type: PlanType;
+
   @Column({ type: 'decimal', nullable: false })
   monthly_price: number;
 
+  @Column({ type: 'decimal', nullable: false })
+  yearly_price: number;
+
+  @Column({ type: 'integer', nullable: false })
+  daily_call_limit: number;
+
   @Column({ type: 'integer', nullable: false })
   monthly_call_limit: number;
+
+  @Column({ type: 'integer', nullable: true })
+  yearly_call_limit: number;
 
   @Column({ type: 'decimal', nullable: false })
   avg_price_per_call: number;
