@@ -88,10 +88,10 @@ export class SubscriptionService {
 
     if (!isPaginated) {
       return isAdmin
-        ? this.subscriptionRepository.find({ relations: ['plan', 'api'] })
+        ? this.subscriptionRepository.find({ relations: ['plan'] })
         : this.subscriptionRepository.find({
             where: { user_id },
-            relations: ['plan', 'api'],
+            relations: ['plan'],
           });
     }
 
@@ -103,7 +103,7 @@ export class SubscriptionService {
     const [subscriptions, total] =
       await this.subscriptionRepository.findAndCount({
         where,
-        relations: ['plan', 'api'],
+        relations: ['plan'],
         skip,
         take,
       });
@@ -119,7 +119,7 @@ export class SubscriptionService {
     const isAdmin = role === 'administrator';
     const subscription = await this.subscriptionRepository.findOne({
       where: { id, ...(!isAdmin ? { user_id } : {}) },
-      relations: ['plan', 'api'],
+      relations: ['plan'],
     });
 
     if (!subscription) {

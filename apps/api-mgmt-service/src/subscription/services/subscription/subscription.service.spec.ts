@@ -103,7 +103,7 @@ describe('SubscriptionService', () => {
 
       expect(result).toEqual(subscriptions);
       expect(mockSubscriptionRepository.find).toHaveBeenCalledWith({
-        relations: ['plan', 'api'],
+        relations: ['plan'],
       });
     });
 
@@ -118,7 +118,7 @@ describe('SubscriptionService', () => {
       expect(result).toEqual(subscriptions);
       expect(mockSubscriptionRepository.find).toHaveBeenCalledWith({
         where: { user_id: 1 },
-        relations: ['plan', 'api'],
+        relations: ['plan'],
       });
     });
 
@@ -139,7 +139,7 @@ describe('SubscriptionService', () => {
         skip: 0,
         take: 1,
         where: { user_id: 1 },
-        relations: ['plan', 'api'],
+        relations: ['plan'],
       });
       expect(result.data).toEqual(subscriptions);
       expect(result.meta.totalItems).toBe(3);
@@ -158,7 +158,7 @@ describe('SubscriptionService', () => {
       expect(result).toEqual(subscription);
       expect(mockSubscriptionRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, user_id: 1 },
-        relations: ['plan', 'api'],
+        relations: ['plan'],
       });
     });
 
