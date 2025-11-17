@@ -8,7 +8,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { SubscriptionPlan } from './plans.entity';
-import { Api } from 'src/api/entities/api.entity';
 
 export enum SubscriptionStatus {
   ACTIVE = 'active',
@@ -31,13 +30,6 @@ export class Subscription {
 
   @Column({ type: 'bigint' })
   plan_id: number;
-
-  @ManyToOne(() => Api)
-  @JoinColumn({ name: 'api_id' })
-  api: Api;
-
-  @Column({ type: 'bigint' })
-  api_id: number;
 
   @Column({ type: 'timestamptz', nullable: false })
   start_date: Date;

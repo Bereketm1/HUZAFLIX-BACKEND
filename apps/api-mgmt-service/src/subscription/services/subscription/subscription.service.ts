@@ -53,7 +53,6 @@ export class SubscriptionService {
     const subscription = this.subscriptionRepository.create({
       user_id: user_id,
       plan_id: plan.id,
-      api_id: data.api_id,
       start_date: now,
       end_date:
         plan.plan_type === PlanType.MONTHLY

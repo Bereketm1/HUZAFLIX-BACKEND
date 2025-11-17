@@ -7,11 +7,6 @@ export class CreateSubscriptionDto {
   @IsNumber()
   plan_id: number;
 
-  @ApiProperty({ description: 'Id of the api' })
-  @IsNotEmpty()
-  @IsNumber()
-  api_id: number;
-
   @ApiPropertyOptional({
     description: 'Auto renew subscription',
   })
