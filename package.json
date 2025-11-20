@@ -8,9 +8,10 @@
     "user": "pnpm --filter user-service run",
     "analytics": "pnpm --filter analytics-service run",
     "api-mgmt": "pnpm --filter api-mgmt-service run",
-    "all:migrate": "pnpm --filter user-service run migration:run && pnpm --filter api-mgmt-service run migration:run",
-    "all:test": "pnpm --filter common run test && pnpm --filter gateway-service run test && pnpm --filter user-service run test && pnpm --filter analytics-service run test && pnpm --filter api-mgmt-service run test",
-    "all:lint": "pnpm --filter common run lint && pnpm --filter gateway-service run lint && pnpm --filter user-service run lint && pnpm --filter analytics-service run lint && pnpm --filter api-mgmt-service run lint"
+    "payment": "pnpm --filter payment-service run",
+    "all:migrate": "pnpm --filter user-service run migration:run && pnpm --filter api-mgmt-service run migration:run && pnpm --filter payment-service run migration:run",
+    "all:test": "pnpm --filter common run test && pnpm --filter gateway-service run test && pnpm --filter user-service run test && pnpm --filter analytics-service run test && pnpm --filter api-mgmt-service run test && pnpm --filter payment-service run test",
+    "all:lint": "pnpm --filter common run lint && pnpm --filter gateway-service run lint && pnpm --filter user-service run lint && pnpm --filter analytics-service run lint && pnpm --filter api-mgmt-service run lint && pnpm --filter payment-service run lint"
   },
   "dependencies": {
     "@nest-lab/throttler-storage-redis": "^1.1.0",

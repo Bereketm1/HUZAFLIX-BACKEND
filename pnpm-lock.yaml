@@ -177,6 +177,12 @@ importers:
 
   apps/gateway-service: {}
 
+  apps/payment-service:
+    dependencies:
+      '@huzaflix/common':
+        specifier: file:../../packages/common
+        version: link:../../packages/common
+
   apps/user-service:
     dependencies:
       '@huzaflix/common':
