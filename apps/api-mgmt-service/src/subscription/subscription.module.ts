@@ -1,4 +1,5 @@
 import { CommonModule } from '@huzaflix/common';
+import { ActivityLogModule } from 'src/api/activity-log/activity-log.module';
 import { Module } from '@nestjs/common';
 import { SubscriptionPlan } from './entities/plans.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,6 +13,7 @@ import { SubscriptionController } from './controllers/subscription/subscription.
   imports: [
     TypeOrmModule.forFeature([SubscriptionPlan, Subscription]),
     CommonModule,
+    ActivityLogModule,
   ],
   providers: [PlanService, SubscriptionService],
   exports: [PlanService],

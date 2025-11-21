@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards, UnauthorizedException, Post, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, CurrentUser } from '@huzaflix/common';
 import { ActivityLogService } from './activity-log.service';
@@ -24,5 +24,12 @@ export class ActivityLogController {
     }
 
     return await this.activityLogService.findForUser({ page, limit }, userId);
+  }
+
+  // Internal endpoint intended for other services to create audit entries.
+  // Note: this is intentionally not guarded to allow internal service-to-service calls
+  @Post('internal')
+  async createInternal(@Body() dto: any) {
+    return await this.activityLogService.createAudit(dto as any);
   }
 }

@@ -2,11 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConsumerApiKeyService } from './consumer-api-key.service';
+import { ActivityLogService } from '../../activity-log/activity-log.service';
 import { ApiKey } from '../../entities/api-key.entity';
 
 describe('ConsumerApiKeyService', () => {
   let service: ConsumerApiKeyService;
   let repo: Partial<Record<keyof Repository<ApiKey>, jest.Mock>>;
+
+  let testingModule: TestingModule;
 
   beforeEach(async () => {
     repo = {
@@ -16,17 +19,21 @@ describe('ConsumerApiKeyService', () => {
       findOne: jest.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    testingModule = await Test.createTestingModule({
       providers: [
         ConsumerApiKeyService,
         {
           provide: getRepositoryToken(ApiKey),
           useValue: repo,
         },
+        {
+          provide: ActivityLogService,
+          useValue: { createAudit: jest.fn() },
+        },
       ],
     }).compile();
 
-    service = module.get<ConsumerApiKeyService>(ConsumerApiKeyService);
+    service = testingModule.get<ConsumerApiKeyService>(ConsumerApiKeyService);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -53,6 +60,8 @@ describe('ConsumerApiKeyService', () => {
     expect(out.key).toBeDefined();
     expect(out.id).toBe(10);
     expect(repo.save).toHaveBeenCalled();
+    const audit = testingModule.get<ActivityLogService>(ActivityLogService) as any;
+    expect(audit.createAudit).toHaveBeenCalled();
   });
 
   it('updateForUser should update existing key for matching user', async () => {
@@ -75,5 +84,7 @@ describe('ConsumerApiKeyService', () => {
     const res = await service.revokeForUser('9', 3);
     expect(repo.findOne).toHaveBeenCalledWith({ where: { id: '3', user_id: '9' } });
     expect(res.revoked_at).toBeDefined();
+    const audit = testingModule.get<ActivityLogService>(ActivityLogService) as any;
+    expect(audit.createAudit).toHaveBeenCalled();
   });
 });
