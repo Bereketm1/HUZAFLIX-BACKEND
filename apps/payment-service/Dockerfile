@@ -23,7 +23,7 @@ RUN pnpm common build
 COPY apps/payment-service/src ./apps/payment-service/src
 COPY apps/payment-service/migrations ./apps/payment-service/migrations
 
-RUN pnpm api-mgmt build
+RUN pnpm payment build
 
 COPY apps/payment-service/wait-for-postgres.sh ./apps/payment-service/wait-for-postgres.sh
 RUN chmod +x ./apps/payment-service/wait-for-postgres.sh && sed -i 's/\r$//' ./apps/payment-service/wait-for-postgres.sh || true

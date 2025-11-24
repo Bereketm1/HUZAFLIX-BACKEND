@@ -1,10 +1,4 @@
-import {
-  CurrentUser,
-  JwtAuthGuard,
-  JwtAuthGuardWithPublic,
-  Roles,
-  RolesGuard,
-} from '@huzaflix/common';
+import { CurrentUser, JwtAuthGuard, Roles, RolesGuard } from '@huzaflix/common';
 import {
   Body,
   Controller,
@@ -30,7 +24,7 @@ export class PaymentRequestController {
   @Get()
   @ApiOperation({ summary: 'Get all apis' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuardWithPublic)
+  @UseGuards(JwtAuthGuard)
   @ApiResponse({
     status: 200,
     description: 'Fetched all payment requests successfully',
@@ -55,7 +49,7 @@ export class PaymentRequestController {
   @Get(':id')
   @ApiOperation({ summary: 'Get by ID' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuardWithPublic)
+  @UseGuards(JwtAuthGuard)
   @ApiResponse({ status: 200, description: 'Fetched successfully' })
   async findOne(
     @Param('id') id: string,
