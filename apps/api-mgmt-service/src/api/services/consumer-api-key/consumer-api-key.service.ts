@@ -1,4 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ActivityLogService } from '../../activity-log/activity-log.service';
+import { EventType } from '../../entities/audit-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiKey } from '../../entities/api-key.entity';
@@ -8,7 +10,10 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class ConsumerApiKeyService {
-  constructor(@InjectRepository(ApiKey) private repo: Repository<ApiKey>) {}
+  constructor(
+    @InjectRepository(ApiKey) private repo: Repository<ApiKey>,
+    private readonly activityLogService?: ActivityLogService,
+  ) {}
 
   // Returns user-owned keys (without exposing the secret hash)
   async findAllForUser(userId: string) {
@@ -45,6 +50,18 @@ export class ConsumerApiKeyService {
       const saved = await this.repo.save(entity);
       // Return created DB record (without hash) plus the cleartext key
       const { key_hash, ...safe } = saved as any;
+      // create an audit entry (best effort)
+      try {
+        await this.activityLogService?.createAudit({
+          actor_id: String(userId),
+          event: EventType.API_KEY_CREATED,
+          resource_type: 'api_key',
+          resource_id: String((saved as any).id),
+          metadata: { name: saved.name, api: saved.api },
+        } as any);
+      } catch (err) {
+        // non-fatal for key creation; log it server-side if needed
+      }
       return { key: publicKey, ...safe };
     } catch (err) {
       // If something like duplicate hash occur (unlikely), throw
@@ -71,6 +88,20 @@ export class ConsumerApiKeyService {
     const found = await this.repo.findOne({ where: { id: String(id), user_id: userId } });
     if (!found) throw new NotFoundException('Api key not found');
     found.revoked_at = new Date();
-    return this.repo.save(found);
+    const saved = await this.repo.save(found);
+
+    try {
+      await this.activityLogService?.createAudit({
+        actor_id: String(userId),
+        event: EventType.API_KEY_DELETED,
+        resource_type: 'api_key',
+        resource_id: String(saved.id),
+        metadata: { name: saved.name },
+      } as any);
+    } catch (err) {
+      // ignore logging failures for non-blocking behaviour
+    }
+
+    return saved;
   }
 }

@@ -10,6 +10,7 @@ import { LoginDto } from './dto/login.dto';
 import bcrypt from 'bcryptjs';
 import { RegisterDto } from './dto/register.dto';
 import { RolesService } from 'src/roles/roles.service';
+import { AuditService } from 'src/audit/audit.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -23,11 +24,22 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly roleService: RolesService,
     private readonly sessionsService: SessionsService,
+    private readonly auditService?: AuditService,
   ) {}
 
   async register(user: RegisterDto): Promise<{ message: string }> {
     const role = await this.roleService.findOneByName('api_consumer');
-    await this.userService.create({ ...user, role_id: role.id });
+    const created = await this.userService.create({ ...user, role_id: role.id });
+    // best-effort audit
+    try {
+      await this.auditService?.createAudit({
+        actor_id: String((created as any).id),
+        event: 'user.register',
+        resource_type: 'user',
+        resource_id: String((created as any).id),
+        metadata: { email: (created as any).email },
+      });
+    } catch (err) {}
     return {
       message: 'User registered successfully',
     };
@@ -68,6 +80,15 @@ export class AuthService {
       ),
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
+
+    try {
+      await this.auditService?.createAudit({
+        actor_id: String(res.id),
+        event: 'user.login',
+        resource_type: 'user',
+        resource_id: String(res.id),
+      });
+    } catch (err) {}
 
     return {
       access_token: accessSession.token as string,
@@ -188,6 +209,14 @@ export class AuthService {
     // mark used and update password
     await this.sessionsService.markUsed(session.id);
     await this.userService.updatePassword(userId, newPassword);
+    try {
+      await this.auditService?.createAudit({
+        actor_id: String(userId),
+        event: 'password.reset',
+        resource_type: 'user',
+        resource_id: String(userId),
+      });
+    } catch (err) {}
     return { message: 'Password has been reset successfully' };
   }
 

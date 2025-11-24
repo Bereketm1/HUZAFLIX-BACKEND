@@ -15,6 +15,8 @@ import {
   SubscriptionStatus,
 } from 'src/subscription/entities/subscriptions.entity';
 import { Repository } from 'typeorm';
+import { ActivityLogService } from 'src/api/activity-log/activity-log.service';
+import { EventType } from 'src/api/entities/audit-log.entity';
 
 @Injectable()
 export class SubscriptionService {
@@ -24,6 +26,7 @@ export class SubscriptionService {
 
     @InjectRepository(SubscriptionPlan)
     private readonly planRepository: Repository<SubscriptionPlan>,
+    private readonly activityLogService?: ActivityLogService,
   ) {}
 
   private computeNextMonth(date: Date): Date {
@@ -67,7 +70,22 @@ export class SubscriptionService {
       calls_used_this_cycle: 0,
     });
 
-    return await this.subscriptionRepository.save(subscription);
+    const saved = await this.subscriptionRepository.save(subscription);
+
+    // best-effort audit entry
+    try {
+      await this.activityLogService?.createAudit({
+        actor_id: String(user_id),
+        event: EventType.SUBSCRIPTION_CREATED,
+        resource_type: 'subscription',
+        resource_id: String((saved as any).id),
+        metadata: { plan_id: plan.id },
+      } as any);
+    } catch (err) {
+      // ignore audit issue
+    }
+
+    return saved;
   }
 
   async findAll(
@@ -188,6 +206,18 @@ export class SubscriptionService {
 
     subscription.auto_renew = false;
     subscription.status = SubscriptionStatus.CANCELLED;
-    return await this.subscriptionRepository.save(subscription);
+    const saved = await this.subscriptionRepository.save(subscription);
+
+    try {
+      await this.activityLogService?.createAudit({
+        actor_id: String(user_id),
+        event: EventType.SUBSCRIPTION_CANCELED,
+        resource_type: 'subscription',
+        resource_id: String((saved as any).id),
+        metadata: {},
+      } as any);
+    } catch (err) {}
+
+    return saved;
   }
 }

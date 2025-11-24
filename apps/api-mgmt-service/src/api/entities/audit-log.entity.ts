@@ -4,6 +4,14 @@ export enum EventType {
   CREATED = 'created',
   UPDATED = 'updated',
   DELETED = 'deleted',
+  // Additional application-level events
+  USER_LOGIN = 'user.login',
+  USER_REGISTER = 'user.register',
+  PASSWORD_RESET = 'password.reset',
+  API_KEY_CREATED = 'api_key.created',
+  API_KEY_DELETED = 'api_key.deleted',
+  SUBSCRIPTION_CREATED = 'subscription.created',
+  SUBSCRIPTION_CANCELED = 'subscription.canceled',
 }
 
 @Entity({ name: 'audit_log' })
