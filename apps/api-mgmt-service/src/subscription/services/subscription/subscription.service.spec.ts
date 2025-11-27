@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SubscriptionService } from './subscription.service';
+import { ActivityLogService } from 'src/api/activity-log/activity-log.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
@@ -25,10 +26,12 @@ describe('SubscriptionService', () => {
     findOne: jest.fn(),
   };
 
+  let testingModule: TestingModule;
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    const module: TestingModule = await Test.createTestingModule({
+    testingModule = await Test.createTestingModule({
       providers: [
         SubscriptionService,
         {
@@ -39,10 +42,14 @@ describe('SubscriptionService', () => {
           provide: getRepositoryToken(SubscriptionPlan),
           useValue: mockPlanRepository,
         },
+        {
+          provide: ActivityLogService,
+          useValue: { createAudit: jest.fn() },
+        },
       ],
     }).compile();
 
-    service = module.get<SubscriptionService>(SubscriptionService);
+    service = testingModule.get<SubscriptionService>(SubscriptionService);
   });
 
   it('should be defined', () => {
@@ -81,6 +88,8 @@ describe('SubscriptionService', () => {
         }),
       );
       expect(result).toEqual(subscription);
+      const audit = testingModule.get<ActivityLogService>(ActivityLogService) as any;
+      expect(audit.createAudit).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if plan does not exist', async () => {
@@ -268,6 +277,8 @@ describe('SubscriptionService', () => {
 
       expect(result.auto_renew).toBe(false);
       expect(result.status).toBe(SubscriptionStatus.CANCELLED);
+      const audit = testingModule.get<ActivityLogService>(ActivityLogService) as any;
+      expect(audit.createAudit).toHaveBeenCalled();
     });
   });
 });

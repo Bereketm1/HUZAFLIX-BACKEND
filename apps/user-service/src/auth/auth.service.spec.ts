@@ -7,6 +7,7 @@ import { UnauthorizedException, NotFoundException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { RolesService } from 'src/roles/roles.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { AuditService } from 'src/audit/audit.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 describe('AuthService', () => {
@@ -38,6 +39,9 @@ describe('AuthService', () => {
     findOneByName: jest.fn(),
     findOneById: jest.fn(),
   };
+  const mockAuditService = {
+    createAudit: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -47,6 +51,7 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: mockUsersService },
         { provide: RolesService, useValue: mockRolesService },
         { provide: SessionsService, useValue: mockSessionsService },
+        { provide: AuditService, useValue: mockAuditService },
       ],
     }).compile();
 
@@ -80,6 +85,7 @@ describe('AuthService', () => {
         role_id: '1',
       });
       expect(result).toEqual({ message: 'User registered successfully' });
+      expect(mockAuditService.createAudit).toHaveBeenCalled();
     });
   });
 
@@ -131,6 +137,7 @@ describe('AuthService', () => {
         access_token: 'mocked-jwt-token',
         refresh_token: 'mocked-jwt-token',
       });
+      expect(mockAuditService.createAudit).toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException if user not found', async () => {
@@ -267,6 +274,7 @@ describe('AuthService', () => {
         1,
         dto.newPassword,
       );
+      expect(mockAuditService.createAudit).toHaveBeenCalled();
     });
 
     it('resetPassword should throw on invalid token', async () => {
