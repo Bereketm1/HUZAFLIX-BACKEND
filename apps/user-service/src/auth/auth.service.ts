@@ -16,6 +16,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 import type { User } from 'src/users/users.entity';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { MfaService } from 'src/mfa/mfa.service';
 
 @Injectable()
 export class AuthService {
@@ -25,11 +26,15 @@ export class AuthService {
     private readonly roleService: RolesService,
     private readonly sessionsService: SessionsService,
     private readonly auditService?: AuditService,
+    private readonly mfaService: MfaService,
   ) {}
 
   async register(user: RegisterDto): Promise<{ message: string }> {
     const role = await this.roleService.findOneByName('api_consumer');
-    const created = await this.userService.create({ ...user, role_id: role.id });
+    const created = await this.userService.create({
+      ...user,
+      role_id: role.id,
+    });
     // best-effort audit
     try {
       await this.auditService?.createAudit({
@@ -152,7 +157,7 @@ export class AuthService {
 
   async requestPasswordReset(
     dto: ForgotPasswordDto,
-  ): Promise<{ message: string; token?: string }> {
+  ): Promise<{ message: string; token?: string; otp?: string }> {
     const { email } = dto;
     interface ResUser {
       id: number;
@@ -161,6 +166,8 @@ export class AuthService {
     let user: ResUser | undefined;
     try {
       user = await this.userService.findOneByEmail(email);
+      if (!user) throw new NotFoundException('User not found');
+
       const created = await this.sessionsService.create({
         user: user as User,
         jti: (user as User).id,
@@ -171,10 +178,14 @@ export class AuthService {
         type: 'reset',
         expires_at: new Date(Date.now() + 5 * 60 * 1000),
       });
+
+      const mfa = await this.mfaService.createMfa(user.id?.toString());
+
       return {
         message:
           'If an account with that email exists, a reset token has been sent',
         token: created.token as string,
+        otp: mfa.toString(),
       };
     } catch {
       return {
