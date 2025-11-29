@@ -220,4 +220,17 @@ export class SubscriptionService {
 
     return saved;
   }
+
+  async findByUserId(userId: number): Promise<Subscription[]> {
+    const subscription = await this.subscriptionRepository.find({
+      where: {
+        user_id: userId,
+        status: SubscriptionStatus.ACTIVE,
+      },
+    });
+    if (!subscription) {
+      return [];
+    }
+    return subscription;
+  }
 }

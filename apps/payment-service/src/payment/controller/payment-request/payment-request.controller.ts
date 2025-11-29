@@ -14,8 +14,8 @@ import {
   ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
-import { CreatePaymentRequestDto } from 'src/payment-request/dto/payment-request/create-payment-request.dto';
-import { PaymentRequestService } from 'src/payment-request/services/payment-request/payment-request.service';
+import { CreatePaymentRequestDto } from 'src/payment/dto/payment-request/create-payment-request.dto';
+import { PaymentRequestService } from 'src/payment/services/payment-request/payment-request.service';
 
 @Controller('payment-request')
 export class PaymentRequestController {

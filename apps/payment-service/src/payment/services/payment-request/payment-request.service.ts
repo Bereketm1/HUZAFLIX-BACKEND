@@ -1,8 +1,8 @@
 import { paginate, PaginatedResponse } from '@huzaflix/common';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreatePaymentRequestDto } from 'src/payment-request/dto/payment-request/create-payment-request.dto';
-import { PaymentRequest } from 'src/payment-request/entities/payment-request.entity';
+import { CreatePaymentRequestDto } from 'src/payment/dto/payment-request/create-payment-request.dto';
+import { PaymentRequest } from 'src/payment/entities/payment-request.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()

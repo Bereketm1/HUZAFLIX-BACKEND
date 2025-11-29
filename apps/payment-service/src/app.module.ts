@@ -18,7 +18,8 @@ import * as redisStore from 'cache-manager-redis-store';
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PaymentRequestModule } from './payment-request/payment-request.module';
+import { PaymentModule } from './payment/payment.module';
+import { BillingModule } from './billing/billing.module';
 
 export type RedisClient = Redis;
 
@@ -79,7 +80,8 @@ const jwtOptions: JwtModuleOptions = {
         bucketName: process.env.MINIO_BUCKET_NAME || 'huzaflix',
       },
     ),
-    PaymentRequestModule,
+    PaymentModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [

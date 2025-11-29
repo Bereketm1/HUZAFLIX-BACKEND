@@ -16,4 +16,4 @@ import { Transaction } from './entities/transaction.entity';
   providers: [PaymentRequestService, TransactionsService],
   controllers: [PaymentRequestController, TransactionController],
 })
-export class PaymentRequestModule {}
+export class PaymentModule {}

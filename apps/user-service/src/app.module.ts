@@ -23,6 +23,7 @@ import * as redisStore from 'cache-manager-redis-store';
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { RolesController } from 'src/roles/roles.controller';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 export type RedisClient = Redis;
 
@@ -63,6 +64,16 @@ const jwtOptions: JwtModuleOptions = {
       ],
       storage: new ThrottlerStorageRedisService(redisClient),
     }),
+    ClientsModule.register([
+      {
+        name: 'SUBSCRIPTION_SERVICE',
+        transport: Transport.REDIS,
+        options: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        },
+      },
+    ]),
     CacheModule.register({
       store: redisStore,
       redisInstance: redisClient,

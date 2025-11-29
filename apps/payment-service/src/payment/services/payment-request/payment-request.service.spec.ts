@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentRequestService } from './payment-request.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaymentRequest } from 'src/payment-request/entities/payment-request.entity';
+import { PaymentRequest } from 'src/payment/entities/payment-request.entity';
 import { NotFoundException } from '@nestjs/common';
 import { PaginatedResponse } from '@huzaflix/common';
 
