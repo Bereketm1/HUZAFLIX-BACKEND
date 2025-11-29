@@ -1,4 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 export enum EventType {
   CREATED = 'created',
@@ -37,7 +42,7 @@ export class AuditLog {
   resource_id?: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata?: any;
+  metadata?: Record<string, unknown> | null;
 
   @Column({ type: 'inet', name: 'ip_address', nullable: true })
   ip_address?: string;

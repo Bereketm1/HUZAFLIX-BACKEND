@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsInt, IsNumber, IsISO8601 } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  IsNumber,
+  IsISO8601,
+} from 'class-validator';
 
 export class CreateConsumerApiKeyDto {
   @IsOptional()
