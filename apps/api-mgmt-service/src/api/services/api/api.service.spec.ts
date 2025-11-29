@@ -211,11 +211,13 @@ describe('ApiService', () => {
 
       expect(result.status).toBe(ApiStatus.ACTIVE);
       expect(mockApiRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
-      expect(mockApiRepository.save).toHaveBeenCalledWith({
-        ...existingApi,
-        status: ApiStatus.ACTIVE,
-        activated_at: new Date(),
-      });
+      expect(mockApiRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...existingApi,
+          status: ApiStatus.ACTIVE,
+          activated_at: expect.any(Date),
+        }),
+      );
     });
 
     it('should throw NotFoundException if API not found', async () => {
