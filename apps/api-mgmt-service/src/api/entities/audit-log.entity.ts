@@ -42,7 +42,7 @@ export class AuditLog {
   resource_id?: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown>;
 
   @Column({ type: 'inet', name: 'ip_address', nullable: true })
   ip_address?: string;

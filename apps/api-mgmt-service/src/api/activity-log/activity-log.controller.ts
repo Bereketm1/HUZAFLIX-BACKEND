@@ -17,7 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard, CurrentUser } from '@huzaflix/common';
 import type { Request } from 'express';
-import type { AuditLog } from './entities/audit-log.entity';
+import type { AuditLog } from '../entities/audit-log.entity';
 import type { DeepPartial } from 'typeorm';
 import { CreateAuditLogDto } from '../dto/audit-log/create-audit-log.dto';
 import { ActivityLogService } from './activity-log.service';

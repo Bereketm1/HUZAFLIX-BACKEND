@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, type FindOptionsWhere } from 'typeorm';
 import { AuditLog } from '../entities/audit-log.entity';
 import type { DeepPartial } from 'typeorm';
 import type { CreateAuditLogDto } from '../dto/audit-log/create-audit-log.dto';
@@ -17,27 +17,30 @@ export class ActivityLogService {
   async createAudit(audit: CreateAuditLogDto | DeepPartial<AuditLog>) {
     // Normalize incoming payload to a DeepPartial<AuditLog> with safe types
     const normalized: DeepPartial<AuditLog> = {};
-
-    if ('actor_id' in audit && audit.actor_id !== undefined) {
-      normalized.actor_id = String((audit as any).actor_id);
-    }
-    if ('event' in audit && (audit as any).event !== undefined) {
-      normalized.event = (audit as any).event as AuditLog['event'];
-    }
-    if ('resource_type' in audit && (audit as any).resource_type !== undefined) {
-      normalized.resource_type = String((audit as any).resource_type);
-    }
-    if ('resource_id' in audit && (audit as any).resource_id !== undefined) {
-      normalized.resource_id = String((audit as any).resource_id);
-    }
-    if ('metadata' in audit && (audit as any).metadata !== undefined) {
-      normalized.metadata = (audit as any).metadata as Record<string, unknown>;
-    }
-    if ('ip_address' in audit && (audit as any).ip_address !== undefined) {
-      normalized.ip_address = String((audit as any).ip_address);
-    }
-    if ('user_agent' in audit && (audit as any).user_agent !== undefined) {
-      normalized.user_agent = String((audit as any).user_agent);
+    const src = audit;
+    if (src && typeof src === 'object') {
+      const createDTO = src as CreateAuditLogDto;
+      if ('actor_id' in src && createDTO.actor_id !== undefined) {
+        normalized.actor_id = String(createDTO.actor_id);
+      }
+      if ('event' in src && createDTO.event !== undefined) {
+        normalized.event = createDTO.event;
+      }
+      if ('resource_type' in src && createDTO.resource_type !== undefined) {
+        normalized.resource_type = String(createDTO.resource_type);
+      }
+      if ('resource_id' in src && createDTO.resource_id !== undefined) {
+        normalized.resource_id = String(createDTO.resource_id);
+      }
+      if ('metadata' in src && createDTO.metadata !== undefined) {
+        normalized.metadata = createDTO.metadata;
+      }
+      if ('ip_address' in src && createDTO.ip_address !== undefined) {
+        normalized.ip_address = String(createDTO.ip_address);
+      }
+      if ('user_agent' in src && createDTO.user_agent !== undefined) {
+        normalized.user_agent = String(createDTO.user_agent);
+      }
     }
 
     try {
@@ -45,7 +48,10 @@ export class ActivityLogService {
       return await this.auditLogRepository.save(entity);
     } catch (err: unknown) {
       // Log and rethrow — preserve original error typing
-      this.logger.error('Failed to save audit log', err instanceof Error ? err.message : String(err));
+      this.logger.error(
+        'Failed to save audit log',
+        err instanceof Error ? err.message : String(err),
+      );
       throw err;
     }
   }
@@ -56,7 +62,7 @@ export class ActivityLogService {
   ) {
     const isPaginated = page && limit;
 
-    const where: Partial<AuditLog> = { actor_id: String(userId) };
+    const where: FindOptionsWhere<AuditLog> = { actor_id: String(userId) };
 
     if (!isPaginated) {
       return await this.auditLogRepository.find({
