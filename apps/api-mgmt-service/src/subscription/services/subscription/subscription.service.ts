@@ -15,11 +15,13 @@ import {
   SubscriptionStatus,
 } from 'src/subscription/entities/subscriptions.entity';
 import { Repository } from 'typeorm';
+import { Logger } from '@nestjs/common';
 import { ActivityLogService } from 'src/api/activity-log/activity-log.service';
 import { EventType } from 'src/api/entities/audit-log.entity';
 
 @Injectable()
 export class SubscriptionService {
+  private readonly logger = new Logger(SubscriptionService.name);
   constructor(
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
@@ -72,17 +74,21 @@ export class SubscriptionService {
 
     const saved = await this.subscriptionRepository.save(subscription);
 
-    // best-effort audit entry
+    // best-effort audit entry — avoid `any` by using saved as Subscription
     try {
       await this.activityLogService?.createAudit({
         actor_id: String(user_id),
         event: EventType.SUBSCRIPTION_CREATED,
         resource_type: 'subscription',
-        resource_id: String((saved as any).id),
+        resource_id: String(saved.id),
         metadata: { plan_id: plan.id },
-      } as any);
-    } catch (err) {
-      // ignore audit issue
+      });
+    } catch (err: unknown) {
+      // Non-fatal; log the error for diagnostics
+      this.logger.warn(
+        'Failed to write subscription created audit: ' +
+          (err instanceof Error ? err.message : String(err)),
+      );
     }
 
     return saved;
@@ -213,10 +219,15 @@ export class SubscriptionService {
         actor_id: String(user_id),
         event: EventType.SUBSCRIPTION_CANCELED,
         resource_type: 'subscription',
-        resource_id: String((saved as any).id),
+        resource_id: String(saved.id),
         metadata: {},
-      } as any);
-    } catch (err) {}
+      });
+    } catch (err: unknown) {
+      this.logger.warn(
+        'Failed to write subscription canceled audit: ' +
+          (err instanceof Error ? err.message : String(err)),
+      );
+    }
 
     return saved;
   }

@@ -7,7 +7,11 @@ import { CommonModule } from '@huzaflix/common';
 import { ActivityLogModule } from './activity-log/activity-log.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ApiKey]), CommonModule, ActivityLogModule],
+  imports: [
+    TypeOrmModule.forFeature([ApiKey]),
+    CommonModule,
+    ActivityLogModule,
+  ],
   providers: [ConsumerApiKeyService],
   controllers: [ConsumerApiKeyController],
   exports: [ConsumerApiKeyService],

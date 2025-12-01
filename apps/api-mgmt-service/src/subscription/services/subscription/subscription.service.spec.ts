@@ -27,10 +27,12 @@ describe('SubscriptionService', () => {
   };
 
   let testingModule: TestingModule;
+  let auditMock: { createAudit: jest.Mock };
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
+    auditMock = { createAudit: jest.fn() };
     testingModule = await Test.createTestingModule({
       providers: [
         SubscriptionService,
@@ -44,7 +46,7 @@ describe('SubscriptionService', () => {
         },
         {
           provide: ActivityLogService,
-          useValue: { createAudit: jest.fn() },
+          useValue: auditMock,
         },
       ],
     }).compile();
@@ -59,7 +61,7 @@ describe('SubscriptionService', () => {
   describe('create', () => {
     it('should create and save a subscription', async () => {
       const plan = { id: 1, monthly_call_limit: 10 } as SubscriptionPlan;
-      (mockPlanRepository.findOne as jest.Mock).mockResolvedValue(plan);
+      mockPlanRepository.findOne = jest.fn(() => Promise.resolve(plan));
 
       const subscription = {
         user_id: 1,
@@ -68,11 +70,9 @@ describe('SubscriptionService', () => {
         calls_used_this_cycle: 0,
       } as Subscription;
 
-      (mockSubscriptionRepository.create as jest.Mock).mockReturnValue(
-        subscription,
-      );
-      (mockSubscriptionRepository.save as jest.Mock).mockResolvedValue(
-        subscription,
+      mockSubscriptionRepository.create = jest.fn(() => subscription);
+      mockSubscriptionRepository.save = jest.fn(() =>
+        Promise.resolve(subscription),
       );
 
       const result = await service.create({ plan_id: 1 }, 1);
@@ -88,12 +88,11 @@ describe('SubscriptionService', () => {
         }),
       );
       expect(result).toEqual(subscription);
-      const audit = testingModule.get<ActivityLogService>(ActivityLogService) as any;
-      expect(audit.createAudit).toHaveBeenCalled();
+      expect(auditMock.createAudit).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if plan does not exist', async () => {
-      (mockPlanRepository.findOne as jest.Mock).mockResolvedValue(null);
+      mockPlanRepository.findOne = jest.fn(() => Promise.resolve(null));
 
       await expect(service.create({ plan_id: 999 }, 1)).rejects.toThrow(
         NotFoundException,
@@ -104,8 +103,8 @@ describe('SubscriptionService', () => {
   describe('findAll', () => {
     it('should return all subscriptions for admin when not paginated', async () => {
       const subscriptions = [{ id: 1 }, { id: 2 }];
-      (mockSubscriptionRepository.find as jest.Mock).mockResolvedValue(
-        subscriptions,
+      mockSubscriptionRepository.find = jest.fn(() =>
+        Promise.resolve(subscriptions),
       );
 
       const result = await service.findAll({}, 1, 'administrator');
@@ -118,8 +117,8 @@ describe('SubscriptionService', () => {
 
     it('should return subscriptions for user when not paginated', async () => {
       const subscriptions = [{ id: 1 }];
-      (mockSubscriptionRepository.find as jest.Mock).mockResolvedValue(
-        subscriptions,
+      mockSubscriptionRepository.find = jest.fn(() =>
+        Promise.resolve(subscriptions),
       );
 
       const result = await service.findAll({}, 1, 'user');
@@ -133,10 +132,9 @@ describe('SubscriptionService', () => {
 
     it('should return paginated subscriptions', async () => {
       const subscriptions = [{ id: 1 }];
-      (mockSubscriptionRepository.findAndCount as jest.Mock).mockResolvedValue([
-        subscriptions,
-        3,
-      ]);
+      mockSubscriptionRepository.findAndCount = jest.fn(() =>
+        Promise.resolve([subscriptions, 3]),
+      );
 
       const result = (await service.findAll(
         { page: 1, limit: 1 },
@@ -158,8 +156,8 @@ describe('SubscriptionService', () => {
   describe('findOne', () => {
     it('should return a subscription if found', async () => {
       const subscription = { id: 1 } as Subscription;
-      (mockSubscriptionRepository.findOne as jest.Mock).mockResolvedValue(
-        subscription,
+      mockSubscriptionRepository.findOne = jest.fn(() =>
+        Promise.resolve(subscription),
       );
 
       const result = await service.findOne(1, 1);
@@ -172,7 +170,7 @@ describe('SubscriptionService', () => {
     });
 
     it('should throw NotFoundException if not found', async () => {
-      (mockSubscriptionRepository.findOne as jest.Mock).mockResolvedValue(null);
+      mockSubscriptionRepository.findOne = jest.fn(() => Promise.resolve(null));
 
       await expect(service.findOne(999, 1)).rejects.toThrow(NotFoundException);
     });
@@ -188,13 +186,11 @@ describe('SubscriptionService', () => {
       } as Subscription;
       const plan = { id: 1, monthly_call_limit: 2 } as SubscriptionPlan;
 
-      (mockSubscriptionRepository.findOne as jest.Mock).mockResolvedValue(
-        subscription,
+      mockSubscriptionRepository.findOne = jest.fn(() =>
+        Promise.resolve(subscription),
       );
-      (mockPlanRepository.findOne as jest.Mock).mockResolvedValue(plan);
-      (mockSubscriptionRepository.save as jest.Mock).mockImplementation((s) =>
-        Promise.resolve(s),
-      );
+      mockPlanRepository.findOne = jest.fn(() => Promise.resolve(plan));
+      mockSubscriptionRepository.save = jest.fn((s) => Promise.resolve(s));
 
       const result = await service.incrementUsage(1, 1);
 
@@ -209,8 +205,8 @@ describe('SubscriptionService', () => {
         id: 1,
         status: SubscriptionStatus.CANCELLED,
       } as Subscription;
-      (mockSubscriptionRepository.findOne as jest.Mock).mockResolvedValue(
-        subscription,
+      mockSubscriptionRepository.findOne = jest.fn(() =>
+        Promise.resolve(subscription),
       );
 
       await expect(service.incrementUsage(1, 1)).rejects.toThrow(
@@ -227,12 +223,10 @@ describe('SubscriptionService', () => {
         calls_used_this_cycle: 1,
         status: SubscriptionStatus.ACTIVE,
       } as Subscription;
-      (mockSubscriptionRepository.findOne as jest.Mock).mockResolvedValue(
-        subscription,
+      mockSubscriptionRepository.findOne = jest.fn(() =>
+        Promise.resolve(subscription),
       );
-      (mockSubscriptionRepository.save as jest.Mock).mockImplementation((s) =>
-        Promise.resolve(s),
-      );
+      mockSubscriptionRepository.save = jest.fn((s) => Promise.resolve(s));
 
       const result = await service.renew(1, 1);
 
@@ -246,12 +240,10 @@ describe('SubscriptionService', () => {
         auto_renew: false,
         status: SubscriptionStatus.ACTIVE,
       } as Subscription;
-      (mockSubscriptionRepository.findOne as jest.Mock).mockResolvedValue(
-        subscription,
+      mockSubscriptionRepository.findOne = jest.fn(() =>
+        Promise.resolve(subscription),
       );
-      (mockSubscriptionRepository.save as jest.Mock).mockImplementation((s) =>
-        Promise.resolve(s),
-      );
+      mockSubscriptionRepository.save = jest.fn((s) => Promise.resolve(s));
 
       const result = await service.renew(1, 1);
 
@@ -277,8 +269,7 @@ describe('SubscriptionService', () => {
 
       expect(result.auto_renew).toBe(false);
       expect(result.status).toBe(SubscriptionStatus.CANCELLED);
-      const audit = testingModule.get<ActivityLogService>(ActivityLogService) as any;
-      expect(audit.createAudit).toHaveBeenCalled();
+      expect(auditMock.createAudit).toHaveBeenCalled();
     });
   });
 });
