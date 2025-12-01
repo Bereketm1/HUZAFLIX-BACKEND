@@ -21,7 +21,6 @@ import type { AuditLog } from '../entities/audit-log.entity';
 import type { DeepPartial } from 'typeorm';
 import { CreateAuditLogDto } from '../dto/audit-log/create-audit-log.dto';
 import { ActivityLogService } from './activity-log.service';
-
 @ApiTags('activity')
 @Controller('activity')
 @ApiBearerAuth()
