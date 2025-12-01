@@ -9,5 +9,8 @@
     "build:watch": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "test": "jest --config jest.config.ts"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.4"
   }
 }

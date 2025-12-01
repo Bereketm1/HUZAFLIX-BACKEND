@@ -5,11 +5,13 @@ import {
   Transport,
 } from '@nestjs/microservices';
 import * as Minio from 'minio';
+import { createTransport, Transporter } from 'nodemailer';
 
 let jwtServiceInstance: JwtService | null = null;
 let sessionClientInstance: ClientProxy | null = null;
 let minioClientInstance: Minio.Client | null = null;
 let minioBucketNameInstance: string | null = null;
+let mailerInstance: Transporter | null = null;
 
 export function initCommonSingletons(
   options: JwtModuleOptions,
@@ -21,6 +23,15 @@ export function initCommonSingletons(
     secretKey: string;
     useSSL?: boolean;
     bucketName?: string;
+  },
+  mailer?: {
+    host: string;
+    port: number;
+    secure: boolean;
+    auth: {
+      user: string;
+      pass: string;
+    };
   },
 ): void {
   jwtServiceInstance = new JwtService(options);
@@ -45,6 +56,18 @@ export function initCommonSingletons(
       },
     });
   }
+
+  if (mailer) {
+    mailerInstance = createTransport({
+      host: mailer.host,
+      port: mailer.port,
+      secure: mailer.secure,
+      auth: {
+        user: mailer.auth.user,
+        pass: mailer.auth.pass,
+      },
+    });
+  }
 }
 
 export function getJwtServiceSingleton(): JwtService | null {
@@ -61,4 +84,8 @@ export function getMinioClientSingleton(): Minio.Client | null {
 
 export function getMinioBucketNameSingleton(): string | null {
   return minioBucketNameInstance;
+}
+
+export function getMailerSingleton(): Transporter | null {
+  return mailerInstance;
 }

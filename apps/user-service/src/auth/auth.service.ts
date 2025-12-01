@@ -17,6 +17,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 import type { User } from 'src/users/users.entity';
 import { UpdatePasswordDto } from './dto/update-password.dto';
+import { MfaService } from 'src/mfa/mfa.service';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly roleService: RolesService,
     private readonly sessionsService: SessionsService,
+    private readonly mfaService: MfaService,
     private readonly auditService?: AuditService,
   ) {}
 
@@ -169,7 +171,7 @@ export class AuthService {
 
   async requestPasswordReset(
     dto: ForgotPasswordDto,
-  ): Promise<{ message: string; token?: string }> {
+  ): Promise<{ message: string; token?: string; otp?: string }> {
     const { email } = dto;
     interface ResUser {
       id: number;
@@ -178,26 +180,35 @@ export class AuthService {
     let user: ResUser | undefined;
     try {
       user = await this.userService.findOneByEmail(email);
+      if (!user) throw new NotFoundException('User not found');
+
       const created = await this.sessionsService.create({
         user: user as User,
         jti: (user as User).id,
         token: await this.signJwt(
-          { id: user.id, jti: user.id, type: 'reset' },
-          { expiresIn: '5m' },
+          { id: user.id, jti: user.id, type: 'otp' },
+          { expiresIn: '10m' },
         ),
-        type: 'reset',
+        type: 'otp',
         expires_at: new Date(Date.now() + 5 * 60 * 1000),
       });
+
+      await this.mfaService.createMfa(user.id?.toString());
+
       return {
         message:
           'If an account with that email exists, a reset token has been sent',
         token: created.token as string,
       };
-    } catch {
-      return {
-        message:
-          'If an account with that email exists, a reset token has been sent',
-      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return {
+          message:
+            'If an account with that email exists, a reset token has been sent',
+        };
+      }
+
+      throw error;
     }
   }
 

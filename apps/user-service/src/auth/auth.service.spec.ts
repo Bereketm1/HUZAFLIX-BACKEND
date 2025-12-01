@@ -9,6 +9,7 @@ import { RolesService } from 'src/roles/roles.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { AuditService } from 'src/audit/audit.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { MfaService } from 'src/mfa/mfa.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -43,6 +44,10 @@ describe('AuthService', () => {
     createAudit: jest.fn(),
   };
 
+  const mockMfaService = {
+    createMfa: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -52,6 +57,7 @@ describe('AuthService', () => {
         { provide: RolesService, useValue: mockRolesService },
         { provide: SessionsService, useValue: mockSessionsService },
         { provide: AuditService, useValue: mockAuditService },
+        { provide: MfaService, useValue: mockMfaService },
       ],
     }).compile();
 
@@ -243,10 +249,15 @@ describe('AuthService', () => {
       const dto: ForgotPasswordDto = {
         email: 'missing@x.com',
       } as ForgotPasswordDto;
-      mockUsersService.findOneByEmail.mockRejectedValue(new Error('not found'));
+
+      mockUsersService.findOneByEmail.mockResolvedValue(undefined);
 
       const res = await service.requestPasswordReset(dto);
+
       expect(res).not.toHaveProperty('token');
+      expect(res.message).toBe(
+        'If an account with that email exists, a reset token has been sent',
+      );
     });
 
     it('resetPassword should succeed with valid token', async () => {

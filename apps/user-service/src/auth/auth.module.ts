@@ -5,9 +5,10 @@ import { UsersModule } from 'src/users/users.module';
 import { RolesModule } from 'src/roles/roles.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
 import { AuditService } from 'src/audit/audit.service';
+import { MfaModule } from 'src/mfa/mfa.module';
 
 @Module({
-  imports: [UsersModule, RolesModule, SessionsModule],
+  imports: [UsersModule, RolesModule, SessionsModule, MfaModule],
   providers: [AuthService, AuditService],
   controllers: [AuthController],
 })

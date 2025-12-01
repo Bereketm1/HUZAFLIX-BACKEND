@@ -36,7 +36,8 @@ interface RequestWithAuth extends Request {
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  protected readonly validatingType: string = 'access';
+  protected readonly validatingType: 'access' | 'reset' | 'refresh' | 'otp' =
+    'access';
   protected readonly validateIsCurrentUser: boolean = false;
   protected readonly allowPublicBypass: boolean = false;
 
@@ -135,6 +136,11 @@ export class RefreshGuard extends JwtAuthGuard {
 @Injectable()
 export class ResetGuard extends JwtAuthGuard {
   protected readonly validatingType = 'reset';
+}
+
+@Injectable()
+export class OtpGuard extends JwtAuthGuard {
+  protected readonly validatingType = 'otp';
 }
 
 @Injectable()
