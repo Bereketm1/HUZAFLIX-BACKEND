@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
@@ -27,19 +28,30 @@ export class AuthService {
     private readonly auditService?: AuditService,
   ) {}
 
+  private readonly logger = new Logger(AuthService.name);
+
   async register(user: RegisterDto): Promise<{ message: string }> {
     const role = await this.roleService.findOneByName('api_consumer');
-    const created = await this.userService.create({ ...user, role_id: role.id });
+    const created = await this.userService.create({
+      ...user,
+      role_id: role.id,
+    });
     // best-effort audit
     try {
       await this.auditService?.createAudit({
-        actor_id: String((created as any).id),
+        actor_id: String(created.id),
         event: 'user.register',
         resource_type: 'user',
-        resource_id: String((created as any).id),
-        metadata: { email: (created as any).email },
+        resource_id: String(created.id),
+        metadata: { email: created.email },
       });
-    } catch (err) {}
+    } catch (err: unknown) {
+      // Audit is best-effort, log failure
+      this.logger.warn(
+        'Failed to create audit for register: ' +
+          (err instanceof Error ? err.message : String(err)),
+      );
+    }
     return {
       message: 'User registered successfully',
     };
@@ -88,7 +100,12 @@ export class AuthService {
         resource_type: 'user',
         resource_id: String(res.id),
       });
-    } catch (err) {}
+    } catch (err: unknown) {
+      this.logger.warn(
+        'Failed to create audit for login: ' +
+          (err instanceof Error ? err.message : String(err)),
+      );
+    }
 
     return {
       access_token: accessSession.token as string,
@@ -216,7 +233,12 @@ export class AuthService {
         resource_type: 'user',
         resource_id: String(userId),
       });
-    } catch (err) {}
+    } catch (err: unknown) {
+      this.logger.warn(
+        'Failed to create audit for password reset: ' +
+          (err instanceof Error ? err.message : String(err)),
+      );
+    }
     return { message: 'Password has been reset successfully' };
   }
 
@@ -254,8 +276,21 @@ export class AuthService {
   }
 
   async logout(token: string) {
-    const decodedToken: { id: number } = this.jwt.decode(token);
-    const id = decodedToken.id;
+    // Verify token signature to ensure token was issued by this service.
+    let payload: unknown;
+    try {
+      payload = (await this.jwt.verifyAsync(token)) as unknown;
+    } catch {
+      throw new NotFoundException('Invalid token');
+    }
+
+    if (!payload || typeof payload !== 'object' || !('id' in payload)) {
+      throw new NotFoundException('Invalid token');
+    }
+
+    const idVal = (payload as Record<string, unknown>).id;
+    const id = typeof idVal === 'number' ? idVal : Number(idVal);
+    if (Number.isNaN(id)) throw new NotFoundException('Invalid token');
     const user = await this.userService.findOneById(id);
     if (!user) {
       throw new NotFoundException('User not found');

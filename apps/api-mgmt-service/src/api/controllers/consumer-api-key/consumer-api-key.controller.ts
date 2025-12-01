@@ -10,7 +10,12 @@ import {
   UnauthorizedException,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard, CurrentUser } from '@huzaflix/common';
 import { ConsumerApiKeyService } from '../../services/consumer-api-key/consumer-api-key.service';
 import { CreateConsumerApiKeyDto } from '../../dto/consumer-api-key/create-consumer-api-key.dto';
@@ -33,16 +38,24 @@ export class ConsumerApiKeyController {
   }
 
   @Post()
-  @ApiOperation({ summary: "Create a new API key for the logged-in user" })
-  @ApiResponse({ status: 201, description: 'Created key (one-time returned value)' })
-  async create(@CurrentUser() user: { id?: number | string }, @Body() dto: CreateConsumerApiKeyDto) {
+  @ApiOperation({ summary: 'Create a new API key for the logged-in user' })
+  @ApiResponse({
+    status: 201,
+    description: 'Created key (one-time returned value)',
+  })
+  async create(
+    @CurrentUser() user: { id?: number | string },
+    @Body() dto: CreateConsumerApiKeyDto,
+  ) {
     const userId = user?.id as number | string;
     if (!userId) throw new UnauthorizedException('Invalid user');
     return this.service.createForUser(String(userId), dto);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: "Update an existing API key owned by the logged-in user" })
+  @ApiOperation({
+    summary: 'Update an existing API key owned by the logged-in user',
+  })
   async update(
     @CurrentUser() user: { id?: number | string },
     @Param('id', ParseIntPipe) id: number,
@@ -54,8 +67,13 @@ export class ConsumerApiKeyController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: "Revoke (soft-delete) an API key owned by the logged-in user" })
-  async remove(@CurrentUser() user: { id?: number | string }, @Param('id', ParseIntPipe) id: number) {
+  @ApiOperation({
+    summary: 'Revoke (soft-delete) an API key owned by the logged-in user',
+  })
+  async remove(
+    @CurrentUser() user: { id?: number | string },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const userId = user?.id as number | string;
     if (!userId) throw new UnauthorizedException('Invalid user');
     return this.service.revokeForUser(String(userId), id);

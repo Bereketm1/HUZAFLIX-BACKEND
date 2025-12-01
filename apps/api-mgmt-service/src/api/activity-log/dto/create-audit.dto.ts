@@ -14,8 +14,8 @@ export class CreateAuditDto {
   @ApiPropertyOptional({ example: '42' })
   resource_id?: string;
 
-  @ApiPropertyOptional({ type: 'object' })
-  metadata?: any;
+  @ApiPropertyOptional({ type: 'object', additionalProperties: true })
+  metadata?: Record<string, unknown>;
 
   @ApiPropertyOptional({ example: '127.0.0.1' })
   ip_address?: string;
