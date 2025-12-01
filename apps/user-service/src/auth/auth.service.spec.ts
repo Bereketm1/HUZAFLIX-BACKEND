@@ -249,10 +249,15 @@ describe('AuthService', () => {
       const dto: ForgotPasswordDto = {
         email: 'missing@x.com',
       } as ForgotPasswordDto;
-      mockUsersService.findOneByEmail.mockRejectedValue(new Error('not found'));
+
+      mockUsersService.findOneByEmail.mockResolvedValue(undefined);
 
       const res = await service.requestPasswordReset(dto);
+
       expect(res).not.toHaveProperty('token');
+      expect(res.message).toBe(
+        'If an account with that email exists, a reset token has been sent',
+      );
     });
 
     it('resetPassword should succeed with valid token', async () => {
