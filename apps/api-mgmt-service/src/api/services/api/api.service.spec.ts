@@ -171,8 +171,8 @@ describe('ApiService', () => {
       const dto: UpdateApiDto = { name: 'New Name' };
 
       (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(existingApi);
-      (mockApiRepository.save as jest.Mock).mockImplementation((u) =>
-        Promise.resolve(u),
+      (mockApiRepository.save as jest.Mock).mockImplementation(
+        (u: Partial<Api>) => Promise.resolve(u as Api),
       );
 
       const result = await service.update(1, dto);
@@ -203,21 +203,24 @@ describe('ApiService', () => {
       };
 
       (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(existingApi);
-      (mockApiRepository.save as jest.Mock).mockImplementation((u) =>
-        Promise.resolve(u),
+      (mockApiRepository.save as jest.Mock).mockImplementation(
+        (u: Partial<Api>) => Promise.resolve(u as Api),
       );
 
       const result = await service.activate(1);
 
       expect(result.status).toBe(ApiStatus.ACTIVE);
       expect(mockApiRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
-      expect(mockApiRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          ...existingApi,
-          status: ApiStatus.ACTIVE,
-          activated_at: expect.any(Date),
-        }),
-      );
+      expect(mockApiRepository.save).toHaveBeenCalled();
+      const saveMock = mockApiRepository.save as unknown as {
+        mock: { calls: unknown[][] };
+      };
+      const savedArg = saveMock.mock.calls[0][0] as Api;
+      expect(savedArg).toMatchObject({
+        ...existingApi,
+        status: ApiStatus.ACTIVE,
+      });
+      expect(savedArg.activated_at).toBeInstanceOf(Date);
     });
 
     it('should throw NotFoundException if API not found', async () => {
