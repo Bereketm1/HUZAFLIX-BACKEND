@@ -13,9 +13,6 @@ export class Mfa {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, nullable: false })
-  email: string;
-
   @Column({ type: 'text', nullable: false })
   otp_hash: string;
 

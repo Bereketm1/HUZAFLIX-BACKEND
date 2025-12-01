@@ -26,8 +26,8 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly roleService: RolesService,
     private readonly sessionsService: SessionsService,
-    private readonly auditService?: AuditService,
     private readonly mfaService: MfaService,
+    private readonly auditService?: AuditService,
   ) {}
 
   private readonly logger = new Logger(AuthService.name);
@@ -186,26 +186,29 @@ export class AuthService {
         user: user as User,
         jti: (user as User).id,
         token: await this.signJwt(
-          { id: user.id, jti: user.id, type: 'reset' },
-          { expiresIn: '5m' },
+          { id: user.id, jti: user.id, type: 'otp' },
+          { expiresIn: '10m' },
         ),
-        type: 'reset',
+        type: 'otp',
         expires_at: new Date(Date.now() + 5 * 60 * 1000),
       });
 
-      const mfa = await this.mfaService.createMfa(user.id?.toString());
+      await this.mfaService.createMfa(user.id?.toString());
 
       return {
         message:
           'If an account with that email exists, a reset token has been sent',
         token: created.token as string,
-        otp: mfa.toString(),
       };
-    } catch {
-      return {
-        message:
-          'If an account with that email exists, a reset token has been sent',
-      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return {
+          message:
+            'If an account with that email exists, a reset token has been sent',
+        };
+      }
+
+      throw error;
     }
   }
 

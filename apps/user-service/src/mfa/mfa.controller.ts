@@ -1,7 +1,8 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -9,23 +10,23 @@ import { MfaService } from './mfa.service';
 import { CurrentUser, OtpGuard } from '@huzaflix/common';
 import { User } from 'src/users/users.entity';
 
-class VerifyMfaDto {
-  otp: string;
-}
-
 @ApiTags('mfa')
 @Controller('mfa')
 export class MfaController {
   constructor(private readonly mfaService: MfaService) {}
 
   @Post('verify')
-  @UseGuards(OtpGuard)
   @ApiBearerAuth()
+  @UseGuards(OtpGuard)
   @ApiOperation({ summary: 'Verify MFA OTP' })
   @ApiResponse({ status: 200, description: 'OTP verified successfully' })
-  async verifyMfa(@Body() body: VerifyMfaDto): Promise<{ verified: boolean }> {
-    const ok = await this.mfaService.verifyMfa(body.otp);
-    return { verified: ok };
+  @ApiQuery({ name: 'otp', required: true })
+  async verifyMfa(
+    @Query('otp') otp: string,
+    @CurrentUser() user: User,
+  ): Promise<{ verified: boolean }> {
+    const ok = await this.mfaService.verifyMfa(otp, user.id);
+    return ok;
   }
 
   @Post('resend')
