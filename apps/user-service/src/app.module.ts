@@ -23,6 +23,7 @@ import * as redisStore from 'cache-manager-redis-store';
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { RolesController } from 'src/roles/roles.controller';
+import { MfaModule } from './mfa/mfa.module';
 
 export type RedisClient = Redis;
 
@@ -69,14 +70,28 @@ const jwtOptions: JwtModuleOptions = {
       ttl: parseInt(process.env.CACHE_TTL || '60000', 10),
       isGlobal: true,
     }),
-    CommonModule.forRoot(jwtOptions, {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    }),
+    CommonModule.forRoot(
+      jwtOptions,
+      {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      },
+      undefined,
+      {
+        host: process.env.MAILER_HOST || 'localhost',
+        port: parseInt(process.env.MAILER_PORT || '25', 10),
+        secure: process.env.MAILER_SECURE === 'true',
+        auth: {
+          user: process.env.MAILER_USER || '',
+          pass: process.env.MAILER_PASSWORD || '',
+        },
+      },
+    ),
     RolesModule,
     UsersModule,
     AuthModule,
     DashboardModule,
+    MfaModule,
   ],
   controllers: [AppController, RolesController],
   providers: [
