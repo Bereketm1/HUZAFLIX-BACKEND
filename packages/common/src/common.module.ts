@@ -36,20 +36,24 @@ export class CommonModule {
       module: CommonModule,
       imports: [
         JwtModule.register(options),
-        MailerModule.forRoot({
-          transport: {
-            host: mailerOptions?.host || 'smtp.example.com',
-            port: mailerOptions?.port || 587,
-            secure: mailerOptions?.secure || false,
-            auth: {
-              user: mailerOptions?.auth?.user || 'your_email@example.com',
-              pass: mailerOptions?.auth?.pass || 'your_email_password',
-            },
-          },
-          defaults: {
-            from: '"No Reply" <noreply@example.com>',
-          },
-        }),
+        ...(mailerOptions
+          ? [
+              MailerModule.forRoot({
+                transport: {
+                  host: mailerOptions.host || 'smtp.example.com',
+                  port: mailerOptions.port || 587,
+                  secure: mailerOptions.secure || false,
+                  auth: {
+                    user: mailerOptions.auth?.user || 'your_email@example.com',
+                    pass: mailerOptions.auth?.pass || 'your_email_password',
+                  },
+                },
+                defaults: {
+                  from: '"No Reply" <noreply@example.com>',
+                },
+              }),
+            ]
+          : []),
         ...(redisOptions
           ? [
               ClientsModule.register([
@@ -67,7 +71,7 @@ export class CommonModule {
       ],
       providers: [
         MinioService,
-        MfaMailerService,
+        ...(mailerOptions ? [MfaMailerService] : []),
         {
           provide: 'JWT_SERVICE',
           useExisting: JwtService,
@@ -75,10 +79,9 @@ export class CommonModule {
       ],
       exports: [
         JwtModule,
-        MailerModule,
         MinioService,
-        MfaMailerService,
         'JWT_SERVICE',
+        ...(mailerOptions ? [MailerModule, MfaMailerService] : []),
         ...(redisOptions ? [ClientsModule] : []),
       ],
     };
