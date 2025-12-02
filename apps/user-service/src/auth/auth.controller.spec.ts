@@ -16,6 +16,10 @@ describe('AuthController', () => {
     logout: jest.fn(),
   };
 
+  const subscriptionClientMock = {
+    send: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -24,6 +28,10 @@ describe('AuthController', () => {
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('') },
+        },
+        {
+          provide: 'SUBSCRIPTION_SERVICE',
+          useValue: subscriptionClientMock,
         },
       ],
     })

@@ -5,6 +5,7 @@ import { ApiKey } from 'src/api/entities/api-key.entity';
 import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
 import { Subscription } from 'src/subscription/entities/subscriptions.entity';
 import { Favourite } from 'src/api/entities/favourites.entity';
+import { AuditLog } from 'src/api/entities/audit-log.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -13,7 +14,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres',
   database: process.env.POSTGRES_DB || 'postgres',
-  entities: [Api, ApiKey, SubscriptionPlan, Subscription, Favourite],
+  entities: [Api, ApiKey, SubscriptionPlan, Subscription, Favourite, AuditLog],
   migrations: ['./migrations/*.ts'],
   synchronize: false,
 });

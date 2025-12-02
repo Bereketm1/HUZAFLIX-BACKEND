@@ -21,13 +21,13 @@ async function bootstrap() {
   }
 
   const config = new DocumentBuilder()
-    .setTitle('Huzaflix Api Management Services API Documentation')
+    .setTitle('Huzaflix Payment Services API Documentation')
     .setDescription('API documentation for Huzaflix Backend')
     .setVersion('1.0')
     .addServer(
       process.env.NODE_ENV === 'production'
-        ? `http://${process.env.SERVER_HOST || 'localhost'}/api-management`
-        : 'http://localhost:3000/api/api-management',
+        ? `http://${process.env.SERVER_HOST || 'localhost/api'}/payment`
+        : 'http://localhost:3000/api/payment',
       'Local Development',
     )
     .addBearerAuth()
