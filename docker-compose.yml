@@ -69,6 +69,20 @@ services:
       redis:
         condition: service_healthy
 
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./apps/payment-service/Dockerfile
+    container_name: payment_service
+    restart: unless-stopped
+    env_file:
+      - ./apps/payment-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   gateway-service:
     build:
       context: .

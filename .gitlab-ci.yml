@@ -12,77 +12,17 @@ before_script:
   - pnpm install
   - pnpm common build
 
-lint_common_job:
+lint:
   stage: lint
   script:
-    - pnpm common lint
+    - pnpm all:lint
 
-test_common_job:
+test:
   stage: test
   script:
-    - pnpm common test
+    - pnpm all:test
 
-build_common_job:
+build:
   stage: build
   script:
-    - pnpm common build
-
-lint_user_services_job:
-  stage: lint
-  script:
-    - pnpm user lint
-
-test_user_services_job:
-  stage: test
-  script:
-    - pnpm user test
-
-build_user_services_job:
-  stage: build
-  script:
-    - pnpm user build
-
-lint_analytics_services_job:
-  stage: lint
-  script:
-    - pnpm analytics lint
-
-test_analytics_services_job:
-  stage: test
-  script:
-    - pnpm analytics test
-
-build_analytics_services_job:
-  stage: build
-  script:
-    - pnpm analytics build
-
-lint_api_mgmt_services_job:
-  stage: lint
-  script:
-    - pnpm api-mgmt lint
-
-test_api_mgmt_services_job:
-  stage: test
-  script:
-    - pnpm api-mgmt test
-
-build_api_mgmt_services_job:
-  stage: build
-  script:
-    - pnpm api-mgmt build
-
-lint_gateway_services_job:
-  stage: lint
-  script:
-    - pnpm gateway lint
-
-test_gateway_services_job:
-  stage: test
-  script:
-    - pnpm gateway test
-
-build_gateway_services_job:
-  stage: build
-  script:
-    - pnpm gateway build
+    - pnpm all:build
