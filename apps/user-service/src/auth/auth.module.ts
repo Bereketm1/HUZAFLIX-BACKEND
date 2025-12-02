@@ -6,12 +6,14 @@ import { RolesModule } from 'src/roles/roles.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
 import { AuditService } from 'src/audit/audit.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { MfaModule } from 'src/mfa/mfa.module';
 
 @Module({
   imports: [
     UsersModule,
     RolesModule,
     SessionsModule,
+    MfaModule,
     ClientsModule.register([
       {
         name: 'SUBSCRIPTION_SERVICE',
