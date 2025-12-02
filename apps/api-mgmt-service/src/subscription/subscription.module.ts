@@ -8,6 +8,7 @@ import { PlanController } from './controllers/plan/plan.controller';
 import { Subscription } from './entities/subscriptions.entity';
 import { SubscriptionService } from './services/subscription/subscription.service';
 import { SubscriptionController } from './controllers/subscription/subscription.controller';
+import { SubscriptionMessageController } from './controllers/subscription/subscription.message.controller';
 
 @Module({
   imports: [
@@ -17,6 +18,10 @@ import { SubscriptionController } from './controllers/subscription/subscription.
   ],
   providers: [PlanService, SubscriptionService],
   exports: [PlanService],
-  controllers: [PlanController, SubscriptionController],
+  controllers: [
+    PlanController,
+    SubscriptionController,
+    SubscriptionMessageController,
+  ],
 })
 export class SubscriptionModule {}

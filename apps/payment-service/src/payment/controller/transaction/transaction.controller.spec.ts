@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionController } from './transaction.controller';
 import { JwtAuthGuard, PaginatedResponse } from '@huzaflix/common';
 import { NotFoundException } from '@nestjs/common';
-import { TransactionsService } from 'src/payment-request/services/transactions/transactions.service';
+import { TransactionsService } from 'src/payment/services/transactions/transactions.service';
 
 describe('TransactionController', () => {
   let controller: TransactionController;

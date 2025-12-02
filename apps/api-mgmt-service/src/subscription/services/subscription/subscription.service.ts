@@ -53,6 +53,15 @@ export class SubscriptionService {
 
     if (!plan) throw new NotFoundException(`Plan ${data.plan_id} not found`);
 
+    const existingSubForPlan = await this.subscriptionRepository.findOne({
+      where: { user_id, plan_id: plan.id },
+    });
+
+    if (existingSubForPlan)
+      throw new BadRequestException(
+        `User already has a subscription for plan ${plan.name}`,
+      );
+
     const now = new Date();
 
     const subscription = this.subscriptionRepository.create({
@@ -232,15 +241,15 @@ export class SubscriptionService {
     return saved;
   }
 
-  async findByUserId(userId: number): Promise<Subscription[]> {
-    const subscription = await this.subscriptionRepository.find({
+  async findByUserId(userId: number): Promise<Subscription | null> {
+    const subscription = await this.subscriptionRepository.findOne({
       where: {
         user_id: userId,
         status: SubscriptionStatus.ACTIVE,
       },
     });
     if (!subscription) {
-      return [];
+      return null;
     }
     return subscription;
   }

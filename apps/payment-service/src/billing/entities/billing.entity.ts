@@ -1,6 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
-@Entity({ name: 'billing' })
+@Entity({ name: 'billings' })
 export class Billing {
   @PrimaryGeneratedColumn()
   id: number;
@@ -15,13 +21,19 @@ export class Billing {
   email: string;
 
   @Column({ nullable: true })
+  phoneNumber: string;
+
+  @Column({ nullable: true })
+  country: string;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
   addressLine1: string;
 
   @Column({ nullable: true })
   addressLine2: string;
-
-  @Column({ nullable: true })
-  city: string;
 
   @Column({ nullable: true })
   state: string;
@@ -30,17 +42,20 @@ export class Billing {
   postalCode: string;
 
   @Column({ nullable: true })
-  country: string;
+  defaultPaymentMethod: string;
 
   @Column({ nullable: true })
-  phoneNumber: string;
+  stripeCustomerId: string;
+
+  @Column({ nullable: true })
+  stripePaymentMethodId: string;
 
   @Column({ type: 'int', default: 0 })
   credits: number;
 
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

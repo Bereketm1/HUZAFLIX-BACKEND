@@ -21,7 +21,7 @@ async function bootstrap() {
   }
 
   const config = new DocumentBuilder()
-    .setTitle('Huzaflix Analytics Services API Documentation')
+    .setTitle('Huzaflix Api Management Services API Documentation')
     .setDescription('API documentation for Huzaflix Backend')
     .setVersion('1.0')
     .addServer(

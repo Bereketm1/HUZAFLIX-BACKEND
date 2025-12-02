@@ -41,7 +41,7 @@ type OAuthProfile = { email?: string; name?: string };
 @Controller('')
 export class AuthController {
   constructor(
-    @Inject('SUBSCRIPTIONS_SERVICE') private client: ClientProxy,
+    @Inject('SUBSCRIPTION_SERVICE') private client: ClientProxy,
     private readonly authService: AuthService,
     private readonly config: ConfigService,
   ) {}
@@ -86,12 +86,14 @@ export class AuthController {
     status: 200,
     description: 'Current user retrieved successfully',
   })
-  getUser(@CurrentUser() user: User) {
-    const subscriptions = this.client.send('get_subscription_by_user_id', {
-      userId: user.id,
-    });
+  async getUser(@CurrentUser() user: User) {
+    const subscription: unknown = await this.client
+      .send('get_subscription_by_user_id', {
+        userId: user.id,
+      })
+      .toPromise();
 
-    return { ...user, subscriptions };
+    return { ...user, subscription };
   }
 
   @Post('update-password')

@@ -6,7 +6,7 @@ import {
   ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
-import { TransactionsService } from 'src/payment-request/services/transactions/transactions.service';
+import { TransactionsService } from 'src/payment/services/transactions/transactions.service';
 
 @Controller('transaction')
 export class TransactionController {

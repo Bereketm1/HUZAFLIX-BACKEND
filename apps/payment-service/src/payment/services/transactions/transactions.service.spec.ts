@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsService } from './transactions.service';
 import { Repository } from 'typeorm';
-import { Transaction } from 'src/payment-request/entities/transaction.entity';
+import { Transaction } from 'src/payment/entities/transaction.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { PaginatedResponse } from '@huzaflix/common';
