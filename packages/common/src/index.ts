@@ -17,3 +17,4 @@ export { paginate } from './utils/paginate.util';
 export { encrypt, decrypt } from './utils/encryption.util';
 export { CurrentUser } from './decorators/current-user.decorator';
 export { MfaMailerService } from './services/mfa-mailer/mfa-mailer.service';
+export { isRealEmail } from './utils/isRealEmail';

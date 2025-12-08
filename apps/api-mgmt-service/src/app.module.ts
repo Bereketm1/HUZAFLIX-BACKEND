@@ -20,6 +20,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiModule } from './api/api.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { PlaygroundModule } from './playground/playground.module';
 
 export type RedisClient = Redis;
 
@@ -82,6 +83,7 @@ const jwtOptions: JwtModuleOptions = {
     ),
     ApiModule,
     SubscriptionModule,
+    PlaygroundModule,
   ],
   controllers: [AppController],
   providers: [

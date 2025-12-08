@@ -27,6 +27,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import {
   CurrentUser,
+  isRealEmail,
   JwtAuthGuard,
   RefreshGuard,
   ResetGuard,
@@ -51,6 +52,16 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   async register(@Body() dto: RegisterDto): Promise<{ message: string }> {
     return this.authService.register(dto);
+  }
+
+  @Post('real-email')
+  @ApiOperation({ summary: 'Check if email is real' })
+  @ApiResponse({ status: 201, description: 'Email is real' })
+  async realEmail(
+    @Body() dto: { email: string },
+  ): Promise<{ is: boolean; message: string }> {
+    const is: boolean = await isRealEmail(dto.email);
+    return { is, message: is ? 'Email is real' : 'Email is not real' };
   }
 
   @Post('login')
