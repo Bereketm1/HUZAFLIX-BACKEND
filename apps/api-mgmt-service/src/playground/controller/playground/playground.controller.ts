@@ -17,4 +17,12 @@ export class PlaygroundController {
   ) {
     return this.playgroundService.getEndpointResponses(id, endpoint);
   }
+
+  @Get(':id/details/:endpoint')
+  async getDetails(
+    @Param('endpoint') endpoint: string,
+    @Param('id') id: number,
+  ) {
+    return this.playgroundService.getEndpointDetails(id, endpoint);
+  }
 }

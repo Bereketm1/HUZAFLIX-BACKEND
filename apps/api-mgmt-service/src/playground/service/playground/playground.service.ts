@@ -41,13 +41,19 @@ export class PlaygroundService {
       throw new BadRequestException(`API not found`);
     }
 
-    console.log(api.openapi_spec_url);
+    const filename = api.openapi_spec_url.split('/').pop();
 
-    const response = await fetch(api.openapi_spec_url);
+    if (!filename) {
+      throw new BadRequestException(`Invalid filename`);
+    }
+
+    const url = await this.apiService.getDocs(filename);
+
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new BadRequestException(
-        `Failed to load Swagger docs: ${response.statusText}`,
+        `Failed to load Swagger docs: ${JSON.stringify(await response.json())}`,
       );
     }
 
@@ -81,14 +87,15 @@ export class PlaygroundService {
     const api = await this.apiService.findOneById(apiId);
     if (!api) throw new BadRequestException('API not found');
 
-    console.log(api.openapi_spec_url);
+    const filename = api.openapi_spec_url.split('/').pop();
 
-    const response = await fetch(api.openapi_spec_url, {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'NestJS-Fetch',
-      },
-    });
+    if (!filename) {
+      throw new BadRequestException(`Invalid filename`);
+    }
+
+    const url = await this.apiService.getDocs(filename);
+
+    const response = await fetch(url);
 
     if (!response.ok)
       throw new BadRequestException(
@@ -120,5 +127,98 @@ export class PlaygroundService {
     throw new BadRequestException(
       `Operation ID "${operationId}" not found in OpenAPI spec`,
     );
+  }
+
+  async getEndpointDetails(apiId: number, operationId: string) {
+    const api = await this.apiService.findOneById(apiId);
+    if (!api) throw new BadRequestException('API not found');
+
+    const filename = api.openapi_spec_url.split('/').pop();
+    if (!filename) throw new BadRequestException(`Invalid filename`);
+
+    const url = await this.apiService.getDocs(filename);
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new BadRequestException(
+        `Failed to load Swagger docs: ${response.statusText}`,
+      );
+    }
+
+    const swagger = (await response.json()) as OpenAPIV3.Document;
+    const paths = swagger.paths;
+
+    for (const path in paths) {
+      const pathObj = paths[path];
+      if (!pathObj) continue;
+
+      for (const method of validMethods) {
+        const operation = pathObj[method];
+        if (!operation) continue;
+
+        if (operation.operationId === operationId) {
+          return {
+            path,
+            method: method.toUpperCase(),
+
+            // Core metadata
+            summary: operation.summary,
+            description: operation.description,
+            tags: operation.tags || [],
+            deprecated: operation.deprecated || false,
+            security: operation.security || [],
+
+            // Parameters (query, path, header, cookie)
+            parameters:
+              (operation.parameters as OpenAPIV3.ParameterObject[]) || [],
+
+            // Request body
+            requestBody: operation.requestBody
+              ? this.extractRequestBody(operation.requestBody)
+              : null,
+
+            // Responses with schemas
+            responses: this.extractResponses(operation.responses),
+          };
+        }
+      }
+    }
+
+    throw new BadRequestException(
+      `Operation ID "${operationId}" not found in OpenAPI spec`,
+    );
+  }
+
+  private extractRequestBody(
+    requestBody: OpenAPIV3.RequestBodyObject | OpenAPIV3.ReferenceObject,
+  ) {
+    if ('$ref' in requestBody) return { $ref: requestBody.$ref };
+
+    return {
+      description: requestBody.description,
+      required: requestBody.required,
+      content: requestBody.content, // includes schema, examples, media types
+    };
+  }
+
+  private extractResponses(responses: OpenAPIV3.ResponsesObject) {
+    const output = {};
+
+    for (const status in responses) {
+      const res = responses[status];
+
+      if ('$ref' in res) {
+        output[status] = { $ref: res.$ref };
+        continue;
+      }
+
+      output[status] = {
+        description: res.description,
+        headers: res.headers,
+        content: res.content, // full schema + examples
+      };
+    }
+
+    return output;
   }
 }

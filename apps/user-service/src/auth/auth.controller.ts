@@ -19,6 +19,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -57,6 +58,13 @@ export class AuthController {
   @Post('real-email')
   @ApiOperation({ summary: 'Check if email is real' })
   @ApiResponse({ status: 201, description: 'Email is real' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { email: { type: 'string' } },
+      required: ['email'],
+    },
+  })
   async realEmail(
     @Body() dto: { email: string },
   ): Promise<{ is: boolean; message: string }> {
