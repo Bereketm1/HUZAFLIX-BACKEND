@@ -4,14 +4,9 @@ import { ApiKey } from './entities/api-key.entity';
 import { ConsumerApiKeyService } from './services/consumer-api-key/consumer-api-key.service';
 import { ConsumerApiKeyController } from './controllers/consumer-api-key/consumer-api-key.controller';
 import { CommonModule } from '@huzaflix/common';
-import { ActivityLogModule } from './activity-log/activity-log.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ApiKey]),
-    CommonModule,
-    ActivityLogModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ApiKey]), CommonModule],
   providers: [ConsumerApiKeyService],
   controllers: [ConsumerApiKeyController],
   exports: [ConsumerApiKeyService],

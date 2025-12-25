@@ -1,5 +1,4 @@
 import { CommonModule, MinioService } from '@huzaflix/common';
-import { ActivityLogModule } from './activity-log/activity-log.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Api } from './entities/api.entity';
@@ -16,7 +15,6 @@ import { Favourite } from './entities/favourites.entity';
   imports: [
     TypeOrmModule.forFeature([Api, ApiKey, SubscriptionPlan, Favourite]),
     CommonModule,
-    ActivityLogModule,
     ConsumerApiKeyModule,
   ],
   providers: [ApiService, MinioService, PlanService, FavouritesService],

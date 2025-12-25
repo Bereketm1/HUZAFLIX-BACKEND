@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { ProxyController } from './proxy/proxy.controller';
+import { ProxyService } from './proxy/proxy.service';
 
 @Module({
   imports: [
@@ -16,7 +18,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
       envFilePath: ['.env'],
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, ProxyController],
+  providers: [AppService, ProxyService],
 })
 export class AppModule {}

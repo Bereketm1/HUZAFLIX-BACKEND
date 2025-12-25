@@ -9,21 +9,21 @@ COPY packages/common/package.json ./packages/common/
 COPY packages/common/tsconfig.json ./packages/common/
 COPY packages/common/src ./packages/common/src
 
-COPY apps/gateway-service/package.json ./apps/gateway-service/
-COPY apps/gateway-service/tsconfig.json ./apps/gateway-service/
-COPY apps/gateway-service/tsconfig.build.json ./apps/gateway-service/
-COPY apps/gateway-service/nest-cli.json ./apps/gateway-service/
+COPY apps/audit-log-service/package.json ./apps/audit-log-service/
+COPY apps/audit-log-service/tsconfig.json ./apps/audit-log-service/
+COPY apps/audit-log-service/tsconfig.build.json ./apps/audit-log-service/
+COPY apps/audit-log-service/nest-cli.json ./apps/audit-log-service/
 
 RUN pnpm install --frozen-lockfile
 
 RUN pnpm common build
 
-COPY apps/gateway-service/src ./apps/gateway-service/src
+COPY apps/audit-log-service/src ./apps/audit-log-service/src
 
-RUN pnpm gateway build
+RUN pnpm --filter audit-log-service build
 
-WORKDIR /app/apps/gateway-service
+WORKDIR /app/apps/audit-log-service
 
-EXPOSE ${APP_PORT:-3000}
+EXPOSE 3000
 
 CMD ["pnpm", "start:prod"]

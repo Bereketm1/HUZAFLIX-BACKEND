@@ -3,6 +3,13 @@ WORKDIR /app
 
 RUN npm install -g pnpm && apt-get update && apt-get install -y netcat-openbsd postgresql-client && rm -rf /var/lib/apt/lists/*
 
+# Harden pnpm installs against transient registry/network issues in container builds.
+ENV PNPM_FETCH_RETRIES=5 \
+	PNPM_FETCH_RETRY_MINTIMEOUT=10000 \
+	PNPM_FETCH_RETRY_MAXTIMEOUT=120000 \
+	PNPM_FETCH_TIMEOUT=600000 \
+	PNPM_NETWORK_CONCURRENCY=1
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 COPY packages/common/package.json ./packages/common/

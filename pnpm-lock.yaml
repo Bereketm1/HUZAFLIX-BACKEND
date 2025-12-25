@@ -184,7 +184,17 @@ importers:
         specifier: file:../../packages/common
         version: link:../../packages/common
 
-  apps/gateway-service: {}
+  apps/audit-log-service:
+    dependencies:
+      '@huzaflix/common':
+        specifier: file:../../packages/common
+        version: link:../../packages/common
+
+  apps/gateway-service:
+    dependencies:
+      '@huzaflix/common':
+        specifier: file:../../packages/common
+        version: link:../../packages/common
 
   apps/payment-service:
     dependencies:

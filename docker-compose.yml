@@ -81,6 +81,24 @@ services:
       redis:
         condition: service_healthy
 
+  audit-log-service:
+    build:
+      context: .
+      dockerfile: ./apps/audit-log-service/Dockerfile
+    container_name: audit_log_service
+    restart: unless-stopped
+    env_file:
+      - ./apps/audit-log-service/.env
+    environment:
+      DB_HOST: postgres
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   gateway-service:
     build:
       context: .
@@ -91,6 +109,17 @@ services:
       - ./apps/gateway-service/.env
     ports:
       - 3000:3000
+    depends_on:
+      user-service:
+        condition: service_started
+      analytics-service:
+        condition: service_started
+      api-mgmt-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      audit-log-service:
+        condition: service_started
 
   # prometheus:
   #   image: prom/prometheus:latest

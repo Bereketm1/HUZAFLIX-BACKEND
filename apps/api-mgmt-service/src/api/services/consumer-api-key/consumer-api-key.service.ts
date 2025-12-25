@@ -3,8 +3,6 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { ActivityLogService } from '../../activity-log/activity-log.service';
-import { EventType } from '../../entities/audit-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiKey } from '../../entities/api-key.entity';
@@ -18,10 +16,7 @@ import * as crypto from 'crypto';
 @Injectable()
 export class ConsumerApiKeyService {
   private readonly logger = new Logger(ConsumerApiKeyService.name);
-  constructor(
-    @InjectRepository(ApiKey) private repo: Repository<ApiKey>,
-    private readonly activityLogService?: ActivityLogService,
-  ) {}
+  constructor(@InjectRepository(ApiKey) private repo: Repository<ApiKey>) {}
 
   // Returns user-owned keys (without exposing the secret hash)
   async findAllForUser(userId: string): Promise<Omit<ApiKey, 'key_hash'>[]> {
@@ -69,22 +64,6 @@ export class ConsumerApiKeyService {
       // Return created DB record (without hash) plus the cleartext key
       const { key_hash: _key_hash, ...safe } = saved;
       void _key_hash;
-      // create an audit entry (best effort)
-      try {
-        await this.activityLogService?.createAudit({
-          actor_id: String(userId),
-          event: EventType.API_KEY_CREATED,
-          resource_type: 'api_key',
-          resource_id: String(saved.id),
-          metadata: { name: saved.name, api: saved.api },
-        });
-      } catch (err: unknown) {
-        // non-fatal for key creation; log it server-side
-        this.logger.warn(
-          'Failed to write audit for api key create: ' +
-            (err instanceof Error ? err.message : String(err)),
-        );
-      }
       return { key: publicKey, ...safe };
     } catch (err: unknown) {
       // If something like duplicate hash occur (unlikely), log and throw
@@ -127,22 +106,6 @@ export class ConsumerApiKeyService {
     if (!found) throw new NotFoundException('Api key not found');
     found.revoked_at = new Date();
     const saved = await this.repo.save(found);
-
-    try {
-      await this.activityLogService?.createAudit({
-        actor_id: String(userId),
-        event: EventType.API_KEY_DELETED,
-        resource_type: 'api_key',
-        resource_id: String(saved.id),
-        metadata: { name: saved.name },
-      });
-    } catch (err) {
-      // ignore logging failures for non-blocking behaviour but log locally
-      this.logger.warn(
-        'Failed to write audit for api key revoke: ' +
-          (err instanceof Error ? err.message : String(err)),
-      );
-    }
 
     return saved;
   }
