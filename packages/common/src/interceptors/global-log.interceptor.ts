@@ -43,7 +43,10 @@ function decodeJwtPayload(token: string): Record<string, unknown> | undefined {
 
   // JWT uses base64url encoding.
   const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+  const padded = base64.padEnd(
+    base64.length + ((4 - (base64.length % 4)) % 4),
+    '=',
+  );
   try {
     const json = Buffer.from(padded, 'base64').toString('utf8');
     const parsed: unknown = JSON.parse(json);
@@ -54,7 +57,9 @@ function decodeJwtPayload(token: string): Record<string, unknown> | undefined {
 }
 
 function getUserIdFromAuthHeader(authHeader: unknown): string | undefined {
-  if (typeof authHeader !== 'string' || authHeader.length === 0) return undefined;
+  if (typeof authHeader !== 'string' || authHeader.length === 0) {
+    return undefined;
+  }
   const [scheme, token] = authHeader.split(' ');
   if (scheme !== 'Bearer' || !token) return undefined;
 
@@ -63,7 +68,9 @@ function getUserIdFromAuthHeader(authHeader: unknown): string | undefined {
   const candidates: unknown[] = [payload.id, payload.userId, payload.sub];
   for (const candidate of candidates) {
     if (typeof candidate === 'string' && candidate.length > 0) return candidate;
-    if (typeof candidate === 'number' && Number.isFinite(candidate)) return String(candidate);
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+      return String(candidate);
+    }
   }
   return undefined;
 }
