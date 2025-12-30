@@ -25,7 +25,7 @@ describe('buildActivityMessage', () => {
       },
     } as any);
 
-    expect(msg).toBe('Login failed (HTTP 401)');
+    expect(msg).toBe('Login failed (unauthorized) (HTTP 401)');
   });
 
   it('falls back to a generic request message', () => {
