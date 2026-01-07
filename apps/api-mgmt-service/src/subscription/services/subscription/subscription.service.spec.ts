@@ -10,6 +10,7 @@ import {
   SubscriptionStatus,
 } from 'src/subscription/entities/subscriptions.entity';
 import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
+import { Api } from 'src/api/entities/api.entity';
 
 describe('SubscriptionService', () => {
   let service: SubscriptionService;
@@ -23,6 +24,10 @@ describe('SubscriptionService', () => {
   };
 
   const mockPlanRepository: Partial<Repository<SubscriptionPlan>> = {
+    findOne: jest.fn(),
+  };
+
+  const mockApiRepository = {
     findOne: jest.fn(),
   };
 
@@ -45,6 +50,10 @@ describe('SubscriptionService', () => {
           useValue: mockPlanRepository,
         },
         {
+          provide: getRepositoryToken(Api),
+          useValue: mockApiRepository,
+        },
+        {
           provide: ActivityLogService,
           useValue: auditMock,
         },
@@ -61,11 +70,14 @@ describe('SubscriptionService', () => {
   describe('create', () => {
     it('should create and save a subscription', async () => {
       const plan = { id: 1, monthly_call_limit: 10 } as SubscriptionPlan;
+      const api = { id: 1 } as Api;
       mockPlanRepository.findOne = jest.fn(() => Promise.resolve(plan));
+      mockApiRepository.findOne = jest.fn(() => Promise.resolve(api));
 
       const subscription = {
         user_id: 1,
         plan_id: plan.id,
+        api_id: 1,
         auto_renew: true,
         calls_used_this_cycle: 0,
       } as Subscription;
@@ -75,11 +87,16 @@ describe('SubscriptionService', () => {
         Promise.resolve(subscription),
       );
 
-      const result = await service.create({ plan_id: 1 }, 1);
+      const result = await service.create({ plan_id: 1, api_id: 1 }, 1);
 
       expect(mockPlanRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
       });
+
+      expect(mockApiRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+
       expect(mockSubscriptionRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: 1,
@@ -94,9 +111,9 @@ describe('SubscriptionService', () => {
     it('should throw NotFoundException if plan does not exist', async () => {
       mockPlanRepository.findOne = jest.fn(() => Promise.resolve(null));
 
-      await expect(service.create({ plan_id: 999 }, 1)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.create({ plan_id: 999, api_id: 1 }, 1),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

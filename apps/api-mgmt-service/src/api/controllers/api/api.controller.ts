@@ -120,9 +120,13 @@ export class ApiController {
   @ApiResponse({ status: 200, description: 'Fetched successfully' })
   async findOne(
     @Param('id') id: string,
-    @CurrentUser() user?: { role: { name: string } },
+    @CurrentUser() user?: { id: number; role: { name: string } },
   ) {
-    return await this.apiService.findOneById(Number(id), user?.role?.name);
+    return await this.apiService.findOneById(
+      Number(id),
+      user?.role?.name,
+      user?.id,
+    );
   }
 
   @Get('/pricing/:id')

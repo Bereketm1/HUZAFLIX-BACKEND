@@ -8,6 +8,7 @@ import { Api, ApiStatus, ApiType } from 'src/api/entities/api.entity';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 import { PlanService } from 'src/subscription/services/plan/plan.service';
+import { Subscription } from 'src/subscription/entities/subscriptions.entity';
 
 jest.mock('@huzaflix/common', (): unknown => {
   const actual: object = jest.requireActual('@huzaflix/common');
@@ -21,6 +22,16 @@ describe('ApiService', () => {
   let service: ApiService;
 
   const mockApiRepository: Partial<Repository<Api>> = {
+    find: jest.fn(),
+    findAndCount: jest.fn(),
+    findOneById: jest.fn(),
+    findOne: jest.fn(),
+    findOneBy: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const subRepository: Partial<Repository<Api>> = {
     find: jest.fn(),
     findAndCount: jest.fn(),
     findOneById: jest.fn(),
@@ -48,6 +59,10 @@ describe('ApiService', () => {
         {
           provide: getRepositoryToken(Api),
           useValue: mockApiRepository,
+        },
+        {
+          provide: getRepositoryToken(Subscription),
+          useValue: subRepository,
         },
         {
           provide: MinioService,

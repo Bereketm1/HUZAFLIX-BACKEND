@@ -10,7 +10,6 @@ import {
   Headers,
   UnauthorizedException,
   UseGuards,
-  Inject,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -35,7 +34,6 @@ import {
 } from '@huzaflix/common';
 import { User } from 'src/users/users.entity';
 import { UpdatePasswordDto } from './dto/update-password.dto';
-import { ClientProxy } from '@nestjs/microservices';
 
 type OAuthProfile = { email?: string; name?: string };
 
@@ -43,7 +41,6 @@ type OAuthProfile = { email?: string; name?: string };
 @Controller('')
 export class AuthController {
   constructor(
-    @Inject('SUBSCRIPTION_SERVICE') private client: ClientProxy,
     private readonly authService: AuthService,
     private readonly config: ConfigService,
   ) {}
@@ -105,14 +102,8 @@ export class AuthController {
     status: 200,
     description: 'Current user retrieved successfully',
   })
-  async getUser(@CurrentUser() user: User) {
-    const subscription: unknown = await this.client
-      .send('get_subscription_by_user_id', {
-        userId: user.id,
-      })
-      .toPromise();
-
-    return { ...user, subscription };
+  getUser(@CurrentUser() user: User) {
+    return user;
   }
 
   @Post('update-password')

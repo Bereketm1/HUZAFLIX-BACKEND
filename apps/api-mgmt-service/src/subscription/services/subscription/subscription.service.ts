@@ -18,6 +18,7 @@ import { Repository } from 'typeorm';
 import { Logger } from '@nestjs/common';
 import { ActivityLogService } from 'src/api/activity-log/activity-log.service';
 import { EventType } from 'src/api/entities/audit-log.entity';
+import { Api } from 'src/api/entities/api.entity';
 
 @Injectable()
 export class SubscriptionService {
@@ -28,6 +29,9 @@ export class SubscriptionService {
 
     @InjectRepository(SubscriptionPlan)
     private readonly planRepository: Repository<SubscriptionPlan>,
+
+    @InjectRepository(Api)
+    private readonly apiRepository: Repository<Api>,
     private readonly activityLogService?: ActivityLogService,
   ) {}
 
@@ -51,7 +55,12 @@ export class SubscriptionService {
       where: { id: data.plan_id },
     });
 
+    const api = await this.apiRepository.findOne({
+      where: { id: data.api_id },
+    });
+
     if (!plan) throw new NotFoundException(`Plan ${data.plan_id} not found`);
+    if (!api) throw new NotFoundException(`API ${data.api_id} not found`);
 
     const existingSubForPlan = await this.subscriptionRepository.findOne({
       where: { user_id, plan_id: plan.id },
@@ -67,6 +76,7 @@ export class SubscriptionService {
     const subscription = this.subscriptionRepository.create({
       user_id: user_id,
       plan_id: plan.id,
+      api_id: api.id,
       start_date: now,
       end_date:
         plan.plan_type === PlanType.MONTHLY

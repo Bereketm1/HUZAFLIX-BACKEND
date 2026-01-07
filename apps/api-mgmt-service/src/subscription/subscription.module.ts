@@ -9,10 +9,11 @@ import { Subscription } from './entities/subscriptions.entity';
 import { SubscriptionService } from './services/subscription/subscription.service';
 import { SubscriptionController } from './controllers/subscription/subscription.controller';
 import { SubscriptionMessageController } from './controllers/subscription/subscription.message.controller';
+import { Api } from 'src/api/entities/api.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([SubscriptionPlan, Subscription]),
+    TypeOrmModule.forFeature([SubscriptionPlan, Subscription, Api]),
     CommonModule,
     ActivityLogModule,
   ],

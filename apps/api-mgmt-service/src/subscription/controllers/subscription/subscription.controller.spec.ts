@@ -108,7 +108,7 @@ describe('SubscriptionController', () => {
 
   describe('create', () => {
     it('should create and return the subscription', async () => {
-      const dto: CreateSubscriptionDto = { plan_id: 1 };
+      const dto: CreateSubscriptionDto = { plan_id: 1, api_id: 1 };
       const created = { id: 1, ...dto, status: SubscriptionStatus.ACTIVE };
 
       mockSubscriptionService.create.mockResolvedValue(created);

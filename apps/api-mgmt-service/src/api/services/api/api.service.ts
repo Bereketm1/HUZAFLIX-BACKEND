@@ -15,6 +15,10 @@ import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 import { Api, ApiStatus } from 'src/api/entities/api.entity';
 import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
+import {
+  Subscription,
+  SubscriptionStatus,
+} from 'src/subscription/entities/subscriptions.entity';
 import { PlanService } from 'src/subscription/services/plan/plan.service';
 import { Repository } from 'typeorm';
 
@@ -23,6 +27,8 @@ export class ApiService {
   constructor(
     @InjectRepository(Api)
     private readonly apiRepository: Repository<Api>,
+    @InjectRepository(Subscription)
+    private readonly subscriptionRepository: Repository<Subscription>,
     private readonly minioService: MinioService,
     private readonly planService: PlanService,
   ) {}
@@ -60,7 +66,11 @@ export class ApiService {
     return paginate(apis, page, limit, total);
   }
 
-  async findOneById(id: number, role?: string): Promise<Api> {
+  async findOneById(
+    id: number,
+    role?: string,
+    userId?: number,
+  ): Promise<Api & { isSubscribed: boolean }> {
     const isAdmin = role === 'administrator';
     const where = isAdmin ? { id: id } : { id: id, status: ApiStatus.ACTIVE };
 
@@ -70,7 +80,11 @@ export class ApiService {
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }
-    return api;
+    if (userId) {
+      return { ...api, isSubscribed: await this.isSubscribed(id, userId) };
+    } else {
+      return { ...api, isSubscribed: false };
+    }
   }
 
   async create(data: CreateApiDto & { created_by: string }): Promise<Api> {
@@ -220,5 +234,19 @@ export class ApiService {
     }));
 
     return priceList;
+  }
+
+  async isSubscribed(apiId: number, userId: number) {
+    const subscription = await this.subscriptionRepository.findOneBy({
+      api_id: apiId,
+      user_id: userId,
+      status: SubscriptionStatus.ACTIVE,
+    });
+
+    if (subscription) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }

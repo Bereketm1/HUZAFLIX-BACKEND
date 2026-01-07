@@ -11,10 +11,17 @@ import { PlanService } from 'src/subscription/services/plan/plan.service';
 import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
 import { FavouritesService } from './services/favourites/favourites.service';
 import { Favourite } from './entities/favourites.entity';
+import { Subscription } from 'src/subscription/entities/subscriptions.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Api, ApiKey, SubscriptionPlan, Favourite]),
+    TypeOrmModule.forFeature([
+      Api,
+      ApiKey,
+      SubscriptionPlan,
+      Favourite,
+      Subscription,
+    ]),
     CommonModule,
     ActivityLogModule,
     ConsumerApiKeyModule,
