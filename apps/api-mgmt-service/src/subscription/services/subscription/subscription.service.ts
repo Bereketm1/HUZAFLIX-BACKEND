@@ -63,7 +63,12 @@ export class SubscriptionService {
     if (!api) throw new NotFoundException(`API ${data.api_id} not found`);
 
     const existingSubForPlan = await this.subscriptionRepository.findOne({
-      where: { user_id, plan_id: plan.id },
+      where: {
+        user_id,
+        plan_id: plan.id,
+        api_id: api.id,
+        status: SubscriptionStatus.ACTIVE,
+      },
     });
 
     if (existingSubForPlan)
@@ -141,7 +146,7 @@ export class SubscriptionService {
     const skip = (page - 1) * limit;
     const take = limit;
 
-    const where = isAdmin ? {} : { user_id };
+    const where = isAdmin ? {} : { user_id, status: SubscriptionStatus.ACTIVE };
 
     const [subscriptions, total] =
       await this.subscriptionRepository.findAndCount({
