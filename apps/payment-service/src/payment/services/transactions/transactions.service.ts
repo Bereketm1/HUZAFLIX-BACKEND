@@ -59,9 +59,7 @@ export class TransactionsService {
     return pr;
   }
 
-  async create(
-    data: CreateTransactionDto & { userId: number },
-  ): Promise<Transaction> {
+  async create(data: CreateTransactionDto): Promise<Transaction> {
     const transaction = this.transactionRepository.create(data);
     await this.transactionRepository.save(transaction);
     return transaction;

@@ -31,7 +31,7 @@ import { stripe } from 'src/stripe/helper';
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 
-  @Get(':id')
+  @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
@@ -40,8 +40,8 @@ export class BillingController {
     status: 200,
     description: 'Fetched billing profile successfully',
   })
-  async findOne(@Param('id') id: number, @CurrentUser() user: { id: number }) {
-    return await this.billingService.findOneById(id, user.id);
+  async findOne(@CurrentUser() user: { id: number }) {
+    return await this.billingService.findOneByUserId(user.id);
   }
 
   @Post()

@@ -1,7 +1,6 @@
 import { DataSource } from 'typeorm';
 import 'dotenv/config';
 import { Transaction } from './src/payment/entities/transaction.entity';
-import { PaymentRequest } from './src/payment/entities/payment-request.entity';
 import { Billing } from 'src/billing/entities/billing.entity';
 
 export const AppDataSource = new DataSource({
@@ -11,7 +10,7 @@ export const AppDataSource = new DataSource({
   username: process.env.POSTGRES_USER || 'postgres',
   password: process.env.POSTGRES_PASSWORD || 'postgres',
   database: process.env.POSTGRES_DB || 'postgres',
-  entities: [Transaction, PaymentRequest, Billing],
+  entities: [Transaction, Billing],
   migrations: ['./migrations/*.ts'],
   synchronize: false,
 });

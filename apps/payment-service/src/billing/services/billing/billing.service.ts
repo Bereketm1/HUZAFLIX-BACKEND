@@ -14,12 +14,14 @@ import { UpdateBillingInfoDto } from 'src/billing/dtos/billing/update-billing.dt
 import { stripe } from 'src/stripe/helper';
 import Stripe from 'stripe';
 import { IssuePaymentDto } from 'src/billing/dtos/billing/issue-payment.dto';
+import { TransactionsService } from 'src/payment/services/transactions/transactions.service';
 
 @Injectable()
 export class BillingService {
   constructor(
     @InjectRepository(Billing)
     private readonly billingRepository: Repository<Billing>,
+    private readonly transactionService: TransactionsService,
   ) {}
 
   async create(dto: CreateBillingInfoDto, userId: number): Promise<Billing> {
@@ -98,6 +100,15 @@ export class BillingService {
     });
 
     return paginate(billingProfiles, page, limit, total);
+  }
+
+  async findOneByUserId(userId: number): Promise<Billing> {
+    const billing = await this.billingRepository.findOne({
+      where: { userId },
+    });
+    if (!billing)
+      throw new NotFoundException(`Billing info with ID ${userId} not found`);
+    return billing;
   }
 
   async findOneById(id: number, userId: number): Promise<Billing> {
@@ -185,6 +196,10 @@ export class BillingService {
 
       billing.credits += credits;
       await this.billingRepository.save(billing);
+      await this.transactionService.create({
+        userId: billing.userId,
+        amount: credits,
+      });
     }
   }
 

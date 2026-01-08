@@ -3,12 +3,9 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
-  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { PaymentRequest } from './payment-request.entity';
 import { randomUUID } from 'crypto';
 
 @Entity({ name: 'transactions' })
@@ -16,30 +13,14 @@ export class Transaction {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ type: 'uuid', nullable: false })
+  @Column({ type: 'varchar', length: 255, nullable: false })
   reference: string;
-
-  @Column({ type: 'text', nullable: false })
-  remote_reference: string;
 
   @Column({ type: 'bigint', nullable: false })
   userId: number;
 
   @Column({ type: 'decimal', nullable: false })
   amount: number;
-
-  @Column({ type: 'text', nullable: true })
-  remark: string;
-
-  @ManyToOne(() => PaymentRequest)
-  @JoinColumn({ name: 'payment_request_id' })
-  payment_request: PaymentRequest;
-
-  @Column({ type: 'bigint' })
-  payment_request_id: number;
-
-  @Column({ type: 'jsonb', nullable: true })
-  metadata?: Record<string, any>;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   created_at: Date;
