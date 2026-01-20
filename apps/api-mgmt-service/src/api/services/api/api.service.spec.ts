@@ -125,7 +125,7 @@ describe('ApiService', () => {
 
       const result = await service.findOneById(1);
 
-      expect(result).toEqual(api);
+      expect(result).toEqual({ ...api, isSubscribed: false });
       expect(mockApiRepository.findOne).toHaveBeenCalledWith({
         where: {
           id: 1,

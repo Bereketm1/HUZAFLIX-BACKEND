@@ -81,7 +81,11 @@ describe('ApiController', () => {
 
       const result = await controller.findOne('1');
 
-      expect(mockApiService.findOneById).toHaveBeenCalledWith(1, undefined);
+      expect(mockApiService.findOneById).toHaveBeenCalledWith(
+        1,
+        undefined,
+        undefined,
+      );
       expect(result).toEqual(api);
     });
 

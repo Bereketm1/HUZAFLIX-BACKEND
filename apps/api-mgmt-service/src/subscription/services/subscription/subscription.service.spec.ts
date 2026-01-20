@@ -162,7 +162,7 @@ describe('SubscriptionService', () => {
       expect(mockSubscriptionRepository.findAndCount).toHaveBeenCalledWith({
         skip: 0,
         take: 1,
-        where: { user_id: 1 },
+        where: { user_id: 1, status: SubscriptionStatus.ACTIVE },
         relations: ['plan'],
       });
       expect(result.data).toEqual(subscriptions);
