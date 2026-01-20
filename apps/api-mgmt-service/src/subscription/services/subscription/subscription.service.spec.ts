@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SubscriptionService } from './subscription.service';
-import { ActivityLogService } from 'src/api/activity-log/activity-log.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
@@ -32,12 +31,10 @@ describe('SubscriptionService', () => {
   };
 
   let testingModule: TestingModule;
-  let auditMock: { createAudit: jest.Mock };
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    auditMock = { createAudit: jest.fn() };
     testingModule = await Test.createTestingModule({
       providers: [
         SubscriptionService,
@@ -105,7 +102,6 @@ describe('SubscriptionService', () => {
         }),
       );
       expect(result).toEqual(subscription);
-      expect(auditMock.createAudit).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if plan does not exist', async () => {
@@ -286,7 +282,6 @@ describe('SubscriptionService', () => {
 
       expect(result.auto_renew).toBe(false);
       expect(result.status).toBe(SubscriptionStatus.CANCELLED);
-      expect(auditMock.createAudit).toHaveBeenCalled();
     });
   });
 });

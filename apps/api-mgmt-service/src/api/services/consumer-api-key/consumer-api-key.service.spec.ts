@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 // repository type not required in tests; keep local mocks instead of using Repository
 import { ConsumerApiKeyService } from './consumer-api-key.service';
-import { ActivityLogService } from '../../activity-log/activity-log.service';
 import { CreateConsumerApiKeyDto } from '../../dto/consumer-api-key/create-consumer-api-key.dto';
 import { UpdateConsumerApiKeyDto } from '../../dto/consumer-api-key/update-consumer-api-key.dto';
 import { ApiKey } from '../../entities/api-key.entity';
@@ -19,7 +18,6 @@ describe('ConsumerApiKeyService', () => {
     save: jest.Mock;
     findOne: jest.Mock;
   };
-  let auditMock: { createAudit: jest.Mock };
 
   let testingModule: TestingModule;
 
@@ -36,17 +34,12 @@ describe('ConsumerApiKeyService', () => {
       findOne: findOneMock,
     };
 
-    auditMock = { createAudit: jest.fn() };
     testingModule = await Test.createTestingModule({
       providers: [
         ConsumerApiKeyService,
         {
           provide: getRepositoryToken(ApiKey),
           useValue: repo,
-        },
-        {
-          provide: ActivityLogService,
-          useValue: auditMock,
         },
       ],
     }).compile();
@@ -88,7 +81,6 @@ describe('ConsumerApiKeyService', () => {
     expect(out.key).toBeDefined();
     expect(out.id).toBe('10');
     expect(saveMock).toHaveBeenCalled();
-    expect(auditMock.createAudit).toHaveBeenCalled();
   });
 
   it('updateForUser should update existing key for matching user', async () => {
@@ -124,6 +116,5 @@ describe('ConsumerApiKeyService', () => {
       where: { id: '3', user_id: '9' },
     });
     expect(res.revoked_at).toBeDefined();
-    expect(auditMock.createAudit).toHaveBeenCalled();
   });
 });

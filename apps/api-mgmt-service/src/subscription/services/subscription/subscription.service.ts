@@ -98,23 +98,6 @@ export class SubscriptionService {
 
     const saved = await this.subscriptionRepository.save(subscription);
 
-    // best-effort audit entry — avoid `any` by using saved as Subscription
-    try {
-      await this.activityLogService?.createAudit({
-        actor_id: String(user_id),
-        event: EventType.SUBSCRIPTION_CREATED,
-        resource_type: 'subscription',
-        resource_id: String(saved.id),
-        metadata: { plan_id: plan.id },
-      });
-    } catch (err: unknown) {
-      // Non-fatal; log the error for diagnostics
-      this.logger.warn(
-        'Failed to write subscription created audit: ' +
-          (err instanceof Error ? err.message : String(err)),
-      );
-    }
-
     return saved;
   }
 
@@ -237,21 +220,6 @@ export class SubscriptionService {
     subscription.auto_renew = false;
     subscription.status = SubscriptionStatus.CANCELLED;
     const saved = await this.subscriptionRepository.save(subscription);
-
-    try {
-      await this.activityLogService?.createAudit({
-        actor_id: String(user_id),
-        event: EventType.SUBSCRIPTION_CANCELED,
-        resource_type: 'subscription',
-        resource_id: String(saved.id),
-        metadata: {},
-      });
-    } catch (err: unknown) {
-      this.logger.warn(
-        'Failed to write subscription canceled audit: ' +
-          (err instanceof Error ? err.message : String(err)),
-      );
-    }
 
     return saved;
   }
