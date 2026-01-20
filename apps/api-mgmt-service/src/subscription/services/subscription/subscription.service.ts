@@ -16,8 +16,6 @@ import {
 } from 'src/subscription/entities/subscriptions.entity';
 import { Repository } from 'typeorm';
 import { Logger } from '@nestjs/common';
-import { ActivityLogService } from 'src/api/activity-log/activity-log.service';
-import { EventType } from 'src/api/entities/audit-log.entity';
 import { Api } from 'src/api/entities/api.entity';
 
 @Injectable()
@@ -32,7 +30,6 @@ export class SubscriptionService {
 
     @InjectRepository(Api)
     private readonly apiRepository: Repository<Api>,
-    private readonly activityLogService?: ActivityLogService,
   ) {}
 
   private computeNextMonth(date: Date): Date {

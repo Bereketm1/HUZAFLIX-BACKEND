@@ -59,7 +59,7 @@ export class ProxyService {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
               proxyReq as unknown as ClientRequest,
-              req as Parameters<RequestHandler>[0],
+              req,
             ),
         },
         timeout: 15_000,
@@ -68,13 +68,12 @@ export class ProxyService {
       analytics: createProxyMiddleware({
         target: `http://analytics-service:${process.env.ANALYTICS_SERVICE_PORT || 3000}`,
         changeOrigin: true,
-        pathRewrite: (path) =>
-          path.replace(/^\/api\/analytics(?=\/|$)/, ''),
+        pathRewrite: (path) => path.replace(/^\/api\/analytics(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
               proxyReq as unknown as ClientRequest,
-              req as Parameters<RequestHandler>[0],
+              req,
             ),
         },
         timeout: 15_000,
@@ -89,7 +88,7 @@ export class ProxyService {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
               proxyReq as unknown as ClientRequest,
-              req as Parameters<RequestHandler>[0],
+              req,
             ),
         },
         timeout: 15_000,
@@ -103,7 +102,7 @@ export class ProxyService {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
               proxyReq as unknown as ClientRequest,
-              req as Parameters<RequestHandler>[0],
+              req,
             ),
         },
         timeout: 15_000,
@@ -112,13 +111,12 @@ export class ProxyService {
       'audit-log': createProxyMiddleware({
         target: `http://audit-log-service:${process.env.AUDIT_LOG_SERVICE_PORT || 3000}`,
         changeOrigin: true,
-        pathRewrite: (path) =>
-          path.replace(/^\/api\/audit-log(?=\/|$)/, ''),
+        pathRewrite: (path) => path.replace(/^\/api\/audit-log(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
               proxyReq as unknown as ClientRequest,
-              req as Parameters<RequestHandler>[0],
+              req,
             ),
         },
         timeout: 15_000,

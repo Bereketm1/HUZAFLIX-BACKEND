@@ -14,7 +14,7 @@ import { Api } from 'src/api/entities/api.entity';
 describe('SubscriptionService', () => {
   let service: SubscriptionService;
 
-  const mockSubscriptionRepository: Partial<Repository<Subscription>> = {
+  const mockSubscriptionRepository = {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
@@ -49,10 +49,6 @@ describe('SubscriptionService', () => {
         {
           provide: getRepositoryToken(Api),
           useValue: mockApiRepository,
-        },
-        {
-          provide: ActivityLogService,
-          useValue: auditMock,
         },
       ],
     }).compile();
@@ -271,10 +267,8 @@ describe('SubscriptionService', () => {
         auto_renew: true,
         status: SubscriptionStatus.ACTIVE,
       } as Subscription;
-      (mockSubscriptionRepository.findOne as jest.Mock).mockResolvedValue(
-        subscription,
-      );
-      (mockSubscriptionRepository.save as jest.Mock).mockImplementation((s) =>
+      mockSubscriptionRepository.findOne.mockResolvedValue(subscription);
+      mockSubscriptionRepository.save.mockImplementation((s) =>
         Promise.resolve(s),
       );
 
