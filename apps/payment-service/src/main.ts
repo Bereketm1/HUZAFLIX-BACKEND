@@ -27,7 +27,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addServer(
       process.env.NODE_ENV === 'production'
-        ? `http://${process.env.SERVER_HOST || 'localhost/api'}/payment`
+        ? `https://${process.env.SERVER_HOST || 'localhost'}/payment`
         : 'http://localhost:3000/api/payment',
       'Local Development',
     )

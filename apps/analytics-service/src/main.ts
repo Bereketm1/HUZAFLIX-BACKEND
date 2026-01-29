@@ -17,7 +17,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addServer(
       process.env.NODE_ENV === 'production'
-        ? `http://${process.env.SERVER_HOST || 'localhost'}/analytics`
+        ? `https://${process.env.SERVER_HOST || 'localhost'}/analytics`
         : 'http://localhost:3000/api/analytics',
       'Local Development',
     )

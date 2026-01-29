@@ -24,7 +24,7 @@ async function bootstrap() {
     )
     .addServer(
       process.env.NODE_ENV === 'production'
-        ? `http://${process.env.SERVER_HOST || 'localhost'}/audit-log`
+        ? `https://${process.env.SERVER_HOST || 'localhost'}/audit-log`
         : 'http://localhost:3000/api/audit-log',
       'Gateway',
     )
