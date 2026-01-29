@@ -54,7 +54,8 @@ export class ProxyService {
       auth: createProxyMiddleware({
         target: `http://user-service:${process.env.USER_SERVICE_PORT || 3000}`,
         changeOrigin: true,
-        pathRewrite: (path) => path.replace(/^\/api\/auth(?=\/|$)/, ''),
+        pathRewrite: (path) =>
+          path.replace(/^\/(?:api\/)?auth(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
@@ -68,7 +69,8 @@ export class ProxyService {
       analytics: createProxyMiddleware({
         target: `http://analytics-service:${process.env.ANALYTICS_SERVICE_PORT || 3000}`,
         changeOrigin: true,
-        pathRewrite: (path) => path.replace(/^\/api\/analytics(?=\/|$)/, ''),
+        pathRewrite: (path) =>
+          path.replace(/^\/(?:api\/)?analytics(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
@@ -83,7 +85,7 @@ export class ProxyService {
         target: `http://api-mgmt-service:${process.env.API_MANAGEMENT_SERVICE_PORT || 3000}`,
         changeOrigin: true,
         pathRewrite: (path) =>
-          path.replace(/^\/api\/api-management(?=\/|$)/, ''),
+          path.replace(/^\/(?:api\/)?api-management(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
@@ -97,7 +99,8 @@ export class ProxyService {
       payment: createProxyMiddleware({
         target: `http://payment-service:${process.env.PAYMENT_SERVICE_PORT || 3000}`,
         changeOrigin: true,
-        pathRewrite: (path) => path.replace(/^\/api\/payment(?=\/|$)/, ''),
+        pathRewrite: (path) =>
+          path.replace(/^\/(?:api\/)?payment(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
@@ -111,7 +114,8 @@ export class ProxyService {
       'audit-log': createProxyMiddleware({
         target: `http://audit-log-service:${process.env.AUDIT_LOG_SERVICE_PORT || 3000}`,
         changeOrigin: true,
-        pathRewrite: (path) => path.replace(/^\/api\/audit-log(?=\/|$)/, ''),
+        pathRewrite: (path) =>
+          path.replace(/^\/(?:api\/)?audit-log(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
