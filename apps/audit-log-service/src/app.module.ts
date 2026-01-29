@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { LogsModule } from './logs/logs.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -25,5 +26,6 @@ import { LogsModule } from './logs/logs.module';
     }),
     LogsModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
