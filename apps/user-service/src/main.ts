@@ -25,11 +25,10 @@ async function bootstrap() {
     .setDescription('API documentation for Huzaflix Backend')
     .setVersion('1.0')
     .addServer(
-      process.env.NODE_ENV === 'production'
-        ? `https://${process.env.SERVER_HOST || 'localhost'}/auth`
-        : 'http://localhost:3000/api/auth',
-      'Local Development',
+      `https://${process.env.SERVER_HOST || 'api.huzaflix.com'}/auth`,
+      'Production',
     )
+    .addServer('http://localhost:3000/api/auth', 'Local Development')
     .addBearerAuth()
     .build();
 
