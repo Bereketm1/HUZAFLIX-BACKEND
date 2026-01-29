@@ -23,11 +23,10 @@ async function bootstrap() {
       'access-token',
     )
     .addServer(
-      process.env.NODE_ENV === 'production'
-        ? `https://${process.env.SERVER_HOST || 'localhost'}/audit-log`
-        : 'http://localhost:3000/api/audit-log',
-      'Gateway',
+      `https://${process.env.SERVER_HOST || 'api.huzaflix.com'}/audit-log`,
+      'Production',
     )
+    .addServer('http://localhost:3000/api/audit-log', 'Local Development')
     .build();
 
   const swaggerDoc = SwaggerModule.createDocument(app, swaggerConfig);
