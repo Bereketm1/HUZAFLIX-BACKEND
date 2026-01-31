@@ -66,6 +66,20 @@ export class ApiController {
     );
   }
 
+  @Get('/recent')
+  @ApiOperation({ summary: 'Get recent apis' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuardWithPublic)
+  @ApiResponse({ status: 200, description: 'Fetched recent apis successfully' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  async findRecent(
+    @Query('limit') limit?: number,
+    @CurrentUser() user?: { role: { name: string } },
+  ) {
+    const take = limit ? Number(limit) : 10;
+    return await this.apiService.findRecent(take, user?.role?.name);
+  }
+
   @Get('/categories')
   @ApiOperation({ summary: 'Get all categories' })
   @ApiResponse({

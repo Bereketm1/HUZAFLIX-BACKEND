@@ -25,6 +25,7 @@ export class BillingService {
   ) {}
 
   async create(dto: CreateBillingInfoDto, userId: number): Promise<Billing> {
+    this.assertStripeConfigured();
     const billing = this.billingRepository.create({ ...dto, userId });
     const params: Stripe.CustomerCreateParams = {
       email: dto.email,
@@ -51,6 +52,7 @@ export class BillingService {
   }
 
   async attachPaymentMethod(paymentMethodId: string, userId: number) {
+    this.assertStripeConfigured();
     if (!paymentMethodId) {
       throw new UnprocessableEntityException('No payment method issued');
     }
@@ -148,6 +150,7 @@ export class BillingService {
   }
 
   async issuePayment(userId: number, dto: IssuePaymentDto) {
+    this.assertStripeConfigured();
     const billing = await this.billingRepository.findOne({
       where: { userId },
     });
@@ -205,5 +208,14 @@ export class BillingService {
 
   private dollarsToCents(amount: number): number {
     return Math.round(amount * 100);
+  }
+
+  private assertStripeConfigured(): void {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key || key === 'api_key_placeholder') {
+      throw new UnprocessableEntityException(
+        'Stripe secret key is not configured',
+      );
+    }
   }
 }
