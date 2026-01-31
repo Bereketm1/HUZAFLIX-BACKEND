@@ -66,6 +66,20 @@ export class ApiService {
     return paginate(apis, page, limit, total);
   }
 
+  async findRecent(
+    limit = 10,
+    role?: string,
+  ): Promise<Api[]> {
+    const isAdmin = role === 'administrator';
+    const where = isAdmin ? {} : { status: ApiStatus.ACTIVE };
+
+    return this.apiRepository.find({
+      where,
+      order: { created_at: 'DESC' },
+      take: limit,
+    });
+  }
+
   async findOneById(
     id: number,
     role?: string,
