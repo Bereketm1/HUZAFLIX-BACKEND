@@ -67,17 +67,20 @@ export class ApiController {
   }
 
   @Get('/recent')
-  @ApiOperation({ summary: 'Get recent apis' })
+  @ApiOperation({ summary: 'Get recently used apis' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuardWithPublic)
-  @ApiResponse({ status: 200, description: 'Fetched recent apis successfully' })
+  @UseGuards(JwtAuthGuard)
+  @ApiResponse({
+    status: 200,
+    description: 'Fetched recently used apis successfully',
+  })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   async findRecent(
+    @CurrentUser() user: { id: number },
     @Query('limit') limit?: number,
-    @CurrentUser() user?: { role: { name: string } },
   ) {
     const take = limit ? Number(limit) : 10;
-    return await this.apiService.findRecent(take, user?.role?.name);
+    return await this.apiService.findRecentUsed(user.id, take);
   }
 
   @Get('/categories')

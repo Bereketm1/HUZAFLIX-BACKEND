@@ -66,18 +66,31 @@ export class ApiService {
     return paginate(apis, page, limit, total);
   }
 
-  async findRecent(
+  async findRecentUsed(
+    userId: number,
     limit = 10,
-    role?: string,
   ): Promise<Api[]> {
-    const isAdmin = role === 'administrator';
-    const where = isAdmin ? {} : { status: ApiStatus.ACTIVE };
+    const subscriptions = await this.subscriptionRepository
+      .createQueryBuilder('subscription')
+      .leftJoinAndSelect('subscription.api', 'api')
+      .where('subscription.user_id = :userId', { userId })
+      .andWhere('subscription.status = :status', {
+        status: SubscriptionStatus.ACTIVE,
+      })
+      .orderBy('subscription.updated_at', 'DESC')
+      .take(limit)
+      .getMany();
 
-    return this.apiRepository.find({
-      where,
-      order: { created_at: 'DESC' },
-      take: limit,
-    });
+    const seen = new Set<number>();
+    return subscriptions
+      .map((subscription) => subscription.api)
+      .filter((api): api is Api => {
+        if (!api || seen.has(api.id)) {
+          return false;
+        }
+        seen.add(api.id);
+        return true;
+      });
   }
 
   async findOneById(
