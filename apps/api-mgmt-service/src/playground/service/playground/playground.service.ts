@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Injectable,
+} from '@nestjs/common';
 import { OpenAPIV3 } from 'openapi-types';
 import { ApiService } from 'src/api/services/api/api.service';
 
@@ -35,25 +39,45 @@ const validMethods: HttpMethod[] = [
 export class PlaygroundService {
   constructor(private readonly apiService: ApiService) {}
 
+  private async resolveOpenApiUrl(api: { openapi_spec_url?: string | null }) {
+    if (!api.openapi_spec_url) {
+      throw new BadRequestException('OpenAPI spec URL not set for this API');
+    }
+
+    const filename = api.openapi_spec_url.split('/').pop();
+    if (!filename) {
+      throw new BadRequestException('Invalid filename');
+    }
+
+    try {
+      const resolved = await this.apiService.getDocs(filename);
+      return resolved || api.openapi_spec_url;
+    } catch {
+      return api.openapi_spec_url;
+    }
+  }
+
   async getEndpointsFromSwagger(apiId: number): Promise<SwaggerEndpoint[]> {
     const api = await this.apiService.findOneById(apiId);
     if (!api) {
       throw new BadRequestException(`API not found`);
     }
 
-    const filename = api.openapi_spec_url.split('/').pop();
+    const url = await this.resolveOpenApiUrl(api);
 
-    if (!filename) {
-      throw new BadRequestException(`Invalid filename`);
+    let response: Response;
+    try {
+      response = await fetch(url);
+    } catch (error) {
+      throw new BadGatewayException(
+        `Failed to fetch Swagger docs: ${(error as Error).message}`,
+      );
     }
 
-    const url = await this.apiService.getDocs(filename);
-
-    const response = await fetch(url);
-
     if (!response.ok) {
+      const bodyText = await response.text();
       throw new BadRequestException(
-        `Failed to load Swagger docs: ${JSON.stringify(await response.json())}`,
+        `Failed to load Swagger docs: ${response.status} ${response.statusText} ${bodyText}`,
       );
     }
 
@@ -87,20 +111,23 @@ export class PlaygroundService {
     const api = await this.apiService.findOneById(apiId);
     if (!api) throw new BadRequestException('API not found');
 
-    const filename = api.openapi_spec_url.split('/').pop();
+    const url = await this.resolveOpenApiUrl(api);
 
-    if (!filename) {
-      throw new BadRequestException(`Invalid filename`);
+    let response: Response;
+    try {
+      response = await fetch(url);
+    } catch (error) {
+      throw new BadGatewayException(
+        `Failed to fetch Swagger docs: ${(error as Error).message}`,
+      );
     }
 
-    const url = await this.apiService.getDocs(filename);
-
-    const response = await fetch(url);
-
-    if (!response.ok)
+    if (!response.ok) {
+      const bodyText = await response.text();
       throw new BadRequestException(
-        `Failed to load Swagger docs: ${response.statusText}`,
+        `Failed to load Swagger docs: ${response.status} ${response.statusText} ${bodyText}`,
       );
+    }
 
     const swagger = (await response.json()) as unknown as OpenAPIV3.Document;
 
@@ -133,15 +160,21 @@ export class PlaygroundService {
     const api = await this.apiService.findOneById(apiId);
     if (!api) throw new BadRequestException('API not found');
 
-    const filename = api.openapi_spec_url.split('/').pop();
-    if (!filename) throw new BadRequestException(`Invalid filename`);
+    const url = await this.resolveOpenApiUrl(api);
 
-    const url = await this.apiService.getDocs(filename);
-    const response = await fetch(url);
+    let response: Response;
+    try {
+      response = await fetch(url);
+    } catch (error) {
+      throw new BadGatewayException(
+        `Failed to fetch Swagger docs: ${(error as Error).message}`,
+      );
+    }
 
     if (!response.ok) {
+      const bodyText = await response.text();
       throw new BadRequestException(
-        `Failed to load Swagger docs: ${response.statusText}`,
+        `Failed to load Swagger docs: ${response.status} ${response.statusText} ${bodyText}`,
       );
     }
 
