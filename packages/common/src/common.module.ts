@@ -70,7 +70,7 @@ export class CommonModule {
           : []),
       ],
       providers: [
-        MinioService,
+        ...(minioOptions ? [MinioService] : []),
         ...(mailerOptions ? [MfaMailerService] : []),
         {
           provide: 'JWT_SERVICE',
@@ -79,7 +79,7 @@ export class CommonModule {
       ],
       exports: [
         JwtModule,
-        MinioService,
+        ...(minioOptions ? [MinioService] : []),
         'JWT_SERVICE',
         ...(mailerOptions ? [MailerModule, MfaMailerService] : []),
         ...(redisOptions ? [ClientsModule] : []),
