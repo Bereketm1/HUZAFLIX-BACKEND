@@ -15,18 +15,24 @@ export class MinioService implements OnModuleInit {
   private readonly bucketName = getMinioBucketNameSingleton();
   private readonly minio = getMinioClientSingleton();
 
-  async onModuleInit() {
+  private getMinioClient(): Minio.Client {
     if (!this.minio) {
       throw new InternalServerErrorException('MinIO client not initialized');
     }
 
+    return this.minio;
+  }
+
+  async onModuleInit() {
+    const minio = this.getMinioClient();
+
     const bucketName = this.bucketName || 'main';
 
     try {
-      const exists = await this.minio.bucketExists(bucketName);
+      const exists = await minio.bucketExists(bucketName);
 
       if (!exists) {
-        await this.minio.makeBucket(bucketName, 'us-east-1');
+        await minio.makeBucket(bucketName, 'us-east-1');
       }
     } catch (error: unknown) {
       const message =
@@ -40,7 +46,7 @@ export class MinioService implements OnModuleInit {
 
   async listBuckets() {
     try {
-      return await this.minio.listBuckets();
+      return await this.getMinioClient().listBuckets();
     } catch (error) {
       throw new InternalServerErrorException(
         'Failed to list buckets',
@@ -51,7 +57,7 @@ export class MinioService implements OnModuleInit {
 
   async getFile(filename: string) {
     try {
-      const url = await this.minio.presignedUrl(
+      const url = await this.getMinioClient().presignedUrl(
         'GET',
         this.bucketName || 'main',
         filename,
@@ -68,7 +74,9 @@ export class MinioService implements OnModuleInit {
     const filename = `${randomUUID()}-${file.originalname}`;
 
     try {
-      await this.minio.putObject(
+      const minio = this.getMinioClient();
+
+      await minio.putObject(
         this.bucketName || 'main',
         filename,
         file.buffer,
@@ -78,7 +86,7 @@ export class MinioService implements OnModuleInit {
         },
       );
 
-      const url = await this.minio.presignedUrl(
+      const url = await minio.presignedUrl(
         'GET',
         this.bucketName || 'main',
         filename,
