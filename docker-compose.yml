@@ -66,8 +66,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
-        condition: service_healthy
 
   payment-service:
     build:
@@ -81,8 +79,6 @@ services:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      minio:
         condition: service_healthy
 
   audit-log-service:
@@ -111,8 +107,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./apps/gateway-service/.env
-    ports:
-      - '5030:3000'
     depends_on:
       user-service:
         condition: service_started
