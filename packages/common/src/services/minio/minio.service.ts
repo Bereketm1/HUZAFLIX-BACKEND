@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import {
   getMinioBucketNameSingleton,
@@ -7,9 +11,34 @@ import {
 import * as Minio from 'minio';
 
 @Injectable()
-export class MinioService {
+export class MinioService implements OnModuleInit {
   private readonly bucketName = getMinioBucketNameSingleton();
   private readonly minio = getMinioClientSingleton();
+
+  async onModuleInit() {
+    if (!this.minio) {
+      throw new InternalServerErrorException('MinIO client not initialized');
+    }
+
+    const bucketName = this.bucketName || 'main';
+
+    try {
+      const exists = await (this.minio as Minio.Client).bucketExists(
+        bucketName,
+      );
+
+      if (!exists) {
+        await (this.minio as Minio.Client).makeBucket(bucketName, 'us-east-1');
+      }
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new InternalServerErrorException(
+        'Failed to ensure MinIO bucket',
+        message,
+      );
+    }
+  }
 
   async listBuckets() {
     try {
