@@ -107,8 +107,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./apps/gateway-service/.env
-    ports:
-      - 5030:3000
     depends_on:
       user-service:
         condition: service_started
@@ -157,9 +155,6 @@ services:
     container_name: huzaflix-minio
     restart: unless-stopped
     command: server /data --console-address ":${MINIO_CONSOLE_PORT}"
-    ports:
-      - "${MINIO_PORT:-19000}:9000"
-      - "${MINIO_CONSOLE_PORT:-19001}:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
