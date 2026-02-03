@@ -23,12 +23,10 @@ export class MinioService implements OnModuleInit {
     const bucketName = this.bucketName || 'main';
 
     try {
-      const exists = await (this.minio as Minio.Client).bucketExists(
-        bucketName,
-      );
+      const exists = await this.minio.bucketExists(bucketName);
 
       if (!exists) {
-        await (this.minio as Minio.Client).makeBucket(bucketName, 'us-east-1');
+        await this.minio.makeBucket(bucketName, 'us-east-1');
       }
     } catch (error: unknown) {
       const message =
@@ -42,7 +40,7 @@ export class MinioService implements OnModuleInit {
 
   async listBuckets() {
     try {
-      return await (this.minio as Minio.Client).listBuckets();
+      return await this.minio.listBuckets();
     } catch (error) {
       throw new InternalServerErrorException(
         'Failed to list buckets',
@@ -53,7 +51,7 @@ export class MinioService implements OnModuleInit {
 
   async getFile(filename: string) {
     try {
-      const url = await (this.minio as Minio.Client).presignedUrl(
+      const url = await this.minio.presignedUrl(
         'GET',
         this.bucketName || 'main',
         filename,
@@ -70,7 +68,7 @@ export class MinioService implements OnModuleInit {
     const filename = `${randomUUID()}-${file.originalname}`;
 
     try {
-      await (this.minio as Minio.Client).putObject(
+      await this.minio.putObject(
         this.bucketName || 'main',
         filename,
         file.buffer,
@@ -80,7 +78,7 @@ export class MinioService implements OnModuleInit {
         },
       );
 
-      const url = await (this.minio as Minio.Client).presignedUrl(
+      const url = await this.minio.presignedUrl(
         'GET',
         this.bucketName || 'main',
         filename,
