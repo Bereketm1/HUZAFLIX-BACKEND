@@ -30,6 +30,12 @@ interface UserRecord {
   [key: string]: unknown;
 }
 
+function isUserRecord(value: unknown): value is UserRecord {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as { id?: unknown };
+  return typeof record.id === 'number';
+}
+
 interface RequestWithAuth extends Request {
   user?: UserRecord | null;
   session?: SessionRecord | null;
@@ -95,9 +101,18 @@ export class JwtAuthGuard implements CanActivate {
 
     let user: UserRecord | null = null;
     try {
-      user = await lastValueFrom(
-        sessionClient.send<UserRecord>('get_user_by_id', payload.id),
+      const payloadId =
+        typeof payload.id === 'number'
+          ? payload.id
+          : Number.parseInt(String(payload.id), 10);
+      if (!Number.isFinite(payloadId))
+        throw new UnauthorizedException('Invalid token payload');
+      const fetchedUser: unknown = await lastValueFrom(
+        sessionClient.send('get_user_by_id', payloadId),
       );
+      if (!isUserRecord(fetchedUser))
+        throw new UnauthorizedException('Invalid user');
+      user = fetchedUser;
     } catch {
       throw new UnauthorizedException('Failed to fetch user from microservice');
     }
