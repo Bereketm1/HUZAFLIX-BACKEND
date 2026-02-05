@@ -106,7 +106,10 @@ export class JwtAuthGuard implements CanActivate {
 
     if (this.validateIsCurrentUser) {
       if (user.role == 'administrator') return true;
-      if (user.id !== parseInt(request.params.id))
+      const paramId = Array.isArray(request.params.id)
+        ? request.params.id[0]
+        : request.params.id;
+      if (user.id !== parseInt(paramId))
         throw new UnauthorizedException('Invalid user');
     }
 
