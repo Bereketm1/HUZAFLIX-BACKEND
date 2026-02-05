@@ -26,14 +26,7 @@ interface SessionRecord {
 
 interface UserRecord {
   id: number;
-  role?: string;
   [key: string]: unknown;
-}
-
-function isUserRecord(value: unknown): value is UserRecord {
-  if (!value || typeof value !== 'object') return false;
-  const record = value as { id?: unknown };
-  return typeof record.id === 'number';
 }
 
 interface RequestWithAuth extends Request {
@@ -69,8 +62,6 @@ export class JwtAuthGuard implements CanActivate {
     const payload = await this.verifyToken(token);
     if (!payload || payload.type !== this.validatingType)
       throw new UnauthorizedException('Invalid token type');
-    if (payload.id == null)
-      throw new UnauthorizedException('Invalid token payload');
 
     const sessionClient = getSessionClientSingleton();
     if (!sessionClient)
@@ -101,18 +92,9 @@ export class JwtAuthGuard implements CanActivate {
 
     let user: UserRecord | null = null;
     try {
-      const payloadId =
-        typeof payload.id === 'number'
-          ? payload.id
-          : Number.parseInt(String(payload.id), 10);
-      if (!Number.isFinite(payloadId))
-        throw new UnauthorizedException('Invalid token payload');
-      const fetchedUser: unknown = await lastValueFrom(
-        sessionClient.send('get_user_by_id', payloadId),
+      user = await lastValueFrom(
+        sessionClient.send<UserRecord>('get_user_by_id', payload.id),
       );
-      if (!isUserRecord(fetchedUser))
-        throw new UnauthorizedException('Invalid user');
-      user = fetchedUser;
     } catch {
       throw new UnauthorizedException('Failed to fetch user from microservice');
     }
@@ -123,17 +105,8 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     if (this.validateIsCurrentUser) {
-      if (!user) throw new UnauthorizedException('Invalid user');
-      if (user.role === 'administrator') return true;
-      const paramIdValue = request.params?.id;
-      const paramId = Array.isArray(paramIdValue)
-        ? paramIdValue[0]
-        : paramIdValue;
-      if (!paramId) throw new UnauthorizedException('Invalid user');
-      const paramIdNumber = Number.parseInt(String(paramId), 10);
-      if (Number.isNaN(paramIdNumber))
-        throw new UnauthorizedException('Invalid user');
-      if (user.id !== paramIdNumber)
+      if (user.role == 'administrator') return true;
+      if (user.id !== parseInt(request.params.id))
         throw new UnauthorizedException('Invalid user');
     }
 

@@ -53,10 +53,7 @@ export class BillingController {
     status: 200,
     description: 'Fetched billing profile successfully',
   })
-  async findOne(
-    @Param('id') id: number,
-    @CurrentUser() user: { id: number },
-  ) {
+  async findOne(@Param('id') id: number, @CurrentUser() user: { id: number }) {
     return await this.billingService.findOneById(id, user.id);
   }
 

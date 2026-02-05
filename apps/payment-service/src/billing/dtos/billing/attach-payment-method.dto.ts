@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsInt, IsBoolean, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator';
 
 export class AttachPaymentMethodDto {
   @ApiProperty({
@@ -19,7 +25,8 @@ export class AttachPaymentMethodDto {
   paymentMethodId: string;
 
   @ApiProperty({
-    description: 'Set this payment method as the default for the billing profile',
+    description:
+      'Set this payment method as the default for the billing profile',
     example: true,
     required: false,
   })

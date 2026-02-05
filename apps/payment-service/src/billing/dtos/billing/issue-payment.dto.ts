@@ -19,7 +19,8 @@ export class IssuePaymentDto {
   amount: number; // in dollars
 
   @ApiProperty({
-    description: 'Specific payment method ID to use (optional, uses default if not provided)',
+    description:
+      'Specific payment method ID to use (optional, uses default if not provided)',
     example: 'pm_1NQe0t2eZvKYlo2C9bQ3Z8xF',
     required: false,
   })

@@ -1,5 +1,4 @@
 import {
-  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -193,7 +192,10 @@ export class BillingService {
     }
 
     // Use provided paymentMethodId or fall back to the default
-    const paymentMethodId = dto.paymentMethodId || billing.stripePaymentMethodId || billing.defaultPaymentMethod;
+    const paymentMethodId =
+      dto.paymentMethodId ||
+      billing.stripePaymentMethodId ||
+      billing.defaultPaymentMethod;
 
     if (!paymentMethodId) {
       throw new UnprocessableEntityException(
