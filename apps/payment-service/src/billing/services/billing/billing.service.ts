@@ -51,19 +51,30 @@ export class BillingService {
     });
   }
 
-  async attachPaymentMethod(paymentMethodId: string, userId: number) {
+  async attachPaymentMethod(
+    billingProfileId: number,
+    paymentMethodId: string,
+    userId: number,
+    setAsDefault?: boolean,
+  ) {
     this.assertStripeConfigured();
     if (!paymentMethodId) {
       throw new UnprocessableEntityException('No payment method issued');
     }
 
     const billing = await this.billingRepository.findOne({
-      where: { userId },
+      where: { id: billingProfileId, userId },
     });
 
-    if (!billing || !billing.stripeCustomerId) {
+    if (!billing) {
+      throw new NotFoundException(
+        `Billing profile with ID ${billingProfileId} not found for this user`,
+      );
+    }
+
+    if (!billing.stripeCustomerId) {
       throw new UnprocessableEntityException(
-        'No billing profile or Stripe customer found for user',
+        'No Stripe customer found for this billing profile',
       );
     }
 
@@ -71,15 +82,21 @@ export class BillingService {
       customer: billing.stripeCustomerId,
     });
 
-    Object.assign(billing, {
-      stripePaymentMethodId: paymentMethodId,
-      updatedAt: new Date(),
-    });
+    // Update the billing profile with the new payment method
+    if (setAsDefault !== false) {
+      // Set as default by default, unless explicitly set to false
+      billing.stripePaymentMethodId = paymentMethodId;
+      billing.defaultPaymentMethod = paymentMethodId;
+    }
+    billing.updatedAt = new Date();
 
     await this.billingRepository.save(billing);
 
     return {
       message: 'Payment method attached successfully',
+      billingProfileId: billing.id,
+      paymentMethodId,
+      isDefault: setAsDefault !== false,
     };
   }
 
@@ -102,6 +119,13 @@ export class BillingService {
     });
 
     return paginate(billingProfiles, page, limit, total);
+  }
+
+  async findAllByUserId(userId: number): Promise<Billing[]> {
+    return await this.billingRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findOneByUserId(userId: number): Promise<Billing> {
@@ -152,16 +176,30 @@ export class BillingService {
   async issuePayment(userId: number, dto: IssuePaymentDto) {
     this.assertStripeConfigured();
     const billing = await this.billingRepository.findOne({
-      where: { userId },
+      where: { id: dto.billingProfileId, userId },
     });
 
-    if (
-      !billing ||
-      !billing.stripeCustomerId ||
-      !billing.stripePaymentMethodId
-    ) {
+    if (!billing) {
+      throw new NotFoundException(
+        `Billing profile with ID ${dto.billingProfileId} not found for this user`,
+      );
+    }
+
+    if (!billing.stripeCustomerId) {
       throw new UnprocessableEntityException(
-        'Billing profile or payment method not configured',
+        'Billing profile does not have a Stripe customer configured',
+      );
+    }
+
+    // Use provided paymentMethodId or fall back to the default
+    const paymentMethodId =
+      dto.paymentMethodId ||
+      billing.stripePaymentMethodId ||
+      billing.defaultPaymentMethod;
+
+    if (!paymentMethodId) {
+      throw new UnprocessableEntityException(
+        'No payment method provided and no default payment method configured for this billing profile',
       );
     }
 
@@ -169,7 +207,7 @@ export class BillingService {
       amount: this.dollarsToCents(dto.amount),
       currency: 'usd',
       customer: billing.stripeCustomerId,
-      payment_method: billing.stripePaymentMethodId,
+      payment_method: paymentMethodId,
       off_session: true,
       confirm: true,
       metadata: {
@@ -182,6 +220,8 @@ export class BillingService {
     return {
       paymentIntentId: paymentIntent.id,
       status: paymentIntent.status,
+      billingProfileId: billing.id,
+      paymentMethodId,
     };
   }
 

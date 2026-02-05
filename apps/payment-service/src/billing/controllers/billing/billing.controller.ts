@@ -35,13 +35,26 @@ export class BillingController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
+  @ApiOperation({ summary: 'Get all billing profiles for the current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Fetched billing profiles successfully',
+  })
+  async findAll(@CurrentUser() user: { id: number }) {
+    return await this.billingService.findAllByUserId(user.id);
+  }
+
+  @Get(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('api_consumer')
   @ApiOperation({ summary: 'Get billing profile by ID' })
   @ApiResponse({
     status: 200,
     description: 'Fetched billing profile successfully',
   })
-  async findOne(@CurrentUser() user: { id: number }) {
-    return await this.billingService.findOneByUserId(user.id);
+  async findOne(@Param('id') id: number, @CurrentUser() user: { id: number }) {
+    return await this.billingService.findOneById(id, user.id);
   }
 
   @Post()
@@ -112,7 +125,7 @@ export class BillingController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
-  @ApiOperation({ summary: 'Attach a payment method to billing profile' })
+  @ApiOperation({ summary: 'Attach a payment method to a billing profile' })
   @ApiResponse({
     status: 200,
     description: 'Payment method attached successfully',
@@ -122,8 +135,10 @@ export class BillingController {
     @Body() bodyDto: AttachPaymentMethodDto,
   ) {
     return await this.billingService.attachPaymentMethod(
+      bodyDto.billingProfileId,
       bodyDto.paymentMethodId,
       user.id,
+      bodyDto.setAsDefault,
     );
   }
 
