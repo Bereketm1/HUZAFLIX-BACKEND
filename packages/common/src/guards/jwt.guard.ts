@@ -26,6 +26,7 @@ interface SessionRecord {
 
 interface UserRecord {
   id: number;
+  role?: string;
   [key: string]: unknown;
 }
 
@@ -62,6 +63,8 @@ export class JwtAuthGuard implements CanActivate {
     const payload = await this.verifyToken(token);
     if (!payload || payload.type !== this.validatingType)
       throw new UnauthorizedException('Invalid token type');
+    if (payload.id == null)
+      throw new UnauthorizedException('Invalid token payload');
 
     const sessionClient = getSessionClientSingleton();
     if (!sessionClient)
@@ -105,11 +108,17 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     if (this.validateIsCurrentUser) {
-      if (user.role == 'administrator') return true;
-      const paramId = Array.isArray(request.params.id)
-        ? request.params.id[0]
-        : request.params.id;
-      if (user.id !== parseInt(paramId))
+      if (!user) throw new UnauthorizedException('Invalid user');
+      if (user.role === 'administrator') return true;
+      const paramIdValue = request.params?.id;
+      const paramId = Array.isArray(paramIdValue)
+        ? paramIdValue[0]
+        : paramIdValue;
+      if (!paramId) throw new UnauthorizedException('Invalid user');
+      const paramIdNumber = Number.parseInt(String(paramId), 10);
+      if (Number.isNaN(paramIdNumber))
+        throw new UnauthorizedException('Invalid user');
+      if (user.id !== paramIdNumber)
         throw new UnauthorizedException('Invalid user');
     }
 
