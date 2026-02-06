@@ -3,13 +3,6 @@ import { IsInt, Min, IsOptional, IsString } from 'class-validator';
 
 export class IssuePaymentDto {
   @ApiProperty({
-    description: 'Billing profile ID to charge',
-    example: 1,
-  })
-  @IsInt()
-  billingProfileId: number;
-
-  @ApiProperty({
     description: 'Amount to charge in USD',
     example: 10,
     minimum: 1,

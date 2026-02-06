@@ -11,7 +11,7 @@ export class Billing {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true })
   userId: number;
 
   @Column()
@@ -41,14 +41,14 @@ export class Billing {
   @Column({ nullable: true })
   postalCode: string;
 
-  @Column({ nullable: true })
-  defaultPaymentMethod: string;
+  @Column({ type: 'varchar', nullable: true })
+  defaultPaymentMethod: string | null;
 
-  @Column({ nullable: true })
-  stripeCustomerId: string;
+  @Column({ type: 'varchar', nullable: true })
+  stripeCustomerId: string | null;
 
-  @Column({ nullable: true })
-  stripePaymentMethodId: string;
+  @Column({ type: 'varchar', nullable: true })
+  stripePaymentMethodId: string | null;
 
   @Column({ type: 'int', default: 0 })
   credits: number;

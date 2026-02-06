@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -6,8 +7,6 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaginatedResponse } from '@huzaflix/common';
-import { paginate } from '@huzaflix/common';
 import { Billing } from 'src/billing/entities/billing.entity';
 import { CreateBillingInfoDto } from 'src/billing/dtos/billing/create-billing.dto';
 import { UpdateBillingInfoDto } from 'src/billing/dtos/billing/update-billing.dto';
@@ -24,15 +23,29 @@ export class BillingService {
     private readonly transactionService: TransactionsService,
   ) {}
 
+  // ──────────────────────────────────────────────
+  //  BILLING PROFILE (one per user)
+  // ──────────────────────────────────────────────
+
   async create(dto: CreateBillingInfoDto, userId: number): Promise<Billing> {
     this.assertStripeConfigured();
+
+    const existing = await this.billingRepository.findOne({
+      where: { userId },
+    });
+    if (existing) {
+      throw new ConflictException(
+        'Billing profile already exists. Use PUT /billing to update it.',
+      );
+    }
+
     const billing = this.billingRepository.create({ ...dto, userId });
     const params: Stripe.CustomerCreateParams = {
       email: dto.email,
       name: dto.fullName,
       address: {
         line1: dto.addressLine1,
-        line2: dto.addressLine1,
+        line2: dto.addressLine2,
         country: dto.country,
         city: dto.city,
         postal_code: dto.postalCode,
@@ -51,26 +64,89 @@ export class BillingService {
     });
   }
 
+  async findByUserId(userId: number): Promise<Billing> {
+    const billing = await this.billingRepository.findOne({
+      where: { userId },
+    });
+    if (!billing) {
+      throw new NotFoundException(
+        'No billing profile found. Create one first via POST /billing.',
+      );
+    }
+    return billing;
+  }
+
+  async update(userId: number, dto: UpdateBillingInfoDto): Promise<Billing> {
+    const billing = await this.findByUserId(userId);
+    Object.assign(billing, { ...dto, updatedAt: new Date() });
+    return await this.billingRepository.save(billing);
+  }
+
+  async remove(userId: number): Promise<void> {
+    const billing = await this.findByUserId(userId);
+
+    if (billing.credits > 0) {
+      throw new UnprocessableEntityException(
+        `Cannot delete billing profile: credits must be 0 (current: ${billing.credits})`,
+      );
+    }
+
+    await this.billingRepository.remove(billing);
+  }
+
+  async forceRemove(userId: number): Promise<void> {
+    const billing = await this.findByUserId(userId);
+    await this.billingRepository.remove(billing);
+  }
+
+  // ──────────────────────────────────────────────
+  //  PAYMENT METHODS (multiple per profile)
+  // ──────────────────────────────────────────────
+
+  async listPaymentMethods(userId: number) {
+    this.assertStripeConfigured();
+    const billing = await this.findByUserId(userId);
+
+    if (!billing.stripeCustomerId) {
+      throw new UnprocessableEntityException(
+        'No Stripe customer found for this billing profile',
+      );
+    }
+
+    const methods = await stripe.paymentMethods.list({
+      customer: billing.stripeCustomerId,
+    });
+
+    return {
+      defaultPaymentMethodId:
+        billing.stripePaymentMethodId || billing.defaultPaymentMethod || null,
+      paymentMethods: methods.data.map((pm) => ({
+        id: pm.id,
+        type: pm.type,
+        card: pm.card
+          ? {
+              brand: pm.card.brand,
+              last4: pm.card.last4,
+              expMonth: pm.card.exp_month,
+              expYear: pm.card.exp_year,
+            }
+          : null,
+        created: pm.created,
+      })),
+    };
+  }
+
   async attachPaymentMethod(
-    billingProfileId: number,
     paymentMethodId: string,
     userId: number,
     setAsDefault?: boolean,
   ) {
     this.assertStripeConfigured();
     if (!paymentMethodId) {
-      throw new UnprocessableEntityException('No payment method issued');
+      throw new UnprocessableEntityException('No payment method provided');
     }
 
-    const billing = await this.billingRepository.findOne({
-      where: { id: billingProfileId, userId },
-    });
-
-    if (!billing) {
-      throw new NotFoundException(
-        `Billing profile with ID ${billingProfileId} not found for this user`,
-      );
-    }
+    const billing = await this.findByUserId(userId);
 
     if (!billing.stripeCustomerId) {
       throw new UnprocessableEntityException(
@@ -82,9 +158,7 @@ export class BillingService {
       customer: billing.stripeCustomerId,
     });
 
-    // Update the billing profile with the new payment method
     if (setAsDefault !== false) {
-      // Set as default by default, unless explicitly set to false
       billing.stripePaymentMethodId = paymentMethodId;
       billing.defaultPaymentMethod = paymentMethodId;
     }
@@ -94,96 +168,54 @@ export class BillingService {
 
     return {
       message: 'Payment method attached successfully',
-      billingProfileId: billing.id,
       paymentMethodId,
       isDefault: setAsDefault !== false,
     };
   }
 
-  async findAll({
-    userId,
-    page,
-    limit,
-  }: {
-    userId: number;
-    page?: number;
-    limit?: number;
-  }): Promise<{ data: Billing[]; meta: PaginatedResponse } | Billing[]> {
-    if (!page || !limit) {
-      return this.billingRepository.find();
+  async detachPaymentMethod(paymentMethodId: string, userId: number) {
+    this.assertStripeConfigured();
+    const billing = await this.findByUserId(userId);
+
+    await stripe.paymentMethods.detach(paymentMethodId);
+
+    // If the detached method was the default, clear it
+    if (billing.stripePaymentMethodId === paymentMethodId) {
+      billing.stripePaymentMethodId = null;
     }
-    const [billingProfiles, total] = await this.billingRepository.findAndCount({
-      where: { userId },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
-
-    return paginate(billingProfiles, page, limit, total);
-  }
-
-  async findAllByUserId(userId: number): Promise<Billing[]> {
-    return await this.billingRepository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async findOneByUserId(userId: number): Promise<Billing> {
-    const billing = await this.billingRepository.findOne({
-      where: { userId },
-    });
-    if (!billing)
-      throw new NotFoundException(`Billing info with ID ${userId} not found`);
-    return billing;
-  }
-
-  async findOneById(id: number, userId: number): Promise<Billing> {
-    const billing = await this.billingRepository.findOne({
-      where: { id, userId },
-    });
-    if (!billing)
-      throw new NotFoundException(`Billing info with ID ${id} not found`);
-    return billing;
-  }
-
-  async update(
-    id: number,
-    userId: number,
-    dto: UpdateBillingInfoDto,
-  ): Promise<Billing> {
-    const billing = await this.findOneById(id, userId);
-    Object.assign(billing, { ...dto, updatedAt: new Date() });
-    return await this.billingRepository.save(billing);
-  }
-
-  async remove(id: number, userId: number): Promise<void> {
-    const billing = await this.findOneById(id, userId);
-
-    if (billing.credits > 0) {
-      throw new UnprocessableEntityException(
-        `Cannot delete billing info: credits must be 0 (current credits: ${billing.credits})`,
-      );
+    if (billing.defaultPaymentMethod === paymentMethodId) {
+      billing.defaultPaymentMethod = null;
     }
+    billing.updatedAt = new Date();
 
-    await this.billingRepository.remove(billing);
+    await this.billingRepository.save(billing);
+
+    return { message: 'Payment method detached successfully', paymentMethodId };
   }
 
-  async forceRemove(id: number, userId: number): Promise<void> {
-    const billing = await this.findOneById(id, userId);
-    await this.billingRepository.remove(billing);
+  async setDefaultPaymentMethod(paymentMethodId: string, userId: number) {
+    this.assertStripeConfigured();
+    const billing = await this.findByUserId(userId);
+
+    billing.stripePaymentMethodId = paymentMethodId;
+    billing.defaultPaymentMethod = paymentMethodId;
+    billing.updatedAt = new Date();
+
+    await this.billingRepository.save(billing);
+
+    return {
+      message: 'Default payment method updated',
+      paymentMethodId,
+    };
   }
+
+  // ──────────────────────────────────────────────
+  //  CHARGE / PAYMENTS
+  // ──────────────────────────────────────────────
 
   async issuePayment(userId: number, dto: IssuePaymentDto) {
     this.assertStripeConfigured();
-    const billing = await this.billingRepository.findOne({
-      where: { id: dto.billingProfileId, userId },
-    });
-
-    if (!billing) {
-      throw new NotFoundException(
-        `Billing profile with ID ${dto.billingProfileId} not found for this user`,
-      );
-    }
+    const billing = await this.findByUserId(userId);
 
     if (!billing.stripeCustomerId) {
       throw new UnprocessableEntityException(
@@ -191,7 +223,6 @@ export class BillingService {
       );
     }
 
-    // Use provided paymentMethodId or fall back to the default
     const paymentMethodId =
       dto.paymentMethodId ||
       billing.stripePaymentMethodId ||
@@ -199,7 +230,7 @@ export class BillingService {
 
     if (!paymentMethodId) {
       throw new UnprocessableEntityException(
-        'No payment method provided and no default payment method configured for this billing profile',
+        'No payment method provided and no default payment method configured',
       );
     }
 
@@ -220,10 +251,13 @@ export class BillingService {
     return {
       paymentIntentId: paymentIntent.id,
       status: paymentIntent.status,
-      billingProfileId: billing.id,
       paymentMethodId,
     };
   }
+
+  // ──────────────────────────────────────────────
+  //  STRIPE WEBHOOK
+  // ──────────────────────────────────────────────
 
   async handleStripeWebhook(event: Stripe.Event) {
     if (event.type === 'payment_intent.succeeded') {
@@ -245,6 +279,10 @@ export class BillingService {
       });
     }
   }
+
+  // ──────────────────────────────────────────────
+  //  HELPERS
+  // ──────────────────────────────────────────────
 
   private dollarsToCents(amount: number): number {
     return Math.round(amount * 100);
