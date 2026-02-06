@@ -16,7 +16,16 @@ function writeParsedBodyToProxyReq(
   proxyReq: ClientRequest,
   req: Parameters<RequestHandler>[0],
 ): void {
-  const reqWithBody = req as unknown as { body?: unknown; headers?: unknown };
+  const reqWithBody = req as unknown as {
+    body?: unknown;
+    rawBody?: Buffer;
+    headers?: unknown;
+  };
+  if (Buffer.isBuffer(reqWithBody.rawBody)) {
+    proxyReq.setHeader('Content-Length', reqWithBody.rawBody.length);
+    proxyReq.write(reqWithBody.rawBody);
+    return;
+  }
 
   const body = reqWithBody.body;
   if (body === undefined || body === null) return;
@@ -54,8 +63,7 @@ export class ProxyService {
       auth: createProxyMiddleware({
         target: `http://user-service:${process.env.USER_SERVICE_PORT || 3000}`,
         changeOrigin: true,
-        pathRewrite: (path) =>
-          path.replace(/^\/(?:api\/)?auth(?=\/|$)/, ''),
+        pathRewrite: (path) => path.replace(/^\/(?:api\/)?auth(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(
@@ -99,8 +107,7 @@ export class ProxyService {
       payment: createProxyMiddleware({
         target: `http://payment-service:${process.env.PAYMENT_SERVICE_PORT || 3000}`,
         changeOrigin: true,
-        pathRewrite: (path) =>
-          path.replace(/^\/(?:api\/)?payment(?=\/|$)/, ''),
+        pathRewrite: (path) => path.replace(/^\/(?:api\/)?payment(?=\/|$)/, ''),
         on: {
           proxyReq: (proxyReq, req) =>
             writeParsedBodyToProxyReq(

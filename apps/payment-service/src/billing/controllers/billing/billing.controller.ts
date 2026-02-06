@@ -12,6 +12,8 @@ import {
   Headers,
   Req,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -198,13 +200,19 @@ export class BillingController {
 
   @Post('webhook')
   async webhook(
-    @Req() req: Request & { body: Buffer },
+    @Req() req: RawBodyRequest<Request>,
     @Headers('stripe-signature') signature: string,
   ) {
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!secret) throw new UnprocessableEntityException('No secret setup');
+    if (!req.rawBody)
+      throw new UnprocessableEntityException('Missing raw request body');
 
-    const event = stripe.webhooks.constructEvent(req.body, signature, secret);
+    const event = stripe.webhooks.constructEvent(
+      req.rawBody,
+      signature,
+      secret,
+    );
     await this.billingService.handleStripeWebhook(event);
     return { received: true };
   }

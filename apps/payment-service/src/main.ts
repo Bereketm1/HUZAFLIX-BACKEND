@@ -6,10 +6,9 @@ import { DataSource } from 'typeorm';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ResponseInterceptor } from '@huzaflix/common';
 import { Transport } from '@nestjs/microservices';
-import express, { RequestHandler } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
@@ -52,11 +51,6 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });
-
-  app.use(
-    '/billing/webhook',
-    express.raw({ type: 'application/json' }) as RequestHandler,
-  );
 
   await app.startAllMicroservices();
   await app.listen(process.env.APP_PORT || 3000);
