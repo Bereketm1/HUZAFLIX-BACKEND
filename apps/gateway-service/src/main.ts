@@ -4,7 +4,10 @@ import { ValidationPipe } from '@nestjs/common';
 import { GlobalLogInterceptor } from '@huzaflix/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule, {
+    cors: true,
+    rawBody: true,
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   if (process.env.NODE_ENV !== 'production') {
     app.setGlobalPrefix('api', {
