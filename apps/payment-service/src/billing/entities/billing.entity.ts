@@ -41,13 +41,13 @@ export class Billing {
   @Column({ nullable: true })
   postalCode: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   defaultPaymentMethod: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   stripeCustomerId: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   stripePaymentMethodId: string | null;
 
   @Column({ type: 'int', default: 0 })
