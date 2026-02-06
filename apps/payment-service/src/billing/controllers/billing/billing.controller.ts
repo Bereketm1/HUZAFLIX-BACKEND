@@ -23,6 +23,7 @@ import { BillingService } from 'src/billing/services/billing/billing.service';
 import { CreateBillingInfoDto } from 'src/billing/dtos/billing/create-billing.dto';
 import { UpdateBillingInfoDto } from 'src/billing/dtos/billing/update-billing.dto';
 import { AttachPaymentMethodDto } from 'src/billing/dtos/billing/attach-payment-method.dto';
+import { SetDefaultPaymentMethodDto } from 'src/billing/dtos/billing/set-default-payment-method.dto';
 import { IssuePaymentDto } from 'src/billing/dtos/billing/issue-payment.dto';
 import { stripe } from 'src/stripe/helper';
 
@@ -31,41 +32,31 @@ import { stripe } from 'src/stripe/helper';
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 
+  // ── Profile (one per user) ────────────────────
+
   @Get()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
-  @ApiOperation({ summary: 'Get all billing profiles for the current user' })
-  @ApiResponse({
-    status: 200,
-    description: 'Fetched billing profiles successfully',
-  })
-  async findAll(@CurrentUser() user: { id: number }) {
-    return await this.billingService.findAllByUserId(user.id);
-  }
-
-  @Get(':id')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('api_consumer')
-  @ApiOperation({ summary: 'Get billing profile by ID' })
+  @ApiOperation({ summary: 'Get billing profile for the current user' })
   @ApiResponse({
     status: 200,
     description: 'Fetched billing profile successfully',
   })
-  async findOne(@Param('id') id: number, @CurrentUser() user: { id: number }) {
-    return await this.billingService.findOneById(id, user.id);
+  async findMine(@CurrentUser() user: { id: number }) {
+    return await this.billingService.findByUserId(user.id);
   }
 
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
-  @ApiOperation({ summary: 'Create a new billing profile' })
+  @ApiOperation({ summary: 'Create a billing profile (one per user)' })
   @ApiResponse({
     status: 201,
     description: 'Created billing profile successfully',
   })
+  @ApiResponse({ status: 409, description: 'Profile already exists' })
   async create(
     @Body() createBillingDto: CreateBillingInfoDto,
     @CurrentUser() user: { id: number },
@@ -73,59 +64,70 @@ export class BillingController {
     return await this.billingService.create(createBillingDto, user.id);
   }
 
-  @Put(':id')
+  @Put()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
-  @ApiOperation({ summary: 'Update billing profile by ID' })
+  @ApiOperation({ summary: 'Update billing profile' })
   @ApiResponse({
     status: 200,
     description: 'Updated billing profile successfully',
   })
   async update(
     @CurrentUser() user: { id: number },
-    @Param('id') id: number,
     @Body() updateBillingDto: UpdateBillingInfoDto,
   ) {
-    return await this.billingService.update(id, user.id, updateBillingDto);
+    return await this.billingService.update(user.id, updateBillingDto);
   }
 
-  @Delete(':id')
+  @Delete()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
-  @ApiOperation({ summary: 'Delete billing profile by ID' })
+  @ApiOperation({ summary: 'Delete billing profile (credits must be 0)' })
   @ApiResponse({
     status: 200,
     description: 'Deleted billing profile successfully',
   })
-  async remove(@Param('id') id: number, @CurrentUser() user: { id: number }) {
-    await this.billingService.remove(id, user.id);
-    return { message: `Billing profile ${id} deleted successfully` };
+  async remove(@CurrentUser() user: { id: number }) {
+    await this.billingService.remove(user.id);
+    return { message: 'Billing profile deleted successfully' };
   }
 
-  @Delete(':id/force')
+  @Delete('force')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
-  @ApiOperation({ summary: 'Delete billing profile by ID' })
+  @ApiOperation({ summary: 'Force-delete billing profile' })
   @ApiResponse({
     status: 200,
     description: 'Deleted billing profile successfully',
   })
-  async removeForce(
-    @Param('id') id: number,
-    @CurrentUser() user: { id: number },
-  ) {
-    await this.billingService.forceRemove(id, user.id);
-    return { message: `Billing profile ${id} deleted successfully` };
+  async removeForce(@CurrentUser() user: { id: number }) {
+    await this.billingService.forceRemove(user.id);
+    return { message: 'Billing profile deleted successfully' };
+  }
+
+  // ── Payment Methods ───────────────────────────
+
+  @Get('payment-methods')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('api_consumer')
+  @ApiOperation({ summary: 'List all payment methods for this user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment methods retrieved successfully',
+  })
+  async listPaymentMethods(@CurrentUser() user: { id: number }) {
+    return await this.billingService.listPaymentMethods(user.id);
   }
 
   @Patch('payment-methods/attach')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('api_consumer')
-  @ApiOperation({ summary: 'Attach a payment method to a billing profile' })
+  @ApiOperation({ summary: 'Attach a payment method' })
   @ApiResponse({
     status: 200,
     description: 'Payment method attached successfully',
@@ -135,12 +137,51 @@ export class BillingController {
     @Body() bodyDto: AttachPaymentMethodDto,
   ) {
     return await this.billingService.attachPaymentMethod(
-      bodyDto.billingProfileId,
       bodyDto.paymentMethodId,
       user.id,
       bodyDto.setAsDefault,
     );
   }
+
+  @Delete('payment-methods/:paymentMethodId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('api_consumer')
+  @ApiOperation({ summary: 'Detach a payment method' })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment method detached successfully',
+  })
+  async detachPaymentMethod(
+    @Param('paymentMethodId') paymentMethodId: string,
+    @CurrentUser() user: { id: number },
+  ) {
+    return await this.billingService.detachPaymentMethod(
+      paymentMethodId,
+      user.id,
+    );
+  }
+
+  @Patch('payment-methods/default')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('api_consumer')
+  @ApiOperation({ summary: 'Set the default payment method' })
+  @ApiResponse({
+    status: 200,
+    description: 'Default payment method updated',
+  })
+  async setDefaultPaymentMethod(
+    @CurrentUser() user: { id: number },
+    @Body() bodyDto: SetDefaultPaymentMethodDto,
+  ) {
+    return await this.billingService.setDefaultPaymentMethod(
+      bodyDto.paymentMethodId,
+      user.id,
+    );
+  }
+
+  // ── Charge ────────────────────────────────────
 
   @Post('charge')
   @ApiBearerAuth()
@@ -152,6 +193,8 @@ export class BillingController {
   ) {
     return this.billingService.issuePayment(user.id, body);
   }
+
+  // ── Webhook ───────────────────────────────────
 
   @Post('webhook')
   async webhook(
