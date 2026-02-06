@@ -9,7 +9,7 @@ import { Transport } from '@nestjs/microservices';
 import express, { RequestHandler } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
@@ -57,6 +57,8 @@ async function bootstrap() {
     '/billing/webhook',
     express.raw({ type: 'application/json' }) as RequestHandler,
   );
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: true }));
 
   await app.startAllMicroservices();
   await app.listen(process.env.APP_PORT || 3000);
