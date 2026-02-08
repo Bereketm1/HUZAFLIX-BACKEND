@@ -7,12 +7,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiExcludeEndpoint,
-  ApiHeader,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiExcludeEndpoint, ApiQuery } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { LogsService } from './logs.service';
 import { CreateLogDto } from './dto/create-log.dto';
@@ -81,15 +76,8 @@ export class LogsController {
 
   // Admin audit logs
   @UseGuards(AdminApiKeyGuard)
-  @ApiHeader({ name: 'x-admin-key', required: true })
+  @ApiExcludeEndpoint()
   @Get('admin/logs')
-  @ApiQuery({ name: 'eventType', required: false, enum: AuditEvent })
-  @ApiQuery({ name: 'userId', required: false, type: String })
-  @ApiQuery({ name: 'startDate', required: false, type: String })
-  @ApiQuery({ name: 'endDate', required: false, type: String })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
-  @ApiQuery({ name: 'sort', required: false, enum: ['asc', 'desc'] })
   async getAdminLogs(@Query() query: GetLogsQuery) {
     const startDate = query.startDate ? new Date(query.startDate) : undefined;
     const endDate = query.endDate ? new Date(query.endDate) : undefined;

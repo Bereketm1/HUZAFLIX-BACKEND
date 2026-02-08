@@ -35,6 +35,16 @@ function getUserIdFromUser(user: unknown): string | undefined {
   return undefined;
 }
 
+function getRoleFromUser(user: unknown): string | undefined {
+  if (!isRecord(user)) return undefined;
+  const role = user.role;
+  if (typeof role === 'string' && role.length > 0) return role;
+  if (isRecord(role) && typeof role.name === 'string' && role.name.length > 0) {
+    return role.name;
+  }
+  return undefined;
+}
+
 function decodeJwtPayload(token: string): Record<string, unknown> | undefined {
   const parts = token.split('.');
   if (parts.length < 2) return undefined;
@@ -75,6 +85,50 @@ function getUserIdFromAuthHeader(authHeader: unknown): string | undefined {
   return undefined;
 }
 
+function getRoleFromAuthHeader(authHeader: unknown): string | undefined {
+  if (typeof authHeader !== 'string' || authHeader.length === 0) {
+    return undefined;
+  }
+  const [scheme, token] = authHeader.split(' ');
+  if (scheme !== 'Bearer' || !token) return undefined;
+
+  const payload = decodeJwtPayload(token);
+  if (!payload) return undefined;
+  const role = payload.role;
+  if (typeof role === 'string' && role.length > 0) return role;
+  if (isRecord(role) && typeof role.name === 'string' && role.name.length > 0) {
+    return role.name;
+  }
+  return undefined;
+}
+
+function getUserIdFromResponseBody(body: unknown): string | undefined {
+  if (!isRecord(body)) return undefined;
+  const tokenCandidates: unknown[] = [
+    body.access_token,
+    body.accessToken,
+    body.token,
+  ];
+
+  for (const tokenCandidate of tokenCandidates) {
+    if (typeof tokenCandidate === 'string' && tokenCandidate.length > 0) {
+      const payload = decodeJwtPayload(tokenCandidate);
+      if (!payload) continue;
+      const candidates: unknown[] = [payload.id, payload.userId, payload.sub];
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.length > 0) {
+          return candidate;
+        }
+        if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+          return String(candidate);
+        }
+      }
+    }
+  }
+
+  return undefined;
+}
+
 function getIpAddress(req: Request): string | undefined {
   const forwarded = req.header('x-forwarded-for');
   if (typeof forwarded === 'string' && forwarded.length > 0) {
@@ -103,6 +157,19 @@ function shouldSkipLogging(url: string): boolean {
 function defaultMapEvent(req: Request): AuditEvent {
   const path = req.originalUrl || req.url;
   const lowered = path.toLowerCase();
+  const method = req.method?.toUpperCase();
+  const role =
+    getRoleFromUser((req as Request & { user?: unknown }).user) ??
+    getRoleFromAuthHeader(req.header('authorization'));
+  if (
+    role === 'administrator' &&
+    method &&
+    method !== 'GET' &&
+    method !== 'HEAD' &&
+    method !== 'OPTIONS'
+  ) {
+    return AuditEvent.ADMIN_ACTION;
+  }
   if (lowered.includes('/login')) return AuditEvent.LOGIN;
   if (lowered.includes('/payment')) return AuditEvent.PAYMENT;
   if (lowered.includes('api-key') || lowered.includes('api_key')) {
@@ -160,10 +227,11 @@ export class GlobalLogInterceptor implements NestInterceptor {
 
     const startedAt = Date.now();
 
-    const dispatch = (status: number) => {
+    const dispatch = (status: number, responseBody?: unknown) => {
       const userId =
         getUserIdFromUser(req.user) ??
-        getUserIdFromAuthHeader(req.header('authorization'));
+        getUserIdFromAuthHeader(req.header('authorization')) ??
+        getUserIdFromResponseBody(responseBody);
       const actor = userId ? AuditActor.User : AuditActor.System;
       const payload: AuditLogPayload = {
         timestamp: new Date().toISOString(),
@@ -184,7 +252,7 @@ export class GlobalLogInterceptor implements NestInterceptor {
     };
 
     return next.handle().pipe(
-      tap(() => dispatch(res.statusCode || 200)),
+      tap((body: unknown) => dispatch(res.statusCode || 200, body)),
       catchError((err: unknown) => {
         dispatch(getHttpStatusFromError(err));
         return throwError(() => err);
