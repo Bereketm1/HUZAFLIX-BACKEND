@@ -149,7 +149,8 @@ function shouldSkipLogging(url: string): boolean {
 
   // Don't audit querying the audit log itself.
   // (Otherwise `/api/audit-log/logs` creates a log entry about viewing logs.)
-  if (lowered.startsWith('/api/audit-log')) return true;
+  if (lowered.startsWith('/api/audit-log') || lowered.startsWith('/audit-log'))
+    return true;
 
   return false;
 }
@@ -227,11 +228,66 @@ export class GlobalLogInterceptor implements NestInterceptor {
 
     const startedAt = Date.now();
 
+    // ── Capture the response body for proxy routes that use @Res() ──
+    // When a controller injects @Res(), the proxy middleware writes
+    // directly to the response stream and the RxJS `tap` callback
+    // receives `undefined`.  We patch write/end so we can still
+    // extract tokens from the body (e.g. the JWT from a LOGIN response).
+    const resChunks: Buffer[] = [];
+    let capturedProxyBody: unknown;
+
+    const origWrite = res.write.bind(res);
+    const origEnd = res.end.bind(res);
+
+    res.write = function (
+      chunk: any,
+      encOrCb?: BufferEncoding | ((err?: Error | null) => void),
+      cb?: (err?: Error | null) => void,
+    ): boolean {
+      if (chunk != null) {
+        resChunks.push(
+          Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)),
+        );
+      }
+      if (typeof encOrCb === 'function') return origWrite(chunk, encOrCb);
+      if (encOrCb != null) return origWrite(chunk, encOrCb, cb);
+      return origWrite(chunk);
+    } as typeof res.write;
+
+    res.end = function (
+      chunkOrCb?: any,
+      encOrCb?: BufferEncoding | (() => void),
+      cb?: () => void,
+    ): Response {
+      if (chunkOrCb != null && typeof chunkOrCb !== 'function') {
+        resChunks.push(
+          Buffer.isBuffer(chunkOrCb)
+            ? chunkOrCb
+            : Buffer.from(String(chunkOrCb)),
+        );
+      }
+      if (resChunks.length > 0) {
+        try {
+          capturedProxyBody = JSON.parse(
+            Buffer.concat(resChunks).toString('utf8'),
+          );
+        } catch {
+          /* response was not JSON — nothing to extract */
+        }
+      }
+      if (typeof chunkOrCb === 'function') return origEnd(chunkOrCb);
+      if (typeof encOrCb === 'function') return origEnd(chunkOrCb, encOrCb);
+      if (encOrCb != null) return origEnd(chunkOrCb, encOrCb, cb);
+      return origEnd(chunkOrCb);
+    } as typeof res.end;
+
     const dispatch = (status: number, responseBody?: unknown) => {
+      // Use the captured proxy body as fallback when RxJS body is undefined
+      const effectiveBody = responseBody ?? capturedProxyBody;
       const userId =
         getUserIdFromUser(req.user) ??
         getUserIdFromAuthHeader(req.header('authorization')) ??
-        getUserIdFromResponseBody(responseBody);
+        getUserIdFromResponseBody(effectiveBody);
       const actor = userId ? AuditActor.User : AuditActor.System;
       const payload: AuditLogPayload = {
         timestamp: new Date().toISOString(),

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuditEvent, paginate, PaginatedResponse } from '@huzaflix/common';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { AuditLog } from './audit-log.entity';
 import type { CreateLogDto } from './dto/create-log.dto';
 
@@ -53,7 +53,23 @@ export class LogsService {
     }
 
     if (filter.userId) {
-      qb.andWhere("l.metadata->>'userId' = :userId", { userId: filter.userId });
+      if (filter.eventType === AuditEvent.LOGIN) {
+        // Login events may lack a userId (the user was not yet
+        // authenticated). Include logs that match OR have no userId.
+        qb.andWhere(
+          new Brackets((sub) =>
+            sub
+              .where("l.metadata->>'userId' = :userId", {
+                userId: filter.userId,
+              })
+              .orWhere("l.metadata->>'userId' IS NULL"),
+          ),
+        );
+      } else {
+        qb.andWhere("l.metadata->>'userId' = :userId", {
+          userId: filter.userId,
+        });
+      }
     }
 
     if (filter.startDate) {
