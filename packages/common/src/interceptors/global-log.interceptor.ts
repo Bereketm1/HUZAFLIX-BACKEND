@@ -104,14 +104,31 @@ function getRoleFromAuthHeader(authHeader: unknown): string | undefined {
 
 function getUserIdFromResponseBody(body: unknown): string | undefined {
   if (!isRecord(body)) return undefined;
-  const tokenCandidates: unknown[] = [
-    body.access_token,
-    body.accessToken,
-    body.token,
+
+  const candidateObjects: Record<string, unknown>[] = [body];
+  const response = isRecord(body.response) ? body.response : undefined;
+  if (response) {
+    candidateObjects.push(response);
+    if (isRecord(response.value)) candidateObjects.push(response.value);
+    if (isRecord(response.data)) candidateObjects.push(response.data);
+  }
+  if (isRecord(body.data)) candidateObjects.push(body.data);
+  if (isRecord(body.value)) candidateObjects.push(body.value);
+
+  const tokenKeys = [
+    'access_token',
+    'accessToken',
+    'token',
+    'refresh_token',
+    'refreshToken',
   ];
 
-  for (const tokenCandidate of tokenCandidates) {
-    if (typeof tokenCandidate === 'string' && tokenCandidate.length > 0) {
+  for (const obj of candidateObjects) {
+    for (const key of tokenKeys) {
+      const tokenCandidate = obj[key];
+      if (typeof tokenCandidate !== 'string' || tokenCandidate.length === 0) {
+        continue;
+      }
       const payload = decodeJwtPayload(tokenCandidate);
       if (!payload) continue;
       const candidates: unknown[] = [payload.id, payload.userId, payload.sub];
@@ -162,10 +179,10 @@ function defaultMapEvent(req: Request): AuditEvent {
   const role =
     getRoleFromUser((req as Request & { user?: unknown }).user) ??
     getRoleFromAuthHeader(req.header('authorization'));
+  const normalizedRole = typeof role === 'string' ? role.toLowerCase() : '';
   if (
-    role === 'administrator' &&
+    normalizedRole.includes('admin') &&
     method &&
-    method !== 'GET' &&
     method !== 'HEAD' &&
     method !== 'OPTIONS'
   ) {
