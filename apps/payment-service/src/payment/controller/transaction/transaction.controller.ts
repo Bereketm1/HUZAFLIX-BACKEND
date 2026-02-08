@@ -25,14 +25,18 @@ export class TransactionController {
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @CurrentUser() user?: { id: number; role: { name: string } },
+    @CurrentUser() user?: { id: number; role?: { name?: string } | string },
   ) {
+    const roleName =
+      typeof user?.role === 'string' ? user.role : user?.role?.name;
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
     return await this.transactionsService.findAll(
       {
-        page,
-        limit,
+        page: Number.isFinite(pageNumber) ? pageNumber : undefined,
+        limit: Number.isFinite(limitNumber) ? limitNumber : undefined,
       },
-      user?.role?.name,
+      roleName,
       user?.id,
     );
   }
@@ -44,11 +48,10 @@ export class TransactionController {
   @ApiResponse({ status: 200, description: 'Fetched successfully' })
   async findOne(
     @Param('id') id: string,
-    @CurrentUser() user?: { role: { name: string } },
+    @CurrentUser() user?: { role?: { name?: string } | string },
   ) {
-    return await this.transactionsService.findOneById(
-      Number(id),
-      user?.role?.name,
-    );
+    const roleName =
+      typeof user?.role === 'string' ? user.role : user?.role?.name;
+    return await this.transactionsService.findOneById(Number(id), roleName);
   }
 }
