@@ -66,10 +66,7 @@ export class ApiService {
     return paginate(apis, page, limit, total);
   }
 
-  async findRecentUsed(
-    userId: number,
-    limit = 10,
-  ): Promise<Api[]> {
+  async findRecentUsed(userId: number, limit = 10): Promise<Api[]> {
     const subscriptions = await this.subscriptionRepository
       .createQueryBuilder('subscription')
       .leftJoinAndSelect('subscription.api', 'api')

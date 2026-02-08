@@ -1,7 +1,14 @@
-import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Inject,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AppService } from './app.service';
 import { ClientProxy } from '@nestjs/microservices';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard, Roles, RolesGuard } from '@huzaflix/common';
 
 @Controller()
@@ -88,9 +95,14 @@ export class AppController {
   @ApiBearerAuth()
   @Get('time-graph')
   @UseGuards(JwtAuthGuard)
-  getTimeGraph(): Array<{ date: string; calls: number }> {
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  getTimeGraph(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Array<{ date: string; calls: number }> {
     // Mocked time-series data (as requested)
-    return [
+    const data = [
       { date: 'Apr 6', calls: 320 },
       { date: 'Apr 10', calls: 450 },
       { date: 'Apr 14', calls: 380 },
@@ -100,14 +112,21 @@ export class AppController {
       { date: 'May 2', calls: 610 },
       { date: 'May 4', calls: 670 },
     ];
+
+    return this.filterByDateRange(data, startDate, endDate);
   }
 
   @ApiBearerAuth()
   @Get('latency-graph')
   @UseGuards(JwtAuthGuard)
-  getLatencyGraph(): Array<{ date: string; latencyMs: number }> {
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  getLatencyGraph(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Array<{ date: string; latencyMs: number }> {
     // Mocked latency time-series data (milliseconds)
-    return [
+    const data = [
       { date: 'Apr 6', latencyMs: 120 },
       { date: 'Apr 10', latencyMs: 95 },
       { date: 'Apr 14', latencyMs: 110 },
@@ -117,6 +136,8 @@ export class AppController {
       { date: 'May 2', latencyMs: 135 },
       { date: 'May 4', latencyMs: 128 },
     ];
+
+    return this.filterByDateRange(data, startDate, endDate);
   }
 
   @ApiBearerAuth()
@@ -128,5 +149,35 @@ export class AppController {
       .send('get_user_stats', {})
       .toPromise();
     return stats;
+  }
+
+  private filterByDateRange<T extends { date: string }>(
+    data: T[],
+    startDate?: string,
+    endDate?: string,
+  ): T[] {
+    if (!startDate && !endDate) return data;
+
+    const start = startDate
+      ? this.parseDate(startDate, 'startDate')
+      : undefined;
+    const end = endDate ? this.parseDate(endDate, 'endDate') : undefined;
+    const year = new Date().getFullYear();
+
+    return data.filter((item) => {
+      const itemDate = new Date(`${item.date} ${year}`);
+      if (Number.isNaN(itemDate.getTime())) return false;
+      if (start && itemDate < start) return false;
+      if (end && itemDate > end) return false;
+      return true;
+    });
+  }
+
+  private parseDate(value: string, label: string): Date {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException(`Invalid ${label}`);
+    }
+    return date;
   }
 }

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -56,8 +57,18 @@ export class PlanController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuardWithPublic)
   @ApiResponse({ status: 200, description: 'Fetched successfully' })
-  async findOne(@Param('id') id: string) {
-    return await this.planService.findOneById(Number(id));
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user?: { role: { name: string } },
+  ) {
+    const plan = await this.planService.findOneById(
+      Number(id),
+      user?.role?.name,
+    );
+    if (!plan) {
+      throw new NotFoundException(`Plan with id ${id} not found`);
+    }
+    return plan;
   }
 
   @Post()
