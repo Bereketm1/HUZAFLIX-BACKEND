@@ -35,6 +35,16 @@ function getUserIdFromUser(user: unknown): string | undefined {
   return undefined;
 }
 
+function getRoleFromUser(user: unknown): string | undefined {
+  if (!isRecord(user)) return undefined;
+  const role = user.role;
+  if (typeof role === 'string' && role.length > 0) return role;
+  if (isRecord(role) && typeof role.name === 'string' && role.name.length > 0) {
+    return role.name;
+  }
+  return undefined;
+}
+
 function decodeJwtPayload(token: string): Record<string, unknown> | undefined {
   const parts = token.split('.');
   if (parts.length < 2) return undefined;
@@ -75,6 +85,67 @@ function getUserIdFromAuthHeader(authHeader: unknown): string | undefined {
   return undefined;
 }
 
+function getRoleFromAuthHeader(authHeader: unknown): string | undefined {
+  if (typeof authHeader !== 'string' || authHeader.length === 0) {
+    return undefined;
+  }
+  const [scheme, token] = authHeader.split(' ');
+  if (scheme !== 'Bearer' || !token) return undefined;
+
+  const payload = decodeJwtPayload(token);
+  if (!payload) return undefined;
+  const role = payload.role;
+  if (typeof role === 'string' && role.length > 0) return role;
+  if (isRecord(role) && typeof role.name === 'string' && role.name.length > 0) {
+    return role.name;
+  }
+  return undefined;
+}
+
+function getUserIdFromResponseBody(body: unknown): string | undefined {
+  if (!isRecord(body)) return undefined;
+
+  const candidateObjects: Record<string, unknown>[] = [body];
+  const response = isRecord(body.response) ? body.response : undefined;
+  if (response) {
+    candidateObjects.push(response);
+    if (isRecord(response.value)) candidateObjects.push(response.value);
+    if (isRecord(response.data)) candidateObjects.push(response.data);
+  }
+  if (isRecord(body.data)) candidateObjects.push(body.data);
+  if (isRecord(body.value)) candidateObjects.push(body.value);
+
+  const tokenKeys = [
+    'access_token',
+    'accessToken',
+    'token',
+    'refresh_token',
+    'refreshToken',
+  ];
+
+  for (const obj of candidateObjects) {
+    for (const key of tokenKeys) {
+      const tokenCandidate = obj[key];
+      if (typeof tokenCandidate !== 'string' || tokenCandidate.length === 0) {
+        continue;
+      }
+      const payload = decodeJwtPayload(tokenCandidate);
+      if (!payload) continue;
+      const candidates: unknown[] = [payload.id, payload.userId, payload.sub];
+      for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.length > 0) {
+          return candidate;
+        }
+        if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+          return String(candidate);
+        }
+      }
+    }
+  }
+
+  return undefined;
+}
+
 function getIpAddress(req: Request): string | undefined {
   const forwarded = req.header('x-forwarded-for');
   if (typeof forwarded === 'string' && forwarded.length > 0) {
@@ -95,7 +166,8 @@ function shouldSkipLogging(url: string): boolean {
 
   // Don't audit querying the audit log itself.
   // (Otherwise `/api/audit-log/logs` creates a log entry about viewing logs.)
-  if (lowered.startsWith('/api/audit-log')) return true;
+  if (lowered.startsWith('/api/audit-log') || lowered.startsWith('/audit-log'))
+    return true;
 
   return false;
 }
@@ -103,6 +175,19 @@ function shouldSkipLogging(url: string): boolean {
 function defaultMapEvent(req: Request): AuditEvent {
   const path = req.originalUrl || req.url;
   const lowered = path.toLowerCase();
+  const method = req.method?.toUpperCase();
+  const role =
+    getRoleFromUser((req as Request & { user?: unknown }).user) ??
+    getRoleFromAuthHeader(req.header('authorization'));
+  const normalizedRole = typeof role === 'string' ? role.toLowerCase() : '';
+  if (
+    normalizedRole.includes('admin') &&
+    method &&
+    method !== 'HEAD' &&
+    method !== 'OPTIONS'
+  ) {
+    return AuditEvent.ADMIN_ACTION;
+  }
   if (lowered.includes('/login')) return AuditEvent.LOGIN;
   if (lowered.includes('/payment')) return AuditEvent.PAYMENT;
   if (lowered.includes('api-key') || lowered.includes('api_key')) {
@@ -160,10 +245,66 @@ export class GlobalLogInterceptor implements NestInterceptor {
 
     const startedAt = Date.now();
 
-    const dispatch = (status: number) => {
+    // ── Capture the response body for proxy routes that use @Res() ──
+    // When a controller injects @Res(), the proxy middleware writes
+    // directly to the response stream and the RxJS `tap` callback
+    // receives `undefined`.  We patch write/end so we can still
+    // extract tokens from the body (e.g. the JWT from a LOGIN response).
+    const resChunks: Buffer[] = [];
+    let capturedProxyBody: unknown;
+
+    const origWrite = res.write.bind(res);
+    const origEnd = res.end.bind(res);
+
+    res.write = function (
+      chunk: any,
+      encOrCb?: BufferEncoding | ((err?: Error | null) => void),
+      cb?: (err?: Error | null) => void,
+    ): boolean {
+      if (chunk != null) {
+        resChunks.push(
+          Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)),
+        );
+      }
+      if (typeof encOrCb === 'function') return origWrite(chunk, encOrCb);
+      if (encOrCb != null) return origWrite(chunk, encOrCb, cb);
+      return origWrite(chunk);
+    } as typeof res.write;
+
+    res.end = function (
+      chunkOrCb?: any,
+      encOrCb?: BufferEncoding | (() => void),
+      cb?: () => void,
+    ): Response {
+      if (chunkOrCb != null && typeof chunkOrCb !== 'function') {
+        resChunks.push(
+          Buffer.isBuffer(chunkOrCb)
+            ? chunkOrCb
+            : Buffer.from(String(chunkOrCb)),
+        );
+      }
+      if (resChunks.length > 0) {
+        try {
+          capturedProxyBody = JSON.parse(
+            Buffer.concat(resChunks).toString('utf8'),
+          );
+        } catch {
+          /* response was not JSON — nothing to extract */
+        }
+      }
+      if (typeof chunkOrCb === 'function') return origEnd(chunkOrCb);
+      if (typeof encOrCb === 'function') return origEnd(chunkOrCb, encOrCb);
+      if (encOrCb != null) return origEnd(chunkOrCb, encOrCb, cb);
+      return origEnd(chunkOrCb);
+    } as typeof res.end;
+
+    const dispatch = (status: number, responseBody?: unknown) => {
+      // Use the captured proxy body as fallback when RxJS body is undefined
+      const effectiveBody = responseBody ?? capturedProxyBody;
       const userId =
         getUserIdFromUser(req.user) ??
-        getUserIdFromAuthHeader(req.header('authorization'));
+        getUserIdFromAuthHeader(req.header('authorization')) ??
+        getUserIdFromResponseBody(effectiveBody);
       const actor = userId ? AuditActor.User : AuditActor.System;
       const payload: AuditLogPayload = {
         timestamp: new Date().toISOString(),
@@ -184,7 +325,7 @@ export class GlobalLogInterceptor implements NestInterceptor {
     };
 
     return next.handle().pipe(
-      tap(() => dispatch(res.statusCode || 200)),
+      tap((body: unknown) => dispatch(res.statusCode || 200, body)),
       catchError((err: unknown) => {
         dispatch(getHttpStatusFromError(err));
         return throwError(() => err);

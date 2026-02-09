@@ -73,7 +73,7 @@ describe('PlanController', () => {
 
       const result = await controller.findOne('1');
 
-      expect(mockPlanService.findOneById).toHaveBeenCalledWith(1);
+      expect(mockPlanService.findOneById).toHaveBeenCalledWith(1, undefined);
       expect(result).toEqual(plan);
     });
 

@@ -4,6 +4,7 @@ import { AuditLog } from './audit-log.entity';
 import { LogsController } from './logs.controller';
 import { LogsService } from './logs.service';
 import { IngestApiKeyGuard } from './guards/ingest-api-key.guard';
+import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { CommonModule } from '@huzaflix/common';
 
 @Module({
@@ -18,6 +19,6 @@ import { CommonModule } from '@huzaflix/common';
     ),
   ],
   controllers: [LogsController],
-  providers: [LogsService, IngestApiKeyGuard],
+  providers: [LogsService, IngestApiKeyGuard, AdminApiKeyGuard],
 })
 export class LogsModule {}

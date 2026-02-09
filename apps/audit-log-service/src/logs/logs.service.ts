@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AuditEvent } from '@huzaflix/common';
-import { Repository } from 'typeorm';
+import { AuditEvent, paginate, PaginatedResponse } from '@huzaflix/common';
+import { Brackets, Repository } from 'typeorm';
 import { AuditLog } from './audit-log.entity';
 import type { CreateLogDto } from './dto/create-log.dto';
 
@@ -10,6 +10,9 @@ export type LogsFilter = {
   userId?: string;
   startDate?: Date;
   endDate?: Date;
+  page?: number;
+  limit?: number;
+  sort?: 'asc' | 'desc';
 };
 
 @Injectable()
@@ -32,7 +35,9 @@ export class LogsService {
     return await this.repo.save(entity);
   }
 
-  async find(filter: LogsFilter): Promise<AuditLog[]> {
+  async find(
+    filter: LogsFilter,
+  ): Promise<{ data: AuditLog[]; meta: PaginatedResponse } | AuditLog[]> {
     const qb = this.repo.createQueryBuilder('l');
 
     // Hide operational noise: swagger docs and viewing the audit log itself.
@@ -48,7 +53,23 @@ export class LogsService {
     }
 
     if (filter.userId) {
-      qb.andWhere("l.metadata->>'userId' = :userId", { userId: filter.userId });
+      if (filter.eventType === AuditEvent.LOGIN) {
+        // Login events may lack a userId (the user was not yet
+        // authenticated). Include logs that match OR have no userId.
+        qb.andWhere(
+          new Brackets((sub) =>
+            sub
+              .where("l.metadata->>'userId' = :userId", {
+                userId: filter.userId,
+              })
+              .orWhere("l.metadata->>'userId' IS NULL"),
+          ),
+        );
+      } else {
+        qb.andWhere("l.metadata->>'userId' = :userId", {
+          userId: filter.userId,
+        });
+      }
     }
 
     if (filter.startDate) {
@@ -59,7 +80,18 @@ export class LogsService {
       qb.andWhere('l.timestamp <= :end', { end: filter.endDate });
     }
 
-    qb.orderBy('l.timestamp', 'DESC');
+    const sort = filter.sort?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    qb.orderBy('l.timestamp', sort);
+
+    if (filter.page && filter.limit) {
+      const skip = (filter.page - 1) * filter.limit;
+      const take = filter.limit;
+      qb.skip(skip).take(take);
+
+      const [logs, total] = await qb.getManyAndCount();
+      return paginate(logs, filter.page, filter.limit, total);
+    }
+
     return await qb.getMany();
   }
 }

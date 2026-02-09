@@ -43,7 +43,9 @@
       "**/*.(t|j)s"
     ],
     "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/src/$1"
+      "^src/(.*)$": "<rootDir>/src/$1",
+      "^@huzaflix/common$": "<rootDir>/../../packages/common/src/index.ts",
+      "^@huzaflix/common/(.*)$": "<rootDir>/../../packages/common/src/$1"
     },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
