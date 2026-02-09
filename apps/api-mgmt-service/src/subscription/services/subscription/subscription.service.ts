@@ -3,6 +3,8 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateSubscriptionDto } from 'src/subscription/dto/subscription/subscription-create.dto';
@@ -15,7 +17,7 @@ import {
   SubscriptionStatus,
 } from 'src/subscription/entities/subscriptions.entity';
 import { Repository } from 'typeorm';
-import { Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { Api } from 'src/api/entities/api.entity';
 
 @Injectable()
@@ -30,6 +32,8 @@ export class SubscriptionService {
 
     @InjectRepository(Api)
     private readonly apiRepository: Repository<Api>,
+
+    @Inject('PAYMENT_SERVICE') private readonly paymentClient: ClientProxy,
   ) {}
 
   private computeNextMonth(date: Date): Date {
@@ -43,6 +47,8 @@ export class SubscriptionService {
     end.setFullYear(end.getFullYear() + 1);
     return end;
   }
+
+  // ... private methods
 
   async create(
     data: CreateSubscriptionDto,
@@ -72,6 +78,18 @@ export class SubscriptionService {
       throw new BadRequestException(
         `User already has a subscription for plan ${plan.name}`,
       );
+
+    // Credit Deduction Logic
+    const price = plan.plan_type === PlanType.MONTHLY ? plan.monthly_price : plan.yearly_price;
+    if (price > 0) {
+        const deducted = await this.paymentClient
+            .send<boolean>('deduct_credits', { userId: user_id, amount: price })
+            .toPromise();
+        
+        if (!deducted) {
+            throw new BadRequestException('Insufficient credits to subscribe to this plan');
+        }
+    }
 
     const now = new Date();
 

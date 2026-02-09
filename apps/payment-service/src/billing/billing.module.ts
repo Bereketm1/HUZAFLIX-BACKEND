@@ -7,13 +7,15 @@ import { Billing } from './entities/billing.entity';
 import { Transaction } from 'src/payment/entities/transaction.entity';
 import { PaymentModule } from 'src/payment/payment.module';
 
+import { BillingMessageController } from './controllers/billing/billing.message.controller';
+
 @Module({
   imports: [
     CommonModule,
     PaymentModule,
     TypeOrmModule.forFeature([Transaction, Billing]),
   ],
-  controllers: [BillingController],
+  controllers: [BillingController, BillingMessageController],
   providers: [BillingService],
 })
 export class BillingModule {}

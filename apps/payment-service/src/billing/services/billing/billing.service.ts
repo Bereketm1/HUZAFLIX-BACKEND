@@ -296,4 +296,30 @@ export class BillingService {
       );
     }
   }
+
+  // ──────────────────────────────────────────────
+  //  INTERNAL / MICROSERVICE METHODS
+  // ──────────────────────────────────────────────
+
+  async deductCredits(userId: number, amount: number): Promise<boolean> {
+    // Avoid Stripe check for internal logic if we just want to use the credits
+    // But if you want to ensure billing exists, we call findByUserId
+    // findByUserId throws if not found, which is what we want.
+    const billing = await this.findByUserId(userId);
+
+    if (billing.credits < amount) {
+      return false;
+    }
+
+    billing.credits -= amount;
+    await this.billingRepository.save(billing);
+    
+    // Create a negative transaction record for history
+    await this.transactionService.create({
+        userId: billing.userId,
+        amount: -amount,
+    });
+
+    return true;
+  }
 }

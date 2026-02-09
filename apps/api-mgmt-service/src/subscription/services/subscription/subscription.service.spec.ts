@@ -30,6 +30,12 @@ describe('SubscriptionService', () => {
     findOne: jest.fn(),
   };
 
+  const mockPaymentClient = {
+    send: jest.fn(() => ({
+        toPromise: jest.fn().mockResolvedValue(true),
+    })),
+  };
+
   let testingModule: TestingModule;
 
   beforeEach(async () => {
@@ -50,6 +56,10 @@ describe('SubscriptionService', () => {
           provide: getRepositoryToken(Api),
           useValue: mockApiRepository,
         },
+        {
+            provide: 'PAYMENT_SERVICE',
+            useValue: mockPaymentClient,
+        },
       ],
     }).compile();
 
@@ -62,7 +72,7 @@ describe('SubscriptionService', () => {
 
   describe('create', () => {
     it('should create and save a subscription', async () => {
-      const plan = { id: 1, monthly_call_limit: 10 } as SubscriptionPlan;
+      const plan = { id: 1, monthly_call_limit: 10, monthly_price: 10, plan_type: 'monthly' } as unknown as SubscriptionPlan;
       const api = { id: 1 } as Api;
       mockPlanRepository.findOne = jest.fn(() => Promise.resolve(plan));
       mockApiRepository.findOne = jest.fn(() => Promise.resolve(api));
@@ -90,6 +100,12 @@ describe('SubscriptionService', () => {
         where: { id: 1 },
       });
 
+      // Verify payment client was called
+      expect(mockPaymentClient.send).toHaveBeenCalledWith('deduct_credits', {
+        userId: 1,
+        amount: 10,
+      });
+
       expect(mockSubscriptionRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: 1,
@@ -98,6 +114,22 @@ describe('SubscriptionService', () => {
         }),
       );
       expect(result).toEqual(subscription);
+    });
+
+    it('should throw BadRequestException if insufficient credits', async () => {
+      const plan = { id: 1, monthly_price: 100, plan_type: 'monthly' } as any;
+      const api = { id: 1 } as Api;
+      mockPlanRepository.findOne = jest.fn(() => Promise.resolve(plan));
+      mockApiRepository.findOne = jest.fn(() => Promise.resolve(api));
+
+      // Mock payment failures
+      mockPaymentClient.send = jest.fn(() => ({
+          toPromise: jest.fn().mockResolvedValue(false),
+      }));
+
+      await expect(service.create({ plan_id: 1, api_id: 1 }, 1)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw NotFoundException if plan does not exist', async () => {
