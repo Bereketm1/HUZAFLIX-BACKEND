@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsageGuard } from './usage.guard';
-import { ClientProxy } from '@nestjs/microservices';
-import { HttpException } from '@nestjs/common';
+import { HttpException, ExecutionContext } from '@nestjs/common';
 import { of } from 'rxjs';
 
 describe('UsageGuard', () => {
   let guard: UsageGuard;
-  let client: ClientProxy;
 
   const mockClient = {
     send: jest.fn(),
@@ -22,7 +20,6 @@ describe('UsageGuard', () => {
     }).compile();
 
     guard = module.get<UsageGuard>(UsageGuard);
-    client = module.get<ClientProxy>('API_MGMT_SERVICE');
   });
 
   const mockContext = {
@@ -32,7 +29,7 @@ describe('UsageGuard', () => {
         url: '/test/path',
       }),
     }),
-  } as any;
+  } as unknown as ExecutionContext;
 
   it('should allow request if validation succeeds', async () => {
     mockClient.send.mockReturnValue(of({ allowed: true }));
@@ -46,7 +43,9 @@ describe('UsageGuard', () => {
   });
 
   it('should throw exception if validation fails', async () => {
-    mockClient.send.mockReturnValue(of({ allowed: false, reason: 'Test Reason' }));
+    mockClient.send.mockReturnValue(
+      of({ allowed: false, reason: 'Test Reason' }),
+    );
 
     await expect(guard.canActivate(mockContext)).rejects.toThrow(HttpException);
   });

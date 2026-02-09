@@ -1,6 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ApiUsageService, ValidationResult } from '../../services/api-usage/api-usage.service';
+import {
+  ApiUsageService,
+  ValidationResult,
+} from '../../services/api-usage/api-usage.service';
 
 @Controller()
 export class ApiUsageController {

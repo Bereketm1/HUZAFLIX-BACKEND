@@ -19,16 +19,19 @@ export class UsageGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req = context.switchToHttp().getRequest();
-    const apiKey = req.headers['x-api-key'];
+    const req = context.switchToHttp().getRequest<{
+      headers: Record<string, string | string[]>;
+      url: string;
+    }>();
+    const apiKey = req.headers['x-api-key'] as string;
     const path = req.url;
 
     try {
-      const result = await lastValueFrom(
+      const result = (await lastValueFrom(
         this.client
           .send('validate_request', { apiKey, path })
           .pipe(timeout(5000)),
-      );
+      )) as { allowed: boolean; reason?: string };
 
       if (!result.allowed) {
         throw new HttpException(
@@ -38,10 +41,11 @@ export class UsageGuard implements CanActivate {
       }
 
       return true;
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof HttpException) throw err;
 
-      this.logger.error(`Usage validation failed: ${err.message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Usage validation failed: ${message}`);
       // Fail closed for security/billing enforcement
       throw new HttpException(
         'Service Unavailable',

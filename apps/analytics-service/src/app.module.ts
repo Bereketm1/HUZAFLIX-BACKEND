@@ -18,6 +18,8 @@ import * as redisStore from 'cache-manager-redis-store';
 import { JwtModuleOptions } from '@nestjs/jwt';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 export type RedisClient = Redis;
 
@@ -38,6 +40,16 @@ const jwtOptions: JwtModuleOptions = {
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env'],
+    }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
+      username: process.env.POSTGRES_USER || 'postgres',
+      password: process.env.POSTGRES_PASSWORD || 'postgres',
+      database: process.env.POSTGRES_DB || 'postgres',
+      autoLoadEntities: true,
+      synchronize: process.env.NODE_ENV !== 'production',
     }),
     ClientsModule.register([
       {
@@ -68,6 +80,7 @@ const jwtOptions: JwtModuleOptions = {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
     }),
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -6,8 +6,9 @@ import { AppService } from './app.service';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ProxyController } from './proxy/proxy.controller';
 import { ProxyService } from './proxy/proxy.service';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { UsageGuard } from './guards/usage.guard';
+import { AnalyticsInterceptor } from './interceptors/analytics.interceptor';
 
 @Module({
   imports: [
@@ -29,6 +30,14 @@ import { UsageGuard } from './guards/usage.guard';
           port: parseInt(process.env.REDIS_PORT || '6379', 10),
         },
       },
+      {
+        name: 'ANALYTICS_SERVICE',
+        transport: Transport.REDIS,
+        options: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        },
+      },
     ]),
   ],
   controllers: [AppController, ProxyController],
@@ -38,6 +47,10 @@ import { UsageGuard } from './guards/usage.guard';
     {
       provide: APP_GUARD,
       useClass: UsageGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AnalyticsInterceptor,
     },
   ],
 })

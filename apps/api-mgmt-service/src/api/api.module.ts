@@ -27,7 +27,13 @@ import { ApiUsageService } from './services/api-usage/api-usage.service';
     CommonModule,
     ConsumerApiKeyModule,
   ],
-  providers: [ApiService, MinioService, PlanService, FavouritesService, ApiUsageService],
+  providers: [
+    ApiService,
+    MinioService,
+    PlanService,
+    FavouritesService,
+    ApiUsageService,
+  ],
   controllers: [ApiController, ApiUsageController],
   exports: [ApiService],
 })
