@@ -23,7 +23,8 @@ export class TransactionsService {
     role?: string,
     userId?: number,
   ): Promise<{ data: Transaction[]; meta: PaginatedResponse } | Transaction[]> {
-    const isAdmin = role === 'administrator';
+    const isAdmin =
+      typeof role === 'string' && role.toLowerCase().includes('admin');
     const isPaginated = page && limit;
 
     if (!isPaginated) {
@@ -47,7 +48,8 @@ export class TransactionsService {
   }
 
   async findOneById(id: number, role?: string): Promise<Transaction> {
-    const isAdmin = role === 'administrator';
+    const isAdmin =
+      typeof role === 'string' && role.toLowerCase().includes('admin');
     const where = isAdmin ? { id: id } : { id: id };
 
     const pr = await this.transactionRepository.findOne({

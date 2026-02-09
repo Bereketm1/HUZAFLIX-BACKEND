@@ -14,6 +14,14 @@ function createHttpContext(req: Request, res: Response): ExecutionContext {
   } as unknown as ExecutionContext;
 }
 
+function mockRes(statusCode = 200): Response {
+  return {
+    statusCode,
+    write: jest.fn().mockReturnValue(true),
+    end: jest.fn().mockReturnThis(),
+  } as unknown as Response;
+}
+
 describe('GlobalLogInterceptor', () => {
   const originalFetch = globalThis.fetch;
 
@@ -43,7 +51,7 @@ describe('GlobalLogInterceptor', () => {
       user: { id: 123 },
     } as unknown as Request;
 
-    const res = { statusCode: 200 } as unknown as Response;
+    const res = mockRes(200);
     const ctx = createHttpContext(req, res);
     const next: CallHandler = { handle: () => of({ ok: true }) };
 
@@ -54,7 +62,8 @@ describe('GlobalLogInterceptor', () => {
     });
 
     expect(result).toEqual({ ok: true });
-    await Promise.resolve();
+    // Give the async dispatch a tick to complete.
+    await new Promise((r) => setTimeout(r, 10));
     expect(fetchMock).toHaveBeenCalled();
   });
 
@@ -76,7 +85,7 @@ describe('GlobalLogInterceptor', () => {
       header: () => undefined,
       user: { id: 'u1' },
     } as unknown as Request;
-    const res = { statusCode: 201 } as unknown as Response;
+    const res = mockRes(201);
 
     const ctx = createHttpContext(req, res);
     const next: CallHandler = { handle: () => of('OK') };
@@ -108,7 +117,7 @@ describe('GlobalLogInterceptor', () => {
       ip: '127.0.0.1',
       header: () => undefined,
     } as unknown as Request;
-    const res = { statusCode: 200 } as unknown as Response;
+    const res = mockRes(200);
 
     const ctx = createHttpContext(req, res);
     const next: CallHandler = {
@@ -123,7 +132,7 @@ describe('GlobalLogInterceptor', () => {
       }),
     ).rejects.toBeDefined();
 
-    await Promise.resolve();
+    await new Promise((r) => setTimeout(r, 10));
     expect(fetchMock).toHaveBeenCalled();
   });
 });

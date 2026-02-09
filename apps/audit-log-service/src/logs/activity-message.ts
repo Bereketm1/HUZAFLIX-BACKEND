@@ -162,7 +162,11 @@ export function buildActivityMessage(
     case AuditEvent.REQUEST: {
       // Prefer plain-English descriptions over raw URLs.
       const p = (path || '').toLowerCase();
-      if (p.includes('/api/auth') || p.includes('/auth') || p.includes('/mfa')) {
+      if (
+        p.includes('/api/auth') ||
+        p.includes('/auth') ||
+        p.includes('/mfa')
+      ) {
         return withOutcome(describeAuth(path, method), log.status);
       }
       if (p.includes('/api/payment') || p.includes('/payment')) {
@@ -176,7 +180,11 @@ export function buildActivityMessage(
 
     default: {
       const p = (path || '').toLowerCase();
-      if (p.includes('/api/auth') || p.includes('/auth') || p.includes('/mfa')) {
+      if (
+        p.includes('/api/auth') ||
+        p.includes('/auth') ||
+        p.includes('/mfa')
+      ) {
         return withOutcome(describeAuth(path, method), log.status);
       }
       if (p.includes('/api/payment') || p.includes('/payment')) {
