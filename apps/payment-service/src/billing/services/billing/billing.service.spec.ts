@@ -49,11 +49,13 @@ describe('BillingService', () => {
         userId: 1,
         credits: 100,
       } as Billing;
-      
+
       // Mock findOne to return the billing
       mockBillingRepository.findOne = jest.fn().mockResolvedValue(billing);
       // Mock save to return saved entity
-      mockBillingRepository.save = jest.fn().mockImplementation((b) => Promise.resolve(b));
+      mockBillingRepository.save = jest
+        .fn()
+        .mockImplementation((b) => Promise.resolve(b));
       // Mock transaction create
       mockTransactionService.create = jest.fn().mockResolvedValue({});
 
@@ -73,7 +75,7 @@ describe('BillingService', () => {
         userId: 1,
         credits: 10,
       } as Billing;
-      
+
       mockBillingRepository.findOne = jest.fn().mockResolvedValue(billing);
 
       const result = await service.deductCredits(1, 50);

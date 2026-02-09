@@ -80,15 +80,20 @@ export class SubscriptionService {
       );
 
     // Credit Deduction Logic
-    const price = plan.plan_type === PlanType.MONTHLY ? plan.monthly_price : plan.yearly_price;
+    const price =
+      plan.plan_type === PlanType.MONTHLY
+        ? plan.monthly_price
+        : plan.yearly_price;
     if (price > 0) {
-        const deducted = await this.paymentClient
-            .send<boolean>('deduct_credits', { userId: user_id, amount: price })
-            .toPromise();
-        
-        if (!deducted) {
-            throw new BadRequestException('Insufficient credits to subscribe to this plan');
-        }
+      const deducted = await this.paymentClient
+        .send<boolean>('deduct_credits', { userId: user_id, amount: price })
+        .toPromise();
+
+      if (!deducted) {
+        throw new BadRequestException(
+          'Insufficient credits to subscribe to this plan',
+        );
+      }
     }
 
     const now = new Date();

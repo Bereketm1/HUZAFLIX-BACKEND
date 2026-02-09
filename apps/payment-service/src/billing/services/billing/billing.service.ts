@@ -313,11 +313,11 @@ export class BillingService {
 
     billing.credits -= amount;
     await this.billingRepository.save(billing);
-    
+
     // Create a negative transaction record for history
     await this.transactionService.create({
-        userId: billing.userId,
-        amount: -amount,
+      userId: billing.userId,
+      amount: -amount,
     });
 
     return true;

@@ -12,6 +12,9 @@ import { FavouritesService } from './services/favourites/favourites.service';
 import { Favourite } from './entities/favourites.entity';
 import { Subscription } from 'src/subscription/entities/subscriptions.entity';
 
+import { ApiUsageController } from './controllers/api-usage/api-usage.controller';
+import { ApiUsageService } from './services/api-usage/api-usage.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -24,8 +27,8 @@ import { Subscription } from 'src/subscription/entities/subscriptions.entity';
     CommonModule,
     ConsumerApiKeyModule,
   ],
-  providers: [ApiService, MinioService, PlanService, FavouritesService],
-  controllers: [ApiController],
+  providers: [ApiService, MinioService, PlanService, FavouritesService, ApiUsageService],
+  controllers: [ApiController, ApiUsageController],
   exports: [ApiService],
 })
 export class ApiModule {}
