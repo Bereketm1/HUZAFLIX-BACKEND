@@ -17,6 +17,7 @@ import { AuditEvent, JwtAuthGuard } from '@huzaflix/common';
 import { buildActivityMessage } from './activity-message';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { GetLogsQuery } from './dto/get-logs.query';
+import { GetUptimeQuery } from './dto/get-uptime.query';
 
 @Controller()
 export class LogsController {
@@ -106,5 +107,16 @@ export class LogsController {
         activityMessage: buildActivityMessage(log),
       })),
     };
+  }
+
+  // Uptime aggregation for API cards
+  @Get('uptime')
+  @ApiQuery({ name: 'basePath', required: true, type: String })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  async uptime(@Query() query: GetUptimeQuery) {
+    const startDate = query.startDate ? new Date(query.startDate) : undefined;
+    const endDate = query.endDate ? new Date(query.endDate) : undefined;
+    return await this.logs.getUptimeStats(query.basePath, startDate, endDate);
   }
 }

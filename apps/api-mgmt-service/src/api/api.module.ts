@@ -11,6 +11,7 @@ import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
 import { FavouritesService } from './services/favourites/favourites.service';
 import { Favourite } from './entities/favourites.entity';
 import { Subscription } from 'src/subscription/entities/subscriptions.entity';
+import { AuditLogClient } from './services/metrics/audit-log.client';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { Subscription } from 'src/subscription/entities/subscriptions.entity';
     CommonModule,
     ConsumerApiKeyModule,
   ],
-  providers: [ApiService, MinioService, PlanService, FavouritesService],
+  providers: [ApiService, MinioService, PlanService, FavouritesService, AuditLogClient],
   controllers: [ApiController],
   exports: [ApiService],
 })
