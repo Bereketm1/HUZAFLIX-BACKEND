@@ -20,6 +20,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -52,17 +53,36 @@ export class ApiController {
   @ApiResponse({ status: 200, description: 'Fetched all apis successfully' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'withMetrics', required: false, type: Boolean })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @CurrentUser() user?: { role: { name: string } },
+    @Query('withMetrics') withMetrics?: string,
+    @Query('startDate') startDateRaw?: string,
+    @Query('endDate') endDateRaw?: string,
+    @CurrentUser() user?: { id?: number; role: { name: string } },
   ) {
-    return await this.apiService.findAll(
-      {
-        page,
-        limit,
-      },
+    const includeMetrics = withMetrics === 'true' || withMetrics === '1';
+    if (!includeMetrics) {
+      return await this.apiService.findAll({ page, limit }, user?.role?.name);
+    }
+
+    if (!user?.id) {
+      throw new UnauthorizedException('Login required for metrics');
+    }
+
+    const now = new Date();
+    const startDate = startDateRaw ? new Date(startDateRaw) : undefined;
+    const endDate = endDateRaw ? new Date(endDateRaw) : undefined;
+    const resolvedWindow = resolveMetricsWindow(startDate, endDate, now);
+
+    return await this.apiService.findAllWithMetrics(
+      { page, limit },
       user?.role?.name,
+      user.id,
+      resolvedWindow,
     );
   }
 
@@ -112,6 +132,9 @@ export class ApiController {
   @ApiOperation({ summary: 'Get all apis by category' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'withMetrics', required: false, type: Boolean })
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Fetched all apis by category successfully',
@@ -120,15 +143,40 @@ export class ApiController {
     @Param('category') category: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @CurrentUser() user?: { role: { name: string } },
+    @Query('withMetrics') withMetrics?: string,
+    @Query('startDate') startDateRaw?: string,
+    @Query('endDate') endDateRaw?: string,
+    @CurrentUser() user?: { id?: number; role: { name: string } },
   ) {
-    return await this.apiService.filterByCategory(
+    const includeMetrics = withMetrics === 'true' || withMetrics === '1';
+    if (!includeMetrics) {
+      return await this.apiService.filterByCategory(
+        category,
+        user?.role?.name,
+        page,
+        limit,
+      );
+    }
+
+    if (!user?.id) {
+      throw new UnauthorizedException('Login required for metrics');
+    }
+
+    const now = new Date();
+    const startDate = startDateRaw ? new Date(startDateRaw) : undefined;
+    const endDate = endDateRaw ? new Date(endDateRaw) : undefined;
+    const resolvedWindow = resolveMetricsWindow(startDate, endDate, now);
+
+    return await this.apiService.filterByCategoryWithMetrics(
       category,
       user?.role?.name,
+      user.id,
       page,
       limit,
+      resolvedWindow,
     );
   }
+
 
   @Get(':id')
   @ApiOperation({ summary: 'Get by ID' })
@@ -304,4 +352,22 @@ export class ApiController {
 
     await this.apiService.delete(id);
   }
+}
+
+function resolveMetricsWindow(
+  startDate: Date | undefined,
+  endDate: Date | undefined,
+  now: Date,
+): { startDate?: Date; endDate?: Date } {
+  if (startDate && endDate) return { startDate, endDate };
+  if (startDate && !endDate) return { startDate, endDate: now };
+  if (!startDate && endDate) {
+    const windowStart = new Date(endDate);
+    windowStart.setDate(windowStart.getDate() - 30);
+    return { startDate: windowStart, endDate };
+  }
+
+  const defaultStart = new Date(now);
+  defaultStart.setDate(defaultStart.getDate() - 30);
+  return { startDate: defaultStart, endDate: now };
 }
