@@ -294,8 +294,9 @@ export class ApiService {
       throw new NotFoundException(`API with id ${apiId} not found`);
     }
 
+    const uptimeBasePath = `/api-management/playground/${api.id}`;
     const uptimeStats = await this.auditLogClient.getUptimeStats(
-      api.base_path,
+      uptimeBasePath,
       window?.startDate,
       window?.endDate,
     );
