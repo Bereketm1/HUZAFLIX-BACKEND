@@ -110,6 +110,7 @@ export class LogsController {
   }
 
   // Uptime aggregation for API cards
+  @ApiExcludeEndpoint()
   @Get('uptime')
   @ApiQuery({ name: 'basePath', required: true, type: String })
   @ApiQuery({ name: 'startDate', required: false, type: String })

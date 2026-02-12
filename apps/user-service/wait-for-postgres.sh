@@ -40,7 +40,7 @@ echo "Running database migrations..."
 pnpm migration:run
 
 echo "Seeding database..."
-pnpm seed
+pnpm seed || echo "Seeding failed, proceeding anyway..."
 
 echo "Postgres is ready - executing command: $@"
 exec "$@"
