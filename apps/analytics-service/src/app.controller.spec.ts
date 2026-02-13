@@ -6,7 +6,6 @@ import { AnalyticsService } from './analytics/services/analytics.service';
 
 describe('AppController', () => {
   let appController: AppController;
-  let analyticsService: AnalyticsService;
 
   const dashboardClientMock = {
     send: jest.fn(() => of({ users: 100, active: 80 })),
@@ -14,7 +13,12 @@ describe('AppController', () => {
 
   const mockAnalyticsService = {
     getDailyStats: jest.fn().mockResolvedValue({
-      totalApiHitsToday: { value: 100, percentage: 10, change: 'increase', period: 'daily' },
+      totalApiHitsToday: {
+        value: 100,
+        percentage: 10,
+        change: 'increase',
+        period: 'daily',
+      },
       totalSuccessHits: 90,
       totalErrorHits: 10,
     }),
@@ -39,7 +43,6 @@ describe('AppController', () => {
     }).compile();
 
     appController = app.get<AppController>(AppController);
-    analyticsService = app.get<AnalyticsService>(AnalyticsService);
   });
 
   describe('root', () => {

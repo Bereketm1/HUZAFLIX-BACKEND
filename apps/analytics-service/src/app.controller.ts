@@ -30,7 +30,7 @@ export class AppController {
   @UseGuards(JwtAuthGuard)
   async getApiReport() {
     const stats = await this.analyticsService.getDailyStats();
-    
+
     // Default/Mock values for other fields not yet tracked in DB
     const totalApiPublished = {
       value: 100,
@@ -46,12 +46,24 @@ export class AppController {
       period: 'monthly',
     };
 
-    const successRate = stats.totalApiHitsToday.value > 0 
-        ? Number(((stats.totalSuccessHits / stats.totalApiHitsToday.value) * 100).toFixed(2)) 
+    const successRate =
+      stats.totalApiHitsToday.value > 0
+        ? Number(
+            (
+              (stats.totalSuccessHits / stats.totalApiHitsToday.value) *
+              100
+            ).toFixed(2),
+          )
         : 0;
-        
-    const errorRate = stats.totalApiHitsToday.value > 0 
-        ? Number(((stats.totalErrorHits / stats.totalApiHitsToday.value) * 100).toFixed(2)) 
+
+    const errorRate =
+      stats.totalApiHitsToday.value > 0
+        ? Number(
+            (
+              (stats.totalErrorHits / stats.totalApiHitsToday.value) *
+              100
+            ).toFixed(2),
+          )
         : 0;
 
     return {

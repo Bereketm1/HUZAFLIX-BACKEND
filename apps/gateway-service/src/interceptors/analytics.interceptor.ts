@@ -10,51 +10,72 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { IncomingMessage } from 'http';
 
+interface AuthenticatedUser {
+  id: number;
+  [key: string]: unknown;
+}
+
+interface AuthenticatedRequest extends IncomingMessage {
+  user?: AuthenticatedUser;
+  url?: string;
+  method?: string;
+}
+
+interface HttpError {
+  status?: number;
+  message?: string;
+}
+
+interface ApiLogData {
+  api_key: string | null;
+  path: string | undefined;
+  method: string | undefined;
+  status_code: number;
+  duration_ms: number;
+  user_id: number | null;
+  timestamp: Date;
+}
+
 @Injectable()
 export class AnalyticsInterceptor implements NestInterceptor {
   constructor(
     @Inject('ANALYTICS_SERVICE') private readonly analyticsClient: ClientProxy,
   ) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const start = Date.now();
     const httpContext = context.switchToHttp();
-    const request = httpContext.getRequest<IncomingMessage & { user?: any }>();
+    const request = httpContext.getRequest<AuthenticatedRequest>();
 
     return next.handle().pipe(
       tap({
-        next: (data) => {
-          this.logRequest(request, context, start, 200); // Assume 200 for successful completion if not available
+        next: () => {
+          this.logRequest(request, start, 200);
         },
-        error: (error) => {
-          const status = error.status || 500;
-          this.logRequest(request, context, start, status);
+        error: (error: HttpError) => {
+          const status = typeof error?.status === 'number' ? error.status : 500;
+          this.logRequest(request, start, status);
         },
       }),
     );
   }
 
   private logRequest(
-    request: IncomingMessage & { user?: any; url?: string; method?: string },
-    context: ExecutionContext,
+    request: AuthenticatedRequest,
     startTime: number,
     status: number,
   ) {
     const duration = Date.now() - startTime;
-    // Extract API Key if present (custom header or query param as used in ApiUsageService)
-    // For now, we'll try to get it from headers 'x-api-key'
-    const apiKey = request.headers['x-api-key'] as string;
+    const apiKey = (request.headers['x-api-key'] as string) || null;
+    const userId = request.user?.id ?? null;
 
-    // User might be attached by AuthGuard
-    const userId = request.user?.id;
-
-    const logData = {
-      api_key: apiKey || null,
+    const logData: ApiLogData = {
+      api_key: apiKey,
       path: request.url,
       method: request.method,
       status_code: status,
       duration_ms: duration,
-      user_id: userId || null,
+      user_id: userId,
       timestamp: new Date(),
     };
 

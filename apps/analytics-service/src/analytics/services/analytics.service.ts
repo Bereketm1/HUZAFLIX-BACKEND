@@ -3,6 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiRequestLog } from '../entities/api-request-log.entity';
 
+interface TimeGraphRow {
+  date: string;
+  calls: string;
+}
+
+interface LatencyGraphRow {
+  date: string;
+  latencyMs: string;
+}
+
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -33,7 +43,7 @@ export class AnalyticsService {
       .getCount();
 
     const totalErrorHits = totalApiHitsToday - totalSuccessHits;
-    
+
     // Placeholder for other stats
     return {
       totalApiHitsToday: {
@@ -53,35 +63,38 @@ export class AnalyticsService {
       .select("TO_CHAR(log.timestamp, 'Mon DD')", 'date')
       .addSelect('COUNT(*)', 'calls')
       .groupBy("TO_CHAR(log.timestamp, 'Mon DD'), DATE(log.timestamp)")
-      .orderBy("DATE(log.timestamp)", 'ASC');
+      .orderBy('DATE(log.timestamp)', 'ASC');
 
     if (startDate) {
-        query.andWhere('log.timestamp >= :startDate', { startDate });
+      query.andWhere('log.timestamp >= :startDate', { startDate });
     }
     if (endDate) {
-        query.andWhere('log.timestamp <= :endDate', { endDate });
+      query.andWhere('log.timestamp <= :endDate', { endDate });
     }
 
-    const result = await query.getRawMany();
-    return result.map(r => ({ date: r.date, calls: Number(r.calls) }));
+    const result = await query.getRawMany<TimeGraphRow>();
+    return result.map((r) => ({ date: r.date, calls: Number(r.calls) }));
   }
 
   async getLatencyGraph(startDate?: string, endDate?: string) {
-     const query = this.logRepository
+    const query = this.logRepository
       .createQueryBuilder('log')
       .select("TO_CHAR(log.timestamp, 'Mon DD')", 'date')
       .addSelect('AVG(log.duration_ms)', 'latencyMs')
       .groupBy("TO_CHAR(log.timestamp, 'Mon DD'), DATE(log.timestamp)")
-      .orderBy("DATE(log.timestamp)", 'ASC');
-      
+      .orderBy('DATE(log.timestamp)', 'ASC');
+
     if (startDate) {
-        query.andWhere('log.timestamp >= :startDate', { startDate });
+      query.andWhere('log.timestamp >= :startDate', { startDate });
     }
     if (endDate) {
-        query.andWhere('log.timestamp <= :endDate', { endDate });
+      query.andWhere('log.timestamp <= :endDate', { endDate });
     }
 
-    const result = await query.getRawMany();
-    return result.map(r => ({ date: r.date, latencyMs: Number(r.latencyMs) }));
+    const result = await query.getRawMany<LatencyGraphRow>();
+    return result.map((r) => ({
+      date: r.date,
+      latencyMs: Number(r.latencyMs),
+    }));
   }
 }
