@@ -11,6 +11,7 @@ import { SubscriptionPlan } from 'src/subscription/entities/plans.entity';
 import { FavouritesService } from './services/favourites/favourites.service';
 import { Favourite } from './entities/favourites.entity';
 import { Subscription } from 'src/subscription/entities/subscriptions.entity';
+import { AuditLogClient } from './services/metrics/audit-log.client';
 
 import { ApiUsageController } from './controllers/api-usage/api-usage.controller';
 import { ApiUsageService } from './services/api-usage/api-usage.service';
@@ -33,6 +34,7 @@ import { ApiUsageService } from './services/api-usage/api-usage.service';
     PlanService,
     FavouritesService,
     ApiUsageService,
+    AuditLogClient
   ],
   controllers: [ApiController, ApiUsageController],
   exports: [ApiService],

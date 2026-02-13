@@ -15,6 +15,15 @@ export type LogsFilter = {
   sort?: 'asc' | 'desc';
 };
 
+export type UptimeStats = {
+  basePath: string;
+  startDate?: string;
+  endDate?: string;
+  total: number;
+  success: number;
+  uptimePct: number;
+};
+
 @Injectable()
 export class LogsService {
   constructor(
@@ -93,5 +102,57 @@ export class LogsService {
     }
 
     return await qb.getMany();
+  }
+
+  async getUptimeStats(
+    basePath: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<UptimeStats> {
+    const normalized = basePath.startsWith('/') ? basePath : `/${basePath}`;
+    const apiPrefixed = normalized.startsWith('/api/')
+      ? normalized
+      : `/api${normalized}`;
+
+    const qb = this.repo.createQueryBuilder('l');
+    qb.select('COUNT(*)', 'total');
+    qb.addSelect(
+      'SUM(CASE WHEN l.status >= 200 AND l.status < 400 THEN 1 ELSE 0 END)',
+      'success',
+    );
+
+    qb.andWhere(
+      new Brackets((sub) => {
+        sub
+          .where("COALESCE(l.metadata->>'path','') LIKE :basePath", {
+            basePath: `${normalized}%`,
+          })
+          .orWhere("COALESCE(l.metadata->>'path','') LIKE :apiPath", {
+            apiPath: `${apiPrefixed}%`,
+          });
+      }),
+    );
+
+    if (startDate) {
+      qb.andWhere('l.timestamp >= :start', { start: startDate });
+    }
+
+    if (endDate) {
+      qb.andWhere('l.timestamp <= :end', { end: endDate });
+    }
+
+    const row = (await qb.getRawOne()) as { total?: string; success?: string };
+    const total = row?.total ? Number(row.total) : 0;
+    const success = row?.success ? Number(row.success) : 0;
+    const uptimePct = total > 0 ? Number(((success / total) * 100).toFixed(2)) : 0;
+
+    return {
+      basePath: normalized,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      total,
+      success,
+      uptimePct,
+    };
   }
 }

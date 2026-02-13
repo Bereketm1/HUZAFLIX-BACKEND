@@ -9,6 +9,7 @@ import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
 import { UpdateApiDto } from 'src/api/dto/api/api-update.dto';
 import { PlanService } from 'src/subscription/services/plan/plan.service';
 import { Subscription } from 'src/subscription/entities/subscriptions.entity';
+import { AuditLogClient } from '../metrics/audit-log.client';
 
 jest.mock('@huzaflix/common', (): unknown => {
   const actual: object = jest.requireActual('@huzaflix/common');
@@ -50,6 +51,10 @@ describe('ApiService', () => {
     findAll: jest.fn(),
   };
 
+  const mockAuditLogClient = {
+    getUptimeStats: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -71,6 +76,10 @@ describe('ApiService', () => {
         {
           provide: PlanService,
           useValue: mockPlanService,
+        },
+        {
+          provide: AuditLogClient,
+          useValue: mockAuditLogClient,
         },
       ],
     }).compile();
