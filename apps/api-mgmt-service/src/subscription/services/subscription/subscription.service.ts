@@ -84,9 +84,18 @@ export class SubscriptionService {
       plan.plan_type === PlanType.MONTHLY
         ? plan.monthly_price
         : plan.yearly_price;
-    if (price > 0) {
+    const deductionAmount = Math.round(Number(price));
+
+    if (!Number.isFinite(deductionAmount) || deductionAmount < 0) {
+      throw new BadRequestException('Invalid subscription plan price');
+    }
+
+    if (deductionAmount > 0) {
       const deducted = await this.paymentClient
-        .send<boolean>('deduct_credits', { userId: user_id, amount: price })
+        .send<boolean>('deduct_credits', {
+          userId: user_id,
+          amount: deductionAmount,
+        })
         .toPromise();
 
       if (!deducted) {

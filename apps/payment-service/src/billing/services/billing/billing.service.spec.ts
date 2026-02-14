@@ -17,6 +17,7 @@ describe('BillingService', () => {
 
   const mockTransactionService = {
     create: jest.fn(),
+    findOneByReference: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -70,6 +71,28 @@ describe('BillingService', () => {
       });
     });
 
+    it('should normalize decimal amount before deducting', async () => {
+      const billing = {
+        userId: 1,
+        credits: 100,
+      } as Billing;
+
+      mockBillingRepository.findOne = jest.fn().mockResolvedValue(billing);
+      mockBillingRepository.save = jest
+        .fn()
+        .mockImplementation((b) => Promise.resolve(b));
+      mockTransactionService.create = jest.fn().mockResolvedValue({});
+
+      const result = await service.deductCredits(1, 9.6);
+
+      expect(result).toBe(true);
+      expect(billing.credits).toBe(90);
+      expect(mockTransactionService.create).toHaveBeenCalledWith({
+        userId: 1,
+        amount: -10,
+      });
+    });
+
     it('should return false if balance is insufficient', async () => {
       const billing = {
         userId: 1,
@@ -83,6 +106,81 @@ describe('BillingService', () => {
       expect(result).toBe(false);
       expect(billing.credits).toBe(10); // Should verify credits not changed
       // Should NOT save if insufficient
+      expect(mockBillingRepository.save).not.toHaveBeenCalled();
+      expect(mockTransactionService.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleStripeWebhook', () => {
+    it('should apply credits for succeeded payment intent webhook', async () => {
+      const billing = {
+        id: 5,
+        userId: 2,
+        credits: 10,
+      } as Billing;
+
+      mockBillingRepository.findOne = jest.fn().mockResolvedValue(billing);
+      mockBillingRepository.save = jest
+        .fn()
+        .mockImplementation((b) => Promise.resolve(b));
+      mockTransactionService.findOneByReference = jest
+        .fn()
+        .mockResolvedValue(null);
+      mockTransactionService.create = jest.fn().mockResolvedValue({});
+
+      const event = {
+        type: 'payment_intent.succeeded',
+        data: {
+          object: {
+            id: 'pi_test_1',
+            metadata: {
+              billingId: '5',
+              credits: '25',
+            },
+          },
+        },
+      } as any;
+
+      await service.handleStripeWebhook(event);
+
+      expect(billing.credits).toBe(35);
+      expect(mockTransactionService.findOneByReference).toHaveBeenCalledWith(
+        'stripe:pi_test_1',
+      );
+      expect(mockTransactionService.create).toHaveBeenCalledWith({
+        reference: 'stripe:pi_test_1',
+        userId: 2,
+        amount: 25,
+      });
+    });
+
+    it('should not re-apply credits when transaction reference already exists', async () => {
+      const billing = {
+        id: 5,
+        userId: 2,
+        credits: 10,
+      } as Billing;
+
+      mockBillingRepository.findOne = jest.fn().mockResolvedValue(billing);
+      mockTransactionService.findOneByReference = jest
+        .fn()
+        .mockResolvedValue({ id: 99 });
+
+      const event = {
+        type: 'payment_intent.succeeded',
+        data: {
+          object: {
+            id: 'pi_test_2',
+            metadata: {
+              billingId: '5',
+              credits: '25',
+            },
+          },
+        },
+      } as any;
+
+      await service.handleStripeWebhook(event);
+
       expect(mockBillingRepository.save).not.toHaveBeenCalled();
       expect(mockTransactionService.create).not.toHaveBeenCalled();
     });
