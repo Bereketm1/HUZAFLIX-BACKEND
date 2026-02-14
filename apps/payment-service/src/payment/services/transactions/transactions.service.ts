@@ -61,6 +61,12 @@ export class TransactionsService {
     return pr;
   }
 
+  async findOneByReference(reference: string): Promise<Transaction | null> {
+    return await this.transactionRepository.findOne({
+      where: { reference },
+    });
+  }
+
   async create(data: CreateTransactionDto): Promise<Transaction> {
     const transaction = this.transactionRepository.create(data);
     await this.transactionRepository.save(transaction);

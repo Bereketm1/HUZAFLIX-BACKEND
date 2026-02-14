@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -248,6 +249,10 @@ export class BillingService {
       },
     });
 
+    if (paymentIntent.status === 'succeeded') {
+      await this.applyCreditsFromPaymentIntent(paymentIntent);
+    }
+
     return {
       paymentIntentId: paymentIntent.id,
       status: paymentIntent.status,
@@ -262,22 +267,52 @@ export class BillingService {
   async handleStripeWebhook(event: Stripe.Event) {
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object;
-      const billingId = parseInt(paymentIntent.metadata.billingId);
-      const credits = parseInt(paymentIntent.metadata.credits);
-
-      const billing = await this.billingRepository.findOne({
-        where: { id: billingId },
-      });
-
-      if (!billing) return;
-
-      billing.credits += credits;
-      await this.billingRepository.save(billing);
-      await this.transactionService.create({
-        userId: billing.userId,
-        amount: credits,
-      });
+      await this.applyCreditsFromPaymentIntent(paymentIntent);
     }
+  }
+
+  private async applyCreditsFromPaymentIntent(
+    paymentIntent: Stripe.PaymentIntent,
+  ): Promise<void> {
+    const billingId = Number(paymentIntent.metadata?.billingId);
+    const credits = Number(paymentIntent.metadata?.credits);
+
+    if (
+      !Number.isFinite(billingId) ||
+      !Number.isFinite(credits) ||
+      credits <= 0
+    ) {
+      Logger.warn(
+        `Skipping credit update for payment intent ${paymentIntent.id}: invalid metadata`,
+      );
+      return;
+    }
+
+    const billing = await this.billingRepository.findOne({
+      where: { id: billingId },
+    });
+
+    if (!billing) {
+      Logger.warn(
+        `Skipping credit update for payment intent ${paymentIntent.id}: billing profile not found`,
+      );
+      return;
+    }
+
+    const transactionReference = `stripe:${paymentIntent.id}`;
+    const existingTransaction =
+      await this.transactionService.findOneByReference(transactionReference);
+    if (existingTransaction) {
+      return;
+    }
+
+    billing.credits += credits;
+    await this.billingRepository.save(billing);
+    await this.transactionService.create({
+      reference: transactionReference,
+      userId: billing.userId,
+      amount: credits,
+    });
   }
 
   // ──────────────────────────────────────────────
@@ -307,17 +342,25 @@ export class BillingService {
     // findByUserId throws if not found, which is what we want.
     const billing = await this.findByUserId(userId);
 
-    if (billing.credits < amount) {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException(
+        'Deduction amount must be a positive number',
+      );
+    }
+
+    const normalizedAmount = Math.round(amount);
+
+    if (billing.credits < normalizedAmount) {
       return false;
     }
 
-    billing.credits -= amount;
+    billing.credits -= normalizedAmount;
     await this.billingRepository.save(billing);
 
     // Create a negative transaction record for history
     await this.transactionService.create({
       userId: billing.userId,
-      amount: -amount,
+      amount: -normalizedAmount,
     });
 
     return true;
