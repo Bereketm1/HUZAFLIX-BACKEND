@@ -4,6 +4,7 @@ import { Billing } from 'src/billing/entities/billing.entity';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TransactionsService } from 'src/payment/services/transactions/transactions.service';
+import Stripe from 'stripe';
 
 describe('BillingService', () => {
   let service: BillingService;
@@ -128,18 +129,20 @@ describe('BillingService', () => {
         .mockResolvedValue(null);
       mockTransactionService.create = jest.fn().mockResolvedValue({});
 
-      const event = {
+      const paymentIntent = {
+        id: 'pi_test_1',
+        metadata: {
+          billingId: '5',
+          credits: '25',
+        },
+      } as Stripe.PaymentIntent;
+
+      const event: Stripe.Event = {
         type: 'payment_intent.succeeded',
         data: {
-          object: {
-            id: 'pi_test_1',
-            metadata: {
-              billingId: '5',
-              credits: '25',
-            },
-          },
+          object: paymentIntent,
         },
-      } as any;
+      } as Stripe.Event;
 
       await service.handleStripeWebhook(event);
 
@@ -166,18 +169,20 @@ describe('BillingService', () => {
         .fn()
         .mockResolvedValue({ id: 99 });
 
-      const event = {
+      const paymentIntent = {
+        id: 'pi_test_2',
+        metadata: {
+          billingId: '5',
+          credits: '25',
+        },
+      } as Stripe.PaymentIntent;
+
+      const event: Stripe.Event = {
         type: 'payment_intent.succeeded',
         data: {
-          object: {
-            id: 'pi_test_2',
-            metadata: {
-              billingId: '5',
-              credits: '25',
-            },
-          },
+          object: paymentIntent,
         },
-      } as any;
+      } as Stripe.Event;
 
       await service.handleStripeWebhook(event);
 

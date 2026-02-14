@@ -177,7 +177,6 @@ export class ApiController {
     );
   }
 
-
   @Get(':id')
   @ApiOperation({ summary: 'Get by ID' })
   @ApiBearerAuth()

@@ -277,7 +277,11 @@ export class BillingService {
     const billingId = Number(paymentIntent.metadata?.billingId);
     const credits = Number(paymentIntent.metadata?.credits);
 
-    if (!Number.isFinite(billingId) || !Number.isFinite(credits) || credits <= 0) {
+    if (
+      !Number.isFinite(billingId) ||
+      !Number.isFinite(credits) ||
+      credits <= 0
+    ) {
       Logger.warn(
         `Skipping credit update for payment intent ${paymentIntent.id}: invalid metadata`,
       );
@@ -339,7 +343,9 @@ export class BillingService {
     const billing = await this.findByUserId(userId);
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      throw new BadRequestException('Deduction amount must be a positive number');
+      throw new BadRequestException(
+        'Deduction amount must be a positive number',
+      );
     }
 
     const normalizedAmount = Math.round(amount);

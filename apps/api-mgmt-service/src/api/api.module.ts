@@ -34,7 +34,7 @@ import { ApiUsageService } from './services/api-usage/api-usage.service';
     PlanService,
     FavouritesService,
     ApiUsageService,
-    AuditLogClient
+    AuditLogClient,
   ],
   controllers: [ApiController, ApiUsageController],
   exports: [ApiService],

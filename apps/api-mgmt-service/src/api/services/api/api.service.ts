@@ -104,7 +104,9 @@ export class ApiService {
     role: string | undefined,
     userId: number,
     window?: { startDate?: Date; endDate?: Date },
-  ): Promise<{ data: ApiWithMetrics[]; meta: PaginatedResponse } | ApiWithMetrics[]> {
+  ): Promise<
+    { data: ApiWithMetrics[]; meta: PaginatedResponse } | ApiWithMetrics[]
+  > {
     const result = await this.findAll({ page, limit }, role);
     if (Array.isArray(result)) {
       return await this.attachMetrics(result, userId, window);
@@ -272,7 +274,9 @@ export class ApiService {
     page?: number,
     limit?: number,
     window?: { startDate?: Date; endDate?: Date },
-  ): Promise<{ data: ApiWithMetrics[]; meta: PaginatedResponse } | ApiWithMetrics[]> {
+  ): Promise<
+    { data: ApiWithMetrics[]; meta: PaginatedResponse } | ApiWithMetrics[]
+  > {
     const result = await this.filterByCategory(category, role, page, limit);
     if (Array.isArray(result)) {
       return await this.attachMetrics(result, userId, window);
