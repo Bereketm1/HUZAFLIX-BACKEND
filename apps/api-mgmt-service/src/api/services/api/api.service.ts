@@ -6,6 +6,7 @@ import {
   PaginatedResponse,
 } from '@huzaflix/common';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -22,6 +23,7 @@ import {
 import { PlanService } from 'src/subscription/services/plan/plan.service';
 import { Repository } from 'typeorm';
 import { AuditLogClient, type UptimeStats } from '../metrics/audit-log.client';
+import { readFile } from 'fs/promises';
 
 export type ApiUsageMetrics = {
   userId: number;
@@ -386,11 +388,65 @@ export class ApiService {
     return enriched;
   }
 
+  private async parseAndValidateOpenApiJson(
+    file: Express.Multer.File,
+  ): Promise<void> {
+    const filename = (file.originalname || '').toLowerCase();
+    if (!filename.endsWith('.json')) {
+      throw new BadRequestException(
+        'Only OpenAPI JSON files (.json) are allowed',
+      );
+    }
+
+    const contentType = (file.mimetype || '').toLowerCase();
+    const allowedContentTypes = new Set([
+      'application/json',
+      'application/octet-stream',
+      'text/json',
+    ]);
+    if (contentType && !allowedContentTypes.has(contentType)) {
+      throw new BadRequestException(
+        `Invalid file content type: ${file.mimetype}. Expected JSON`,
+      );
+    }
+
+    let raw: string;
+    if (file.buffer && file.buffer.length > 0) {
+      raw = file.buffer.toString('utf-8');
+    } else if (file.path) {
+      raw = await readFile(file.path, 'utf-8');
+    } else {
+      throw new BadRequestException('Unable to read uploaded file');
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new BadRequestException('Uploaded file is not valid JSON');
+    }
+
+    if (!parsed || typeof parsed !== 'object') {
+      throw new BadRequestException('Invalid OpenAPI JSON document');
+    }
+
+    const openApiVersion = (parsed as { openapi?: unknown }).openapi;
+    if (
+      typeof openApiVersion !== 'string' ||
+      !openApiVersion.startsWith('3.')
+    ) {
+      throw new BadRequestException(
+        'Invalid OpenAPI JSON document: missing OpenAPI 3.x "openapi" field',
+      );
+    }
+  }
+
   async uploadDocs(id: number, file: Express.Multer.File): Promise<Api> {
     const api = await this.apiRepository.findOneBy({ id });
     if (!api) {
       throw new NotFoundException(`API with id ${id} not found`);
     }
+    await this.parseAndValidateOpenApiJson(file);
     const uploadFile = await this.minioService.uploadFile(file);
     api.openapi_spec_url =
       process.env.NODE_ENV === 'production'

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ApiService } from './api.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MinioService, PaginatedResponse } from '@huzaflix/common';
 import { Api, ApiStatus, ApiType } from 'src/api/entities/api.entity';
 import { CreateApiDto } from 'src/api/dto/api/api-create.dto';
@@ -253,6 +253,36 @@ describe('ApiService', () => {
       (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue(null);
 
       await expect(service.activate(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('uploadDocs', () => {
+    it('should reject non-json file uploads', async () => {
+      (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue({ id: 1 });
+
+      const file = {
+        originalname: 'openapi.yaml',
+        mimetype: 'application/yaml',
+        buffer: Buffer.from('openapi: 3.0.0', 'utf8'),
+      } as Express.Multer.File;
+
+      await expect(service.uploadDocs(1, file)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject invalid openapi json uploads', async () => {
+      (mockApiRepository.findOneBy as jest.Mock).mockResolvedValue({ id: 1 });
+
+      const file = {
+        originalname: 'openapi.json',
+        mimetype: 'application/json',
+        buffer: Buffer.from(JSON.stringify({ notOpenApi: true }), 'utf8'),
+      } as Express.Multer.File;
+
+      await expect(service.uploadDocs(1, file)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });
