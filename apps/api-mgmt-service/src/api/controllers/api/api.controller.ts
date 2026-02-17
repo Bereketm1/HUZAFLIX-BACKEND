@@ -66,7 +66,11 @@ export class ApiController {
   ) {
     const includeMetrics = withMetrics === 'true' || withMetrics === '1';
     if (!includeMetrics) {
-      return await this.apiService.findAll({ page, limit }, user?.role?.name);
+      const result = await this.apiService.findAll(
+        { page, limit },
+        user?.role?.name,
+      );
+      return mapApiResponseBasePath(result);
     }
 
     if (!user?.id) {
@@ -78,12 +82,13 @@ export class ApiController {
     const endDate = endDateRaw ? new Date(endDateRaw) : undefined;
     const resolvedWindow = resolveMetricsWindow(startDate, endDate, now);
 
-    return await this.apiService.findAllWithMetrics(
+    const result = await this.apiService.findAllWithMetrics(
       { page, limit },
       user?.role?.name,
       user.id,
       resolvedWindow,
     );
+    return mapApiResponseBasePath(result);
   }
 
   @Get('/recent')
@@ -100,7 +105,8 @@ export class ApiController {
     @Query('limit') limit?: number,
   ) {
     const take = limit ? Number(limit) : 10;
-    return await this.apiService.findRecentUsed(user.id, take);
+    const result = await this.apiService.findRecentUsed(user.id, take);
+    return mapApiResponseBasePath(result);
   }
 
   @Get('/categories')
@@ -150,12 +156,13 @@ export class ApiController {
   ) {
     const includeMetrics = withMetrics === 'true' || withMetrics === '1';
     if (!includeMetrics) {
-      return await this.apiService.filterByCategory(
+      const result = await this.apiService.filterByCategory(
         category,
         user?.role?.name,
         page,
         limit,
       );
+      return mapApiResponseBasePath(result);
     }
 
     if (!user?.id) {
@@ -167,7 +174,7 @@ export class ApiController {
     const endDate = endDateRaw ? new Date(endDateRaw) : undefined;
     const resolvedWindow = resolveMetricsWindow(startDate, endDate, now);
 
-    return await this.apiService.filterByCategoryWithMetrics(
+    const result = await this.apiService.filterByCategoryWithMetrics(
       category,
       user?.role?.name,
       user.id,
@@ -175,6 +182,7 @@ export class ApiController {
       limit,
       resolvedWindow,
     );
+    return mapApiResponseBasePath(result);
   }
 
   @Get(':id')
@@ -186,11 +194,12 @@ export class ApiController {
     @Param('id') id: string,
     @CurrentUser() user?: { id: number; role: { name: string } },
   ) {
-    return await this.apiService.findOneById(
+    const result = await this.apiService.findOneById(
       Number(id),
       user?.role?.name,
       user?.id,
     );
+    return mapApiBasePath(result);
   }
 
   @Get('/pricing/:id')
@@ -369,4 +378,28 @@ function resolveMetricsWindow(
   const defaultStart = new Date(now);
   defaultStart.setDate(defaultStart.getDate() - 30);
   return { startDate: defaultStart, endDate: now };
+}
+
+function mapApiBasePath<T extends { slug?: string; base_path?: string }>(
+  api: T,
+): T {
+  if (!api?.slug) return api;
+  return {
+    ...api,
+    base_path: `/api-management/proxy/${api.slug}`,
+  };
+}
+
+function mapApiResponseBasePath<
+  T extends { slug?: string; base_path?: string },
+  P extends { data: T[]; meta: unknown },
+>(response: T[] | P): T[] | P {
+  if (Array.isArray(response)) {
+    return response.map((item) => mapApiBasePath(item));
+  }
+
+  return {
+    ...response,
+    data: response.data.map((item) => mapApiBasePath(item)),
+  };
 }

@@ -37,6 +37,6 @@ import { ApiUsageService } from './services/api-usage/api-usage.service';
     AuditLogClient,
   ],
   controllers: [ApiController, ApiUsageController],
-  exports: [ApiService],
+  exports: [ApiService, ApiUsageService],
 })
 export class ApiModule {}

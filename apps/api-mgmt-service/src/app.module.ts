@@ -21,6 +21,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiModule } from './api/api.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { PlaygroundModule } from './playground/playground.module';
+import { ProxyModule } from './proxy/proxy.module';
 
 export type RedisClient = Redis;
 
@@ -84,6 +85,7 @@ const jwtOptions: JwtModuleOptions = {
     ApiModule,
     SubscriptionModule,
     PlaygroundModule,
+    ProxyModule,
   ],
   controllers: [AppController],
   providers: [
