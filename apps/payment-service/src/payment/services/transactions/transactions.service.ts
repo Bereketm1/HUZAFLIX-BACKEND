@@ -33,7 +33,7 @@ export class TransactionsService {
   ): Promise<{ data: Transaction[]; meta: PaginatedResponse } | Transaction[]> {
     const isAdmin =
       typeof role === 'string' && role.toLowerCase().includes('admin');
-    const isPaginated = page && limit;
+    const isPaginated = typeof page === 'number' && typeof limit === 'number';
 
     // non-paginated behaviour unchanged
     if (!isPaginated && !startDate && !endDate && !sortBy) {
@@ -42,8 +42,8 @@ export class TransactionsService {
         : this.transactionRepository.find({ where: { userId: userId } });
     }
 
-    const skip = page ? (page - 1) * limit : undefined;
-    const take = limit;
+    const skip = isPaginated ? (page - 1) * (limit as number) : undefined;
+    const take = isPaginated ? (limit as number) : undefined;
 
     // If there are filters or sorting, use query builder to support dates and ordering
     const useQueryBuilder = !!(startDate || endDate || sortBy);
@@ -64,7 +64,7 @@ export class TransactionsService {
       }
 
       const allowedSorts = ['created_at', 'amount', 'id'];
-      const sortColumn = allowedSorts.includes(sortBy)
+      const sortColumn = typeof sortBy === 'string' && allowedSorts.includes(sortBy)
         ? `t.${sortBy}`
         : 't.created_at';
       const sortOrder = order && order.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
@@ -91,7 +91,13 @@ export class TransactionsService {
       take,
     });
 
-    return paginate(prs, page, limit, total);
+    // Type-check: only call paginate when page & limit are numbers
+    if (typeof page === 'number' && typeof limit === 'number') {
+      return paginate(prs, page, limit, total);
+    }
+
+    // Fallback (shouldn't normally happen because of earlier guard)
+    return prs;
   }
 
   async findOneById(id: number, role?: string): Promise<Transaction> {
