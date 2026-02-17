@@ -22,9 +22,32 @@ export class TransactionController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    example: '2026-01-01',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    example: '2026-01-31',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'created_at',
+  })
+  @ApiQuery({ name: 'order', required: false, type: String, example: 'desc' })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('order') order?: 'asc' | 'desc',
     @CurrentUser() user?: { id: number; role?: { name?: string } | string },
   ) {
     const roleName =
@@ -35,6 +58,10 @@ export class TransactionController {
       {
         page: Number.isFinite(pageNumber) ? pageNumber : undefined,
         limit: Number.isFinite(limitNumber) ? limitNumber : undefined,
+        startDate: startDate,
+        endDate: endDate,
+        sortBy: sortBy,
+        order: order,
       },
       roleName,
       user?.id,

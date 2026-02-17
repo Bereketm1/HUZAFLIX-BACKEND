@@ -16,9 +16,17 @@ export class TransactionsService {
     {
       page,
       limit,
+      startDate,
+      endDate,
+      sortBy,
+      order,
     }: {
       page?: number;
       limit?: number;
+      startDate?: string;
+      endDate?: string;
+      sortBy?: string;
+      order?: 'asc' | 'desc';
     },
     role?: string,
     userId?: number,
@@ -27,15 +35,54 @@ export class TransactionsService {
       typeof role === 'string' && role.toLowerCase().includes('admin');
     const isPaginated = page && limit;
 
-    if (!isPaginated) {
+    // non-paginated behaviour unchanged
+    if (!isPaginated && !startDate && !endDate && !sortBy) {
       return isAdmin
         ? this.transactionRepository.find()
         : this.transactionRepository.find({ where: { userId: userId } });
     }
 
-    const skip = (page - 1) * limit;
+    const skip = page ? (page - 1) * limit : undefined;
     const take = limit;
 
+    // If there are filters or sorting, use query builder to support dates and ordering
+    const useQueryBuilder = !!(startDate || endDate || sortBy);
+
+    if (useQueryBuilder) {
+      const qb = this.transactionRepository.createQueryBuilder('t');
+
+      if (!isAdmin) {
+        qb.andWhere('t.userId = :userId', { userId });
+      }
+
+      if (startDate) {
+        qb.andWhere('t.created_at >= :startDate', { startDate });
+      }
+
+      if (endDate) {
+        qb.andWhere('t.created_at <= :endDate', { endDate });
+      }
+
+      const allowedSorts = ['created_at', 'amount', 'id'];
+      const sortColumn = allowedSorts.includes(sortBy)
+        ? `t.${sortBy}`
+        : 't.created_at';
+      const sortOrder = order && order.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+      qb.orderBy(sortColumn, sortOrder);
+
+      if (typeof skip === 'number' && typeof take === 'number') {
+        qb.skip(skip).take(take);
+      }
+
+      const [prs, total] = await qb.getManyAndCount();
+      // If paginated return paginated format, otherwise return array
+      if (typeof page === 'number' && typeof limit === 'number') {
+        return paginate(prs, page, limit, total);
+      }
+      return prs;
+    }
+
+    // fallback to previous repository.findAndCount when no filters
     const where = isAdmin ? {} : { userId: userId };
 
     const [prs, total] = await this.transactionRepository.findAndCount({

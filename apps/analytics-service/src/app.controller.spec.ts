@@ -24,6 +24,26 @@ describe('AppController', () => {
     }),
     getTimeGraph: jest.fn().mockResolvedValue([]),
     getLatencyGraph: jest.fn().mockResolvedValue([]),
+    getSystemHealth: jest.fn().mockResolvedValue({
+      total: 100,
+      success: 90,
+      errors: 10,
+      successRate: 90,
+      errorRate: 10,
+      uptimePct: 90,
+      downtimePct: 10,
+    }),
+    getApiHealth: jest.fn().mockResolvedValue([
+      {
+        path: '/api/foo',
+        total: 10,
+        success: 9,
+        errors: 1,
+        successRate: 90,
+        errorRate: 10,
+        avgLatency: 50,
+      },
+    ]),
   };
 
   beforeEach(async () => {
@@ -59,6 +79,29 @@ describe('AppController', () => {
         'get_user_stats',
         {},
       );
+    });
+  });
+
+  describe('getApiReport', () => {
+    it('should include totalUsers from dashboard client', async () => {
+      // dashboardClientMock.send returns { users:100, active:80 } by default
+      const report = await appController.getApiReport();
+      expect(report).toHaveProperty('totalApiHitsToday');
+      expect(report).toHaveProperty('totalUsers');
+    });
+  });
+
+  describe('health endpoints', () => {
+    it('should return system health', async () => {
+      const res = await appController.getSystemHealth(undefined, undefined);
+      expect(res).toHaveProperty('uptimePct', 90);
+      expect(mockAnalyticsService.getSystemHealth).toHaveBeenCalled();
+    });
+
+    it('should return api health list', async () => {
+      const res = await appController.getApiHealth(undefined, undefined);
+      expect(Array.isArray(res)).toBe(true);
+      expect(mockAnalyticsService.getApiHealth).toHaveBeenCalled();
     });
   });
 });
