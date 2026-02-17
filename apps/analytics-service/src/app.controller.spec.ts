@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AnalyticsService } from './analytics/services/analytics.service';
 
 describe('AppController', () => {
@@ -88,6 +88,14 @@ describe('AppController', () => {
       const report = await appController.getApiReport();
       expect(report).toHaveProperty('totalApiHitsToday');
       expect(report).toHaveProperty('totalUsers');
+    });
+
+    it('should still return a report when dashboard client fails', async () => {
+      dashboardClientMock.send.mockImplementationOnce(() => throwError(() => new Error('unavailable')));
+
+      const report = await appController.getApiReport();
+      expect(report).toHaveProperty('totalApiHitsToday');
+      expect(report.totalUsers).toBeNull();
     });
   });
 
