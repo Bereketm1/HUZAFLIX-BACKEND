@@ -74,7 +74,7 @@ export class AppController {
       active?: number;
     } | null = null;
     try {
-      userStats = await this.dashboardClient
+      const _ds = await this.dashboardClient
         .send<{
           total?: number;
           totalUsers?: number;
@@ -82,6 +82,7 @@ export class AppController {
           active?: number;
         }>('get_user_stats', {})
         .toPromise();
+      userStats = _ds ?? null;
     } catch (err: unknown) {
       // Non-fatal: dashboard stats are supplementary. Log and continue with null.
 
