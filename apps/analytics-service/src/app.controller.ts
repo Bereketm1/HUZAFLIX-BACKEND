@@ -67,9 +67,14 @@ export class AppController {
         : 0;
 
     // fetch total users from dashboard microservice (typed). Be tolerant if dashboard is unavailable.
-    let userStats: { total?: number; totalUsers?: number; users?: number; active?: number } | null = null;
+    let userStats: {
+      total?: number;
+      totalUsers?: number;
+      users?: number;
+      active?: number;
+    } | null = null;
     try {
-      userStats = await this.dashboardClient
+      const _ds = await this.dashboardClient
         .send<{
           total?: number;
           totalUsers?: number;
@@ -77,10 +82,12 @@ export class AppController {
           active?: number;
         }>('get_user_stats', {})
         .toPromise();
-    } catch (err) {
+      userStats = _ds ?? null;
+    } catch (err: unknown) {
       // Non-fatal: dashboard stats are supplementary. Log and continue with null.
-      // eslint-disable-next-line no-console
-      console.warn('dashboard service unavailable for getApiReport:', err?.message ?? err);
+
+      const _msg = err instanceof Error ? err.message : String(err);
+      console.warn('dashboard service unavailable for getApiReport:', _msg);
       userStats = null;
     }
 
@@ -159,10 +166,11 @@ export class AppController {
         }>('get_user_stats', {})
         .toPromise();
       return stats;
-    } catch (err) {
+    } catch (err: unknown) {
       // If dashboard is unavailable, return null instead of 500.
-      // eslint-disable-next-line no-console
-      console.warn('dashboard service unavailable for getUserStats:', err?.message ?? err);
+
+      const _msg = err instanceof Error ? err.message : String(err);
+      console.warn('dashboard service unavailable for getUserStats:', _msg);
       return null;
     }
   }

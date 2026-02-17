@@ -91,7 +91,9 @@ describe('AppController', () => {
     });
 
     it('should still return a report when dashboard client fails', async () => {
-      dashboardClientMock.send.mockImplementationOnce(() => throwError(() => new Error('unavailable')));
+      dashboardClientMock.send.mockImplementationOnce(() =>
+        throwError(() => new Error('unavailable')),
+      );
 
       const report = await appController.getApiReport();
       expect(report).toHaveProperty('totalApiHitsToday');
