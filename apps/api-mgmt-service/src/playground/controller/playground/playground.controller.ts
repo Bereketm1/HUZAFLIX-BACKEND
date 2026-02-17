@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { PlaygroundService } from 'src/playground/service/playground/playground.service';
+import { ProxyPlaygroundRequestDto } from 'src/playground/dto/proxy-playground-request.dto';
 
 @Controller('playground')
 export class PlaygroundController {
@@ -24,5 +25,13 @@ export class PlaygroundController {
     @Param('id') id: number,
   ) {
     return this.playgroundService.getEndpointDetails(id, endpoint);
+  }
+
+  @Post(':id/proxy')
+  async proxy(
+    @Param('id') id: number,
+    @Body() body: ProxyPlaygroundRequestDto,
+  ) {
+    return this.playgroundService.proxyRequest(id, body);
   }
 }

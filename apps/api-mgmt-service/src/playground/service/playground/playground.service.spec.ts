@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlaygroundService } from './playground.service';
 import { ApiService } from 'src/api/services/api/api.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { ApiKey, KeyStatus } from 'src/api/entities/api-key.entity';
+import { UnauthorizedException } from '@nestjs/common';
+import * as common from '@huzaflix/common';
 
 describe('PlaygroundService', () => {
   let service: PlaygroundService;
@@ -11,14 +15,23 @@ describe('PlaygroundService', () => {
     getDocs: jest.fn(),
   };
 
+  const mockApiKeyRepo = {
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    jest.spyOn(common, 'decrypt').mockReturnValue('test-key');
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlaygroundService,
         {
           provide: ApiService,
           useValue: mockApiService,
+        },
+        {
+          provide: getRepositoryToken(ApiKey),
+          useValue: mockApiKeyRepo,
         },
       ],
     }).compile();
@@ -29,6 +42,7 @@ describe('PlaygroundService', () => {
 
   afterEach(() => {
     fetchMock.mockRestore();
+    jest.restoreAllMocks();
   });
 
   it('should be defined', () => {
@@ -102,5 +116,62 @@ describe('PlaygroundService', () => {
         },
       },
     });
+  });
+
+  it('proxyRequest should throw when neither consumer nor test key is provided', async () => {
+    await expect(
+      service.proxyRequest(1, {
+        method: 'GET',
+        path: '/users',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('proxyRequest should forward request using stored test key and never user key', async () => {
+    mockApiService.findOneById.mockResolvedValue({
+      id: 1,
+      base_path: 'https://api.example.com',
+      test_api_key: 'enc-test-key',
+    });
+
+    mockApiKeyRepo.findOne.mockResolvedValue({
+      status: KeyStatus.ACTIVE,
+      revoked_at: null,
+      expires_at: null,
+      api: { id: 1 },
+    });
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (key: string) =>
+          key.toLowerCase() === 'content-type' ? 'application/json' : null,
+      },
+      json: () => Promise.resolve({ ok: true }),
+      text: () => Promise.resolve(''),
+    } as unknown as Response);
+
+    const result = await service.proxyRequest(1, {
+      method: 'POST',
+      path: '/users',
+      consumer_api_key: 'consumer-key',
+      headers: {
+        'x-api-key': 'should-not-pass-through',
+      },
+      body: { name: 'john' },
+    });
+
+    expect(fetchMock).toHaveBeenCalled();
+    const [calledUrl, calledOptions] = fetchMock.mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(calledUrl).toContain('https://api.example.com/users');
+    expect(calledOptions.headers).toMatchObject({
+      'x-api-key': 'test-key',
+      'content-type': 'application/json',
+    });
+    expect(result.status).toBe(200);
   });
 });

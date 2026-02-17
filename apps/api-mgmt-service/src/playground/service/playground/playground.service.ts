@@ -2,9 +2,16 @@ import {
   BadGatewayException,
   BadRequestException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { decrypt } from '@huzaflix/common';
 import { OpenAPIV3 } from 'openapi-types';
 import { ApiService } from 'src/api/services/api/api.service';
+import { ProxyPlaygroundRequestDto } from 'src/playground/dto/proxy-playground-request.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ApiKey, KeyStatus } from 'src/api/entities/api-key.entity';
+import { Repository } from 'typeorm';
+import * as crypto from 'crypto';
 
 export interface SwaggerEndpoint {
   path: string;
@@ -37,7 +44,11 @@ const validMethods: HttpMethod[] = [
 
 @Injectable()
 export class PlaygroundService {
-  constructor(private readonly apiService: ApiService) {}
+  constructor(
+    private readonly apiService: ApiService,
+    @InjectRepository(ApiKey)
+    private readonly apiKeyRepository: Repository<ApiKey>,
+  ) {}
 
   private isArraySchemaObject(
     schema: OpenAPIV3.SchemaObject,
@@ -495,6 +506,115 @@ export class PlaygroundService {
       description: requestBodyObject.description,
       required: requestBodyObject.required,
       content,
+    };
+  }
+
+  private async validatePlaygroundAccess(
+    apiId: number,
+    apiTestKey: string | undefined,
+    consumerApiKey: string | undefined,
+  ): Promise<void> {
+    if (!apiTestKey && !consumerApiKey) {
+      throw new UnauthorizedException(
+        'Provide either a consumer API key or API test key',
+      );
+    }
+
+    const api = await this.apiService.findOneById(apiId, 'administrator');
+    let testKeyMatched = false;
+    if (apiTestKey && api.test_api_key) {
+      testKeyMatched = decrypt(api.test_api_key) === apiTestKey;
+    }
+
+    let consumerKeyMatched = false;
+    if (consumerApiKey) {
+      const hash = crypto.createHash('sha256').update(consumerApiKey).digest();
+      const keyEntity = await this.apiKeyRepository.findOne({
+        where: { key_hash: hash as unknown as Buffer },
+        relations: ['api'],
+      });
+
+      if (
+        keyEntity &&
+        keyEntity.status === KeyStatus.ACTIVE &&
+        !keyEntity.revoked_at &&
+        (!keyEntity.expires_at || new Date() <= keyEntity.expires_at) &&
+        keyEntity.api?.id === apiId
+      ) {
+        consumerKeyMatched = true;
+      }
+    }
+
+    if (!testKeyMatched && !consumerKeyMatched) {
+      throw new UnauthorizedException('Invalid API key for playground access');
+    }
+  }
+
+  async proxyRequest(apiId: number, dto: ProxyPlaygroundRequestDto) {
+    await this.validatePlaygroundAccess(
+      apiId,
+      dto.api_test_key,
+      dto.consumer_api_key,
+    );
+
+    const api = await this.apiService.findOneById(apiId, 'administrator');
+    if (!api.test_api_key) {
+      throw new BadRequestException(
+        `API with id ${apiId} has no configured test API key`,
+      );
+    }
+
+    const upstreamBase = api.base_path.endsWith('/')
+      ? api.base_path.slice(0, -1)
+      : api.base_path;
+    const requestPath = dto.path.startsWith('/') ? dto.path : `/${dto.path}`;
+    const url = new URL(`${upstreamBase}${requestPath}`);
+    for (const [key, value] of Object.entries(dto.query || {})) {
+      url.searchParams.set(key, String(value));
+    }
+
+    const filteredHeaders = { ...(dto.headers || {}) };
+    delete filteredHeaders['x-api-key'];
+    delete filteredHeaders['authorization'];
+
+    const headers: Record<string, string> = {
+      ...filteredHeaders,
+      'x-api-key': decrypt(api.test_api_key),
+    };
+
+    const method = dto.method.toUpperCase();
+    const hasBody = !['GET', 'HEAD'].includes(method);
+    if (hasBody && dto.body !== undefined && !headers['content-type']) {
+      headers['content-type'] = 'application/json';
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(url.toString(), {
+        method,
+        headers,
+        body:
+          hasBody && dto.body !== undefined
+            ? JSON.stringify(dto.body)
+            : undefined,
+      });
+    } catch (error) {
+      throw new BadGatewayException(
+        `Failed to reach upstream API: ${(error as Error).message}`,
+      );
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    const responseBody: unknown = contentType.includes('application/json')
+      ? ((await response.json()) as unknown)
+      : await response.text();
+
+    return {
+      status: response.status,
+      headers: {
+        'content-type': response.headers.get('content-type'),
+      },
+      data: responseBody,
     };
   }
 }
