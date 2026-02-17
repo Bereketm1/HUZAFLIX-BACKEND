@@ -28,6 +28,11 @@ async function bootstrap() {
       `https://${process.env.SERVER_HOST || 'api.huzaflix.com'}/api-management`,
       'Production',
     )
+    // Backwards-compatible server (some clients still call /api/{service})
+    .addServer(
+      `https://${process.env.SERVER_HOST || 'api.huzaflix.com'}/api/api-management`,
+      'Production (legacy /api)'
+    )
     .addServer('http://localhost:3000/api/api-management', 'Local Development')
     .addBearerAuth()
     .build();

@@ -6,17 +6,17 @@ import { ProxyService } from './proxy.service';
 export class ProxyController {
   constructor(private readonly proxy: ProxyService) {}
 
-  @All(['auth', 'auth/*path'])
+  @All(['auth', 'auth/*path', 'api/auth', 'api/auth/*path'])
   async auth(@Req() req: Request, @Res() res: Response): Promise<void> {
     await this.proxy.forward('auth', req, res);
   }
 
-  @All(['analytics', 'analytics/*path'])
+  @All(['analytics', 'analytics/*path', 'api/analytics', 'api/analytics/*path'])
   async analytics(@Req() req: Request, @Res() res: Response): Promise<void> {
     await this.proxy.forward('analytics', req, res);
   }
 
-  @All(['api-management', 'api-management/*path'])
+  @All(['api-management', 'api-management/*path', 'api/api-management', 'api/api-management/*path'])
   async apiManagement(
     @Req() req: Request,
     @Res() res: Response,
@@ -24,12 +24,12 @@ export class ProxyController {
     await this.proxy.forward('api-management', req, res);
   }
 
-  @All(['payment', 'payment/*path'])
+  @All(['payment', 'payment/*path', 'api/payment', 'api/payment/*path'])
   async payment(@Req() req: Request, @Res() res: Response): Promise<void> {
     await this.proxy.forward('payment', req, res);
   }
 
-  @All(['audit-log', 'audit-log/*path'])
+  @All(['audit-log', 'audit-log/*path', 'api/audit-log', 'api/audit-log/*path'])
   async auditLog(@Req() req: Request, @Res() res: Response): Promise<void> {
     await this.proxy.forward('audit-log', req, res);
   }
