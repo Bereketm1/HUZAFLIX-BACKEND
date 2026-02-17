@@ -9,10 +9,11 @@ async function bootstrap() {
     rawBody: true,
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-
-  app.setGlobalPrefix('api', {
-    exclude: ['metrics'],
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    app.setGlobalPrefix('api', {
+      exclude: ['metrics'],
+    });
+  }
 
   app.useGlobalInterceptors(
     new GlobalLogInterceptor({
