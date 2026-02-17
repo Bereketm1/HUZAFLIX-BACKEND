@@ -166,6 +166,9 @@ export class ApiService {
   async create(data: CreateApiDto & { created_by: string }): Promise<Api> {
     const api = this.apiRepository.create(data);
     api.base_api_key = encrypt(data.base_api_key);
+    if (data.test_api_key) {
+      api.test_api_key = encrypt(data.test_api_key);
+    }
     return this.apiRepository.save(api);
   }
 
@@ -182,6 +185,15 @@ export class ApiService {
     if (data.base_api_key) {
       if (decrypt(api.base_api_key) !== data.base_api_key) {
         data.base_api_key = encrypt(data.base_api_key);
+      }
+    }
+
+    if (data.test_api_key) {
+      const existingTestApiKey = api.test_api_key
+        ? decrypt(api.test_api_key)
+        : null;
+      if (existingTestApiKey !== data.test_api_key) {
+        data.test_api_key = encrypt(data.test_api_key);
       }
     }
 

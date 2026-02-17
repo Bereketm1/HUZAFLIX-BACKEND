@@ -87,6 +87,13 @@ export class CreateApiDto {
   @IsNotEmpty()
   base_api_key: string;
 
+  @ApiPropertyOptional({
+    description: 'Test API key of the API',
+  })
+  @IsString()
+  @IsOptional()
+  test_api_key?: string;
+
   @ApiProperty({ description: 'API version', maxLength: 50 })
   @IsString()
   @IsNotEmpty()

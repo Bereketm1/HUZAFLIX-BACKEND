@@ -91,6 +91,13 @@ export class UpdateApiDto {
   @IsOptional()
   base_api_key?: string;
 
+  @ApiPropertyOptional({
+    description: 'Test API key of the API',
+  })
+  @IsString()
+  @IsOptional()
+  test_api_key?: string;
+
   @ApiPropertyOptional({ description: 'API version', maxLength: 50 })
   @IsString()
   @IsOptional()

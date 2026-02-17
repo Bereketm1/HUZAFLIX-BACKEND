@@ -86,6 +86,13 @@ export class Api {
   })
   base_api_key: string;
 
+  @Column({
+    type: 'text',
+    name: 'test_api_key',
+    nullable: true,
+  })
+  test_api_key?: string | null;
+
   @Column({ type: 'varchar', length: 50, nullable: false })
   version: string;
 

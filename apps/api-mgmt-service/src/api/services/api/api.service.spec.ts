@@ -158,6 +158,7 @@ describe('ApiService', () => {
         base_path: '/test',
         version: '1.0',
         base_api_key: 'key123',
+        test_api_key: 'test-key-123',
         category: 'category1',
         tags: ['tag1', 'tag2'],
         avg_response_time: 0.56,
@@ -168,6 +169,7 @@ describe('ApiService', () => {
         ...dto,
         created_by: '1',
         base_api_key: 'encrypted-value',
+        test_api_key: 'encrypted-value',
       };
 
       (mockApiRepository.create as jest.Mock).mockReturnValue({

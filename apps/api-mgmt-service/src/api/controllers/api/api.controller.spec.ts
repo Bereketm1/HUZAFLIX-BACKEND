@@ -109,6 +109,7 @@ describe('ApiController', () => {
         category: 'category',
         tags: ['tag1', 'tag2'],
         base_api_key: 'base_api_key',
+        test_api_key: 'test_api_key',
         avg_response_time: 12.5,
       };
 
