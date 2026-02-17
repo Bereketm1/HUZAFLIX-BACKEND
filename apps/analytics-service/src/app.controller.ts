@@ -66,15 +66,23 @@ export class AppController {
           )
         : 0;
 
-    // fetch total users from dashboard microservice (typed)
-    const userStats = await this.dashboardClient
-      .send<{
-        total?: number;
-        totalUsers?: number;
-        users?: number;
-        active?: number;
-      }>('get_user_stats', {})
-      .toPromise();
+    // fetch total users from dashboard microservice (typed). Be tolerant if dashboard is unavailable.
+    let userStats: { total?: number; totalUsers?: number; users?: number; active?: number } | null = null;
+    try {
+      userStats = await this.dashboardClient
+        .send<{
+          total?: number;
+          totalUsers?: number;
+          users?: number;
+          active?: number;
+        }>('get_user_stats', {})
+        .toPromise();
+    } catch (err) {
+      // Non-fatal: dashboard stats are supplementary. Log and continue with null.
+      // eslint-disable-next-line no-console
+      console.warn('dashboard service unavailable for getApiReport:', err?.message ?? err);
+      userStats = null;
+    }
 
     return {
       totalRevenueThisMonth,
@@ -141,15 +149,22 @@ export class AppController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrator')
   async getUserStats(): Promise<unknown> {
-    const stats = await this.dashboardClient
-      .send<{
-        total?: number;
-        totalUsers?: number;
-        users?: number;
-        active?: number;
-      }>('get_user_stats', {})
-      .toPromise();
-    return stats;
+    try {
+      const stats = await this.dashboardClient
+        .send<{
+          total?: number;
+          totalUsers?: number;
+          users?: number;
+          active?: number;
+        }>('get_user_stats', {})
+        .toPromise();
+      return stats;
+    } catch (err) {
+      // If dashboard is unavailable, return null instead of 500.
+      // eslint-disable-next-line no-console
+      console.warn('dashboard service unavailable for getUserStats:', err?.message ?? err);
+      return null;
+    }
   }
 
   private filterByDateRange<T extends { date: string }>(
