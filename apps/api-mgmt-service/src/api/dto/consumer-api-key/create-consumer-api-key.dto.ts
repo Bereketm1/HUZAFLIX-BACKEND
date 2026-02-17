@@ -1,13 +1,22 @@
 import {
+  IsInt,
+  IsISO8601,
+  IsIn,
+  IsNotEmpty,
   IsOptional,
   IsString,
-  IsInt,
-  IsNumber,
-  IsISO8601,
 } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateConsumerApiKeyDto {
+  @IsInt()
+  @IsNotEmpty()
+  @ApiProperty({
+    example: 1,
+    description: 'API id to scope the key to',
+  })
+  api_id: number;
+
   @IsOptional()
   @IsString()
   @ApiPropertyOptional({
@@ -17,42 +26,20 @@ export class CreateConsumerApiKeyDto {
   name?: string;
 
   @IsOptional()
-  @IsInt()
-  @ApiPropertyOptional({
-    example: 60,
-    description: 'Requests per minute allowed for this key',
-  })
-  rate_limit_per_minute?: number;
-
-  @IsOptional()
-  @IsInt()
-  @ApiPropertyOptional({
-    example: 1000,
-    description: 'Daily quota for this key',
-  })
-  quota_daily?: number;
-
-  @IsOptional()
-  @IsInt()
-  @ApiPropertyOptional({
-    example: 10000,
-    description: 'Monthly quota for this key',
-  })
-  quota_monthly?: number;
-
-  @IsOptional()
   @IsISO8601()
   @ApiPropertyOptional({
-    example: '2025-12-31T23:59:59Z',
+    example: '2026-12-31T23:59:59Z',
     description: 'ISO8601 expiry date/time for the key',
   })
   expires_at?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
+  @IsIn([30, 60, 90])
   @ApiPropertyOptional({
-    example: 1,
-    description: 'Optional API id to scope the key to a single API',
+    example: 30,
+    description:
+      'Expiry in days. Used when expires_at is not provided. Allowed values: 30, 60, 90',
   })
-  api_id?: number;
+  expires_in_days?: number;
 }

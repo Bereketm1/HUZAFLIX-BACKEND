@@ -10,6 +10,7 @@ import { Api } from './api.entity';
 
 export enum KeyStatus {
   ACTIVE = 'active',
+  INACTIVE = 'inactive',
 }
 
 @Entity({ name: 'api_keys' })
@@ -32,15 +33,6 @@ export class ApiKey {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   name?: string | null;
-
-  @Column({ type: 'int', name: 'rate_limit_per_minute', default: 60 })
-  rate_limit_per_minute: number;
-
-  @Column({ type: 'int', name: 'quota_daily', nullable: true })
-  quota_daily?: number | null;
-
-  @Column({ type: 'int', name: 'quota_monthly', nullable: true })
-  quota_monthly?: number | null;
 
   @Column({ type: 'timestamptz', name: 'expires_at', nullable: true })
   expires_at?: Date | null;

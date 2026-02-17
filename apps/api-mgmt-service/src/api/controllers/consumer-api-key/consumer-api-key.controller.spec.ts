@@ -9,13 +9,16 @@ describe('ConsumerApiKeyController', () => {
   let controller: ConsumerApiKeyController;
 
   const mockService = {
-    findAllForUser: jest.fn(),
     createForUser: jest.fn(),
-    updateForUser: jest.fn(),
+    activateForUser: jest.fn(),
+    deactivateForUser: jest.fn(),
     revokeForUser: jest.fn(),
+    updateExpiryForUser: jest.fn(),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ConsumerApiKeyController],
       providers: [
@@ -32,77 +35,44 @@ describe('ConsumerApiKeyController', () => {
     controller = module.get<ConsumerApiKeyController>(ConsumerApiKeyController);
   });
 
-  afterEach(() => jest.clearAllMocks());
-
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('findAll', () => {
-    it("should return the user's keys", async () => {
-      const keys = [{ id: 1 }, { id: 2 }];
-      mockService.findAllForUser.mockResolvedValue(keys);
+  it('create should call createForUser', async () => {
+    const dto = { api_id: 1 } as CreateConsumerApiKeyDto;
+    mockService.createForUser.mockResolvedValue({ id: '1' });
 
-      const user: { id: number } = { id: 10 };
-      const result = await controller.findAll(user);
-
-      expect(mockService.findAllForUser).toHaveBeenCalledWith(String(user.id));
-      expect(result).toBe(keys);
-    });
+    await controller.create({ id: 5 }, dto);
+    expect(mockService.createForUser).toHaveBeenCalledWith('5', dto);
   });
 
-  describe('create', () => {
-    it('should create a new key for the user', async () => {
-      const dto: Partial<CreateConsumerApiKeyDto> = { name: 'abc' };
-      const created = { id: 1, key: 'PREF_secret', name: 'abc' };
-      mockService.createForUser.mockResolvedValue(created);
+  it('activate should call activateForUser', async () => {
+    mockService.activateForUser.mockResolvedValue({ id: '1' });
 
-      const user: { id: number } = { id: 5 };
-      const res = await controller.create(user, dto as CreateConsumerApiKeyDto);
-
-      expect(mockService.createForUser).toHaveBeenCalledWith(
-        String(user.id),
-        dto,
-      );
-      expect(res).toBe(created);
-    });
+    await controller.activate({ id: 5 }, 1);
+    expect(mockService.activateForUser).toHaveBeenCalledWith('5', 1);
   });
 
-  describe('update', () => {
-    it('should call updateForUser with parsed id', async () => {
-      const dto: Partial<UpdateConsumerApiKeyDto> = { name: 'updated' };
-      const updated = { id: 1, name: 'updated' };
-      mockService.updateForUser.mockResolvedValue(updated);
+  it('deactivate should call deactivateForUser', async () => {
+    mockService.deactivateForUser.mockResolvedValue({ id: '1' });
 
-      const user: { id: number } = { id: 3 };
-      const res = await controller.update(
-        user,
-        1 as number,
-        dto as UpdateConsumerApiKeyDto,
-      );
-
-      expect(mockService.updateForUser).toHaveBeenCalledWith(
-        String(user.id),
-        1,
-        dto,
-      );
-      expect(res).toBe(updated);
-    });
+    await controller.deactivate({ id: 5 }, 1);
+    expect(mockService.deactivateForUser).toHaveBeenCalledWith('5', 1);
   });
 
-  describe('remove', () => {
-    it('should call revokeForUser with parsed id', async () => {
-      const revoked = { id: 2, revoked_at: new Date() };
-      mockService.revokeForUser.mockResolvedValue(revoked);
+  it('revoke should call revokeForUser', async () => {
+    mockService.revokeForUser.mockResolvedValue({ id: '1' });
 
-      const user: { id: number } = { id: 23 };
-      const res = await controller.remove(user, 2 as number);
+    await controller.revoke({ id: 5 }, 1);
+    expect(mockService.revokeForUser).toHaveBeenCalledWith('5', 1);
+  });
 
-      expect(mockService.revokeForUser).toHaveBeenCalledWith(
-        String(user.id),
-        2,
-      );
-      expect(res).toBe(revoked);
-    });
+  it('updateExpiry should call updateExpiryForUser', async () => {
+    const dto = { expires_in_days: 90 } as UpdateConsumerApiKeyDto;
+    mockService.updateExpiryForUser.mockResolvedValue({ id: '1' });
+
+    await controller.updateExpiry({ id: 5 }, 1, dto);
+    expect(mockService.updateExpiryForUser).toHaveBeenCalledWith('5', 1, dto);
   });
 });

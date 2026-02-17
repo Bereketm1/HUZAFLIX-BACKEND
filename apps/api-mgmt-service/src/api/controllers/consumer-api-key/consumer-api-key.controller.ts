@@ -1,14 +1,12 @@
 import {
   Controller,
-  Get,
-  Post,
   Patch,
-  Delete,
+  Post,
   Param,
   Body,
-  UseGuards,
-  UnauthorizedException,
   ParseIntPipe,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -28,17 +26,10 @@ import { UpdateConsumerApiKeyDto } from '../../dto/consumer-api-key/update-consu
 export class ConsumerApiKeyController {
   constructor(private readonly service: ConsumerApiKeyService) {}
 
-  @Get()
-  @ApiOperation({ summary: "List current user's API keys" })
-  @ApiResponse({ status: 200, description: 'List of keys' })
-  async findAll(@CurrentUser() user: { id?: number | string }) {
-    const userId = user?.id as number | string;
-    if (!userId) throw new UnauthorizedException('Invalid user');
-    return this.service.findAllForUser(String(userId));
-  }
-
   @Post()
-  @ApiOperation({ summary: 'Create a new API key for the logged-in user' })
+  @ApiOperation({
+    summary: 'Create a new consumer API key for the logged-in user',
+  })
   @ApiResponse({
     status: 201,
     description: 'Created key (one-time returned value)',
@@ -52,30 +43,57 @@ export class ConsumerApiKeyController {
     return this.service.createForUser(String(userId), dto);
   }
 
-  @Patch(':id')
+  @Post(':id/activate')
   @ApiOperation({
-    summary: 'Update an existing API key owned by the logged-in user',
+    summary: 'Activate a consumer API key owned by the logged-in user',
   })
-  async update(
+  async activate(
     @CurrentUser() user: { id?: number | string },
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateConsumerApiKeyDto,
   ) {
     const userId = user?.id as number | string;
     if (!userId) throw new UnauthorizedException('Invalid user');
-    return this.service.updateForUser(String(userId), id, dto);
+    return this.service.activateForUser(String(userId), id);
   }
 
-  @Delete(':id')
+  @Post(':id/deactivate')
   @ApiOperation({
-    summary: 'Revoke (soft-delete) an API key owned by the logged-in user',
+    summary: 'Deactivate a consumer API key owned by the logged-in user',
   })
-  async remove(
+  async deactivate(
+    @CurrentUser() user: { id?: number | string },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const userId = user?.id as number | string;
+    if (!userId) throw new UnauthorizedException('Invalid user');
+    return this.service.deactivateForUser(String(userId), id);
+  }
+
+  @Post(':id/revoke')
+  @ApiOperation({
+    summary: 'Revoke a consumer API key owned by the logged-in user',
+  })
+  async revoke(
     @CurrentUser() user: { id?: number | string },
     @Param('id', ParseIntPipe) id: number,
   ) {
     const userId = user?.id as number | string;
     if (!userId) throw new UnauthorizedException('Invalid user');
     return this.service.revokeForUser(String(userId), id);
+  }
+
+  @Patch(':id/expiry')
+  @ApiOperation({
+    summary:
+      'Update expiry date for a consumer API key owned by the logged-in user',
+  })
+  async updateExpiry(
+    @CurrentUser() user: { id?: number | string },
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateConsumerApiKeyDto,
+  ) {
+    const userId = user?.id as number | string;
+    if (!userId) throw new UnauthorizedException('Invalid user');
+    return this.service.updateExpiryForUser(String(userId), id, dto);
   }
 }
