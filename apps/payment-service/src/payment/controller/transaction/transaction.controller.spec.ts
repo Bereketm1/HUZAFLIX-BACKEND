@@ -50,13 +50,60 @@ describe('TransactionController', () => {
 
       const user = { id: 10, role: { name: 'user' } };
 
-      const result = await controller.findAll(1, 10, user);
+      const result = await controller.findAll(
+        1,
+        10,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        user,
+      );
 
       expect(mockTransactionService.findAll).toHaveBeenCalledWith(
-        { page: 1, limit: 10 },
+        {
+          page: 1,
+          limit: 10,
+          startDate: undefined,
+          endDate: undefined,
+          sortBy: undefined,
+          order: undefined,
+        },
         'user',
         10,
       );
+      expect(result).toEqual(paginated);
+    });
+
+    it('should forward date and sort params to service', async () => {
+      const paginated = { data: [], meta: new PaginatedResponse(1, 0, 0) };
+      mockTransactionService.findAll.mockResolvedValue(paginated);
+
+      const user = { id: 3, role: { name: 'user' } };
+
+      const result = await controller.findAll(
+        1,
+        10,
+        '2026-01-01',
+        '2026-01-31',
+        'amount',
+        'asc',
+        user,
+      );
+
+      expect(mockTransactionService.findAll).toHaveBeenCalledWith(
+        {
+          page: 1,
+          limit: 10,
+          startDate: '2026-01-01',
+          endDate: '2026-01-31',
+          sortBy: 'amount',
+          order: 'asc',
+        },
+        'user',
+        3,
+      );
+
       expect(result).toEqual(paginated);
     });
 
@@ -70,10 +117,25 @@ describe('TransactionController', () => {
 
       const admin = { id: 1, role: { name: 'administrator' } };
 
-      const result = await controller.findAll(1, 5, admin);
+      const result = await controller.findAll(
+        1,
+        5,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        admin,
+      );
 
       expect(mockTransactionService.findAll).toHaveBeenCalledWith(
-        { page: 1, limit: 5 },
+        {
+          page: 1,
+          limit: 5,
+          startDate: undefined,
+          endDate: undefined,
+          sortBy: undefined,
+          order: undefined,
+        },
         'administrator',
         1,
       );

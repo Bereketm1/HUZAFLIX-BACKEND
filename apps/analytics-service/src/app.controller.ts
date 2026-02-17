@@ -66,6 +66,16 @@ export class AppController {
           )
         : 0;
 
+    // fetch total users from dashboard microservice (typed)
+    const userStats = await this.dashboardClient
+      .send<{
+        total?: number;
+        totalUsers?: number;
+        users?: number;
+        active?: number;
+      }>('get_user_stats', {})
+      .toPromise();
+
     return {
       totalRevenueThisMonth,
       totalApiHitsToday: stats.totalApiHitsToday,
@@ -74,7 +84,32 @@ export class AppController {
       successRate,
       totalErrorHits: stats.totalErrorHits,
       errorRate,
+      totalUsers: userStats?.total ?? userStats?.totalUsers ?? null,
     };
+  }
+
+  @ApiBearerAuth()
+  @Get('health')
+  @UseGuards(JwtAuthGuard)
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  async getSystemHealth(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return await this.analyticsService.getSystemHealth(startDate, endDate);
+  }
+
+  @ApiBearerAuth()
+  @Get('api-health')
+  @UseGuards(JwtAuthGuard)
+  @ApiQuery({ name: 'startDate', required: false, type: String })
+  @ApiQuery({ name: 'endDate', required: false, type: String })
+  async getApiHealth(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return await this.analyticsService.getApiHealth(startDate, endDate);
   }
 
   @ApiBearerAuth()
@@ -106,8 +141,13 @@ export class AppController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('administrator')
   async getUserStats(): Promise<unknown> {
-    const stats: unknown = await this.dashboardClient
-      .send('get_user_stats', {})
+    const stats = await this.dashboardClient
+      .send<{
+        total?: number;
+        totalUsers?: number;
+        users?: number;
+        active?: number;
+      }>('get_user_stats', {})
       .toPromise();
     return stats;
   }

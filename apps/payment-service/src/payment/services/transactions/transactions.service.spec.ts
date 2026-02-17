@@ -9,12 +9,13 @@ import { PaginatedResponse } from '@huzaflix/common';
 describe('TransactionsService', () => {
   let service: TransactionsService;
 
-  const mockPaymentRepository: Partial<Repository<PaymentRequest>> = {
+  const mockPaymentRepository: Partial<Repository<Transaction>> = {
     find: jest.fn(),
     findAndCount: jest.fn(),
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -110,6 +111,53 @@ describe('TransactionsService', () => {
         skip: 1,
         take: 1,
       });
+    });
+
+    it('should support date range filtering and sorting via query builder', async () => {
+      const prs = [{ id: 1, amount: 10 }];
+
+      // build a chainable mock for createQueryBuilder (typed)
+      const qb = {
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([prs, 1]),
+      } as unknown as {
+        andWhere: jest.Mock;
+        orderBy: jest.Mock;
+        skip: jest.Mock;
+        take: jest.Mock;
+        getManyAndCount: jest.Mock<Promise<[typeof prs, number]>, []>;
+      };
+
+      // attach mock to repository
+      (mockPaymentRepository.createQueryBuilder as jest.Mock).mockReturnValue(
+        qb,
+      );
+
+      const result = (await service.findAll(
+        {
+          page: 1,
+          limit: 10,
+          startDate: '2026-01-01',
+          endDate: '2026-01-31',
+          sortBy: 'amount',
+          order: 'asc',
+        },
+        'user',
+        7,
+      )) as { data: Transaction[]; meta: PaginatedResponse };
+
+      expect(mockPaymentRepository.createQueryBuilder).toHaveBeenCalledWith(
+        't',
+      );
+      expect(qb.andWhere).toHaveBeenCalled();
+      expect(qb.orderBy).toHaveBeenCalledWith('t.amount', 'ASC');
+      expect(qb.getManyAndCount).toHaveBeenCalled();
+
+      expect(result.data).toEqual(prs);
+      expect(result.meta.totalItems).toBe(1);
     });
   });
 
